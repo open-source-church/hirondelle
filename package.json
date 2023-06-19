@@ -1,7 +1,7 @@
 {
   "name": "osc-obs-bot",
   "version": "0.0.1",
-  "description": "Bot pour Twitch et OBS",
+  "description": "OSC-OBS-BOT",
   "productName": "Bot pour twitch et obs",
   "author": "Olivier Keshavjee <olivier.keshavjee@gmail.com>",
   "private": true,
@@ -14,18 +14,20 @@
   },
   "dependencies": {
     "@quasar/extras": "^1.0.0",
+    "obs-websocket-js": "^5.0.3",
+    "pinia": "^2.1.4",
     "quasar": "^2.6.0",
     "vue": "^3.0.0",
     "vue-router": "^4.0.0"
   },
   "devDependencies": {
-    "eslint": "^8.10.0",
-    "eslint-plugin-vue": "^9.0.0",
-    "eslint-config-prettier": "^8.1.0",
-    "prettier": "^2.5.1",
     "@quasar/app-vite": "^1.0.0",
     "autoprefixer": "^10.4.2",
-    "postcss": "^8.4.14"
+    "eslint": "^8.10.0",
+    "eslint-config-prettier": "^8.1.0",
+    "eslint-plugin-vue": "^9.0.0",
+    "postcss": "^8.4.14",
+    "prettier": "^2.5.1"
   },
   "engines": {
     "node": "^18 || ^16 || ^14.19",
