@@ -4,7 +4,7 @@
       <q-input class="col-10" v-model="ip" label="URL" />
       <q-input class="col-2" v-model="port" label="port" />
 
-      <q-input class="col-12" v-model="password" label = "password" />
+      <q-input class="col-12" v-model="password" type="password" label = "password" />
       <q-btn class="col-6" :disable="obs.connected" @click="obs.connect(url, password)" label="Connect" color="primary"/>
       <q-btn class="col-6" :disable="!obs.connected" @click="obs.disconnect()" label="Disconnect" color="secondary"/>
 
@@ -26,10 +26,75 @@
         {{ obs.data.botCreated }}
       </div>
 
-      <q-chip v-for="s in obs.data.scenes" :key="s.sceneIndex" :label="s.sceneName" clickable
-        :color="s.program ? 'green' : s.preview ? 'blue' : ''"
-        @click="obs.setPreviewScene(s.sceneName)"
-        @dblclick="obs.setProgramScene(s.sceneName)" />
+      <!-- SCENES -->
+      <div class="col-12 row items-start" v-if="obs.connected">
+        <q-btn flat icon="settings" class="col-auto">
+          <q-menu><q-list separator>
+            <q-item>
+              <q-item-section>
+                Icon only
+              </q-item-section>
+              <q-item-section side>
+                  <q-toggle v-model="scenes_icon_only" />
+              </q-item-section>
+            </q-item>
+            <q-item>
+              <q-item-section>
+                <q-input v-model="filter_scenes" borderless dense clearable placeholder="filter" />
+              </q-item-section>
+              <q-item-section side>
+                  <q-icon name="visibility" />
+              </q-item-section>
+              <q-item-section side>
+                  <q-icon name="image" />
+              </q-item-section>
+            </q-item>
+            <q-item v-for="s in obs.data.scenes.filter(s => !filter_scenes || s.sceneName.includes(filter_scenes))" :key="s.sceneIndex">
+              <q-item-section>{{ s.sceneName }}</q-item-section>
+              <q-item-section side>
+                <q-toggle size="xs" :model-value="!scenes_hide.includes(s.sceneName)"
+                  @update:model-value="scenes_hide = _.xor(scenes_hide, [s.sceneName])"/>
+              </q-item-section>
+              <q-item-section side>
+                <q-btn flat :icon="scenes_icon[s.sceneName] || 'add_circle'"
+                  :color="scenes_icon[s.sceneName] ? 'white' : 'grey-8'" >
+                  <q-popup-proxy>
+                    <div style="max-width: 520px;" class="row q-pa-md"  >
+                      <div class="col-12 row items-center">
+                        <q-icon name="search" size="sm" class="q-pa-sm"/>
+                        <q-input class="col" v-model="icons.filter"
+                        borderless dense clearable placeholder="filter" icon="search" />
+                      </div>
+                      <q-btn flat icon="clear" size="lg" class="q-pa-md" color="negative"
+                      @click.stop="delete scenes_icon[s.sceneName]" v-close-popup
+                      />
+                      <q-btn v-for="i in icons.icons" :key="i"
+                        flat :icon="i" size="lg" class="q-pa-md"
+                        @click.stop="scenes_icon[s.sceneName] = i" v-close-popup
+                        :color="scenes_icon[s.sceneName] == i ? 'accent' : ''"
+                        />
+                    </div>
+                  </q-popup-proxy>
+                </q-btn></q-item-section>
+            </q-item>
+          </q-list></q-menu>
+        </q-btn>
+        <div v-if="!scenes_icon_only" class="col" >
+          <q-chip v-for="s in scenes_filtered" :key="s.sceneIndex" :label="s.sceneName" clickable
+          :color="s.program ? 'green' : s.preview ? 'blue' : ''"
+          @click="obs.setPreviewScene(s.sceneName)"
+          @dblclick="obs.setProgramScene(s.sceneName)"
+          :icon="scenes_icon[s.sceneName]" />
+        </div>
+        <div v-else class="col">
+          <q-btn v-for="s in scenes_filtered" :key="s.sceneIndex" size="xl"
+          :color="s.program ? 'green' : s.preview ? 'blue' : ''"
+          @click="obs.setPreviewScene(s.sceneName)"
+          @dblclick="obs.setProgramScene(s.sceneName)"
+          :icon="scenes_icon[s.sceneName] || 'image'" />
+        </div>
+
+      </div>
 
       <div class="col-12 row">
         <q-img class="col" :src="obs.preview_img" no-transition v-if="obs.data.studioModeEnabled" />
@@ -40,14 +105,14 @@
         <div class="col-auto q-pa-md">
           Browser source in OBS to:
         </div>
-        <q-input class="col" readonly v-model="source_url" filled dense >
+        <q-input class="col" readonly v-model="peer.source_url" filled dense >
           <template v-slot:append>
-            <q-btn @click="copyURL" icon="content_copy"/>
+            <q-btn @click="peer.copyURL" icon="content_copy"/>
           </template>
         </q-input>
       </div>
-      Connection status: <q-icon name="circle" size="md" :color="peer_connected ? 'green' : 'red'"/>
-      <q-btn label="Send data" @click="send" />
+      Connection status: <q-icon name="circle" size="md" :color="peer.connected ? 'green' : 'red'"/>
+      <q-btn label="Send data" @click="peer.send" />
     </div>
   </q-page>
 </template>
@@ -56,11 +121,14 @@
 import { ref, computed, reactive, watch } from 'vue'
 import { useOBS } from 'stores/obs'
 import { useQuasar, copyToClipboard } from 'quasar'
-
-import { Peer } from "peerjs"
+import { usePeer } from 'stores/peer'
+import { useIcons } from 'stores/material_icons'
+import _ from 'lodash'
 
 const obs = useOBS()
 const $q = useQuasar()
+const peer = usePeer()
+const icons = useIcons()
 
 const ip = ref("192.168.1.56")
 const port = ref("4455")
@@ -68,39 +136,15 @@ const password = ref("testing")
 
 const url = computed(() => `ws://${ip.value}:${port.value}`)
 
+const scenes_hide = ref($q.localStorage.getItem("scenes_hidden") || [])
+const scenes_icon = ref($q.localStorage.getItem("scenes_icons") || {})
+const scenes_icon_only = ref(false)
 
+const scenes_filtered = computed(() => obs.data.scenes.filter(s => !scenes_hide.value.includes(s.sceneName)))
 
-// PEER Connection
+watch(scenes_hide, () => $q.localStorage.set("scenes_hidden", scenes_hide.value))
+watch(scenes_icon, () => $q.localStorage.set("scenes_icons", scenes_icon.value), { deep: true })
 
-
-const peer_id = ref($q.localStorage.getItem("peer_id"))
-
-const conn = ref({})
-const peer_connected = computed(() => conn.value.connectionId != null)
-var peer = new Peer(peer_id.value)
-// On store l'id
-peer.on("open", id => {
-  $q.localStorage.set("peer_id", id)
-  peer_id.value = id
-})
-
-peer.on("connection", c => {
-  console.log("Connection", c)
-  conn.value = c
-})
-
-peer.on("error", err => {
-  console.log("Error", err)
-})
-
-const send = () => {
-  conn.value.send("Coucou: " + Math.random().toString(36).substring(4))
-}
-
-const source_url = computed(() => window.location + "source/" + peer_id.value)
-const copyURL = () => {
-  copyToClipboard(source_url.value)
-  $q.notify("URL copiée dans le presse-papier.")
-}
+const filter_scenes = ref("")
 
 </script>
