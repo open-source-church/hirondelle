@@ -5,21 +5,37 @@
       <q-input class="col-2" v-model="port" label="port" />
 
       <q-input class="col-12" v-model="password" label = "password" />
-      <q-btn class="col-6" @click="obs.connect(url, password)" label="Connect" color="primary"/>
-      <q-btn class="col-6" @click="obs.disconnect()" label="Disconnect" color="secondary"/>
+      <q-btn class="col-6" :disable="obs.connected" @click="obs.connect(url, password)" label="Connect" color="primary"/>
+      <q-btn class="col-6" :disable="!obs.connected" @click="obs.disconnect()" label="Disconnect" color="secondary"/>
 
-      <q-checkbox :model-value="obs.connected" label="Connecté"/>
-      <q-checkbox v-model="obs.preview" label="Preview"/>
-      <q-checkbox :model-value="obs.studio" @update:model-value="obs.setStudioMode(!obs.studio)" label="Studio"/>
+      <div class="col-12 row q-gutter-md items-center">
+        <q-icon name="circle" size="sm" :color="obs.connected ? 'green' : 'red'"/>
+        <!-- <q-checkbox :model-value="obs.connected" label="Connecté"/> -->
+        <q-checkbox v-model="obs.preview" label="Preview"/>
+        <q-checkbox :model-value="obs.data.studioModeEnabled" @update:model-value="obs.setStudioMode(!obs.data.studioModeEnabled)" label="Studio"/>
+        <q-select dense class="col" :options="obs.data.profiles" label="Profiles"
+          :model-value="obs.data.currentProfileName" @update:model-value="value => obs.setProfile(value)" />
+        <q-select dense class="col" :options="obs.data.sceneCollections" label="Collections"
+          :model-value="obs.data.currentSceneCollectionName" @update:model-value="value => obs.setSceneCollection(value)" />
+      </div>
+      <div class="col-12 row">
+        <q-btn class="col" :disable="!obs.connected" @click="obs.createOSCBotBrowserSource()"
+        label="Create Browse rSource" color="positive"/>
+        <q-btn class="col" :disable="!obs.connected" @click="obs.removeOSCBotBrowserSource()"
+        label="Remove Browser Source" color="negative"/>
+        {{ obs.data.botCreated }}
+      </div>
 
-      <q-chip v-for="s in obs.scenes" :key="s.sceneIndex" :label="s.sceneName" clickable
+      <q-chip v-for="s in obs.data.scenes" :key="s.sceneIndex" :label="s.sceneName" clickable
         :color="s.program ? 'green' : s.preview ? 'blue' : ''"
         @click="obs.setPreviewScene(s.sceneName)"
         @dblclick="obs.setProgramScene(s.sceneName)" />
+
       <div class="col-12 row">
-        <q-img class="col" :src="obs.preview_img" no-transition v-if="obs.studio" />
+        <q-img class="col" :src="obs.preview_img" no-transition v-if="obs.data.studioModeEnabled" />
         <q-img class="col" :src="obs.program_img" no-transition />
       </div>
+
       <div class="col-12 row items-center">
         <div class="col-auto q-pa-md">
           Browser source in OBS to:
@@ -52,7 +68,13 @@ const password = ref("testing")
 
 const url = computed(() => `ws://${ip.value}:${port.value}`)
 
+
+
+// PEER Connection
+
+
 const peer_id = ref($q.localStorage.getItem("peer_id"))
+
 const conn = ref({})
 const peer_connected = computed(() => conn.value.connectionId != null)
 var peer = new Peer(peer_id.value)
