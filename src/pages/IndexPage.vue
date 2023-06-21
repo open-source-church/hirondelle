@@ -18,13 +18,6 @@
         <q-select dense class="col" :options="obs.data.sceneCollections" label="Collections"
           :model-value="obs.data.currentSceneCollectionName" @update:model-value="value => obs.setSceneCollection(value)" />
       </div>
-      <div class="col-12 row">
-        <q-btn class="col" :disable="!obs.connected" @click="obs.createOSCBotBrowserSource()"
-        label="Create Browse rSource" color="positive"/>
-        <q-btn class="col" :disable="!obs.connected" @click="obs.removeOSCBotBrowserSource()"
-        label="Remove Browser Source" color="negative"/>
-        {{ obs.data.botCreated }}
-      </div>
 
       <!-- SCENES -->
       <div class="col-12 row items-start" v-if="obs.connected">
@@ -101,7 +94,10 @@
         <q-img class="col" :src="obs.program_img" no-transition />
       </div>
 
-      <div class="col-12 row items-center">
+      <div class="col-12 row">
+      </div>
+
+      <div class="col-12 row items-center q-gutter-md">
         <div class="col-auto q-pa-md">
           Browser source in OBS to:
         </div>
@@ -110,9 +106,15 @@
             <q-btn @click="peer.copyURL" icon="content_copy"/>
           </template>
         </q-input>
+        <q-btn v-if="!obs.data.botCreated" class="col-auto" :disable="!obs.connected" @click="obs.createOSCBotBrowserSource(peer.source_url)"
+        label="Create" color="positive"/>
+        <q-btn v-else class="col-auto" :disable="!obs.connected" @click="obs.removeOSCBotBrowserSource()"
+        label="Remove" color="negative"/>
       </div>
-      Connection status: <q-icon name="circle" size="md" :color="peer.connected ? 'green' : 'red'"/>
-      <q-btn label="Send data" @click="peer.send" />
+      <div v-if="obs.data.botCreated">
+        Connection status: <q-icon name="circle" size="md" :color="peer.connected ? 'green' : 'red'"/>
+        <q-btn label="Send data" @click="peer.send" />
+      </div>
     </div>
   </q-page>
 </template>
@@ -123,12 +125,14 @@ import { useOBS } from 'stores/obs'
 import { useQuasar, copyToClipboard } from 'quasar'
 import { usePeer } from 'stores/peer'
 import { useIcons } from 'stores/material_icons'
+import { useTwitch } from 'stores/twitch'
 import _ from 'lodash'
 
 const obs = useOBS()
 const $q = useQuasar()
 const peer = usePeer()
 const icons = useIcons()
+const twitch = useTwitch()
 
 const ip = ref("192.168.1.56")
 const port = ref("4455")

@@ -14,6 +14,8 @@
   },
   "dependencies": {
     "@quasar/extras": "^1.0.0",
+    "comfy.js": "^1.1.16",
+    "dotenv": "^16.3.1",
     "lodash": "^4.17.21",
     "obs-websocket-js": "^5.0.3",
     "peerjs": "^1.4.7",

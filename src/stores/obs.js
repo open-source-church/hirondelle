@@ -154,7 +154,7 @@ export const useOBS = defineStore('obs', () => {
     obs_ws.call("SetCurrentSceneCollection", { sceneCollectionName: val })
   }
 
-  const createOSCBotBrowserSource = async () => {
+  const createOSCBotBrowserSource = async (url) => {
     var r = await obs_ws.call("CreateInput", {
       sceneName: data.value.previewScene,
       inputName: OSCBotBrowserName,
@@ -164,7 +164,7 @@ export const useOBS = defineStore('obs', () => {
             "is_local_file": false,
             "reroute_audio": false,
             "restart_when_active": false,
-            "url": "http://localhost:9000/source/d9fd797a-f845-4c67-b67a-2debedfd345d",
+            "url": url,
             "webpage_control_level": 1
       }
     })
