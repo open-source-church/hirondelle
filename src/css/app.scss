@@ -1,5 +1,31 @@
 // app global css in SCSS form
 
-body {
-  // background-color: transparent !important;
+.text-cream {
+  color: #f1e9da !important;
 }
+
+.bg-cream {
+  background: #f1e9da !important;
+}
+
+.text-discord {
+  color: $discord !important;
+}
+
+.bg-discord {
+  background: $discord !important;
+}
+
+body {
+  // font-size: 18px;
+  // font-weight: 300;
+}
+
+.q-page {
+  a {
+    color: $primary;
+    text-decoration: none;
+    font-weight: bold;
+  }
+}
+

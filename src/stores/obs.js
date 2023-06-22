@@ -2,8 +2,11 @@ import { defineStore } from 'pinia'
 import OBSWebSocket from 'obs-websocket-js'
 import { ref, computed, watch } from 'vue'
 import _ from 'lodash'
+import { useSettings } from './settings'
 
 export const useOBS = defineStore('obs', () => {
+
+  const S = useSettings()
 
   const obs_ws = new OBSWebSocket()
   const connected = ref(false)
@@ -11,19 +14,27 @@ export const useOBS = defineStore('obs', () => {
 
   const preview_img = ref()
   const program_img = ref()
-  const preview = ref(false)
+  const preview = ref(S.get("obs.preview"))
+  watch(preview, (val) => {
+    S.set("obs.preview", val)
+    getScreenshot()
+  })
 
   const _data = ref({}) // all data we get from OBS
 
   var OSCBotBrowserName = "OSCBotBrowser[TEMP]"
   const OSCBotBrowserKeepOnAllScenes = ref(true)
 
-  const connect = async (url, password) => {
+  const connect = async (ip, port, password) => {
+    var url = `ws://${ip}:${port}`
     disconnect()
     try {
       var r = await obs_ws.connect(url, password)
       console.log(`Connecté à websocket version ${r.obsWebSocketVersion} (avec RCP ${r.rpcVersion})`)
       connected.value = true
+      S.set("obs.ip", ip)
+      S.set("obs.port", port)
+      S.set("obs.password", password)
     }
     catch(error) {
       console.log(error)
@@ -65,6 +76,7 @@ export const useOBS = defineStore('obs', () => {
 
     // On mets le bot sur la scene en cours
     if (OSCBotBrowserKeepOnAllScenes.value && d.botCreated) {
+      // On rajoute le bot sur la scene
       for (const s of d.scenes) {
         // On recherche le bot sur la scene, et on récupère son item
         r = await obs_ws.call("GetSceneItemList", { sceneName: s.sceneName})
@@ -74,8 +86,15 @@ export const useOBS = defineStore('obs', () => {
           if (!item)
             var r = await obs_ws.call("CreateSceneItem", { sceneName: s.sceneName, sourceName: OSCBotBrowserName })
         }
-        // Sinon on enlève
-        else {
+      }
+      // On enlève le bot des scènes ou il doit pas y etre
+      // On doit faire ça après coup, sinon suivant comment ça supprime la source, et c'est triste
+      for (const s of d.scenes) {
+        // On recherche le bot sur la scene, et on récupère son item
+        r = await obs_ws.call("GetSceneItemList", { sceneName: s.sceneName})
+        var item = r.sceneItems.find(i => i.sourceName == OSCBotBrowserName)
+        // Si c'est pas la scene en cours, on ajoute
+        if (s.sceneName != d.currentPreviewSceneName && s.sceneName != d.currentProgramSceneName) {
           if (item)
             await obs_ws.call("RemoveSceneItem", { sceneName: s.sceneName, sceneItemId: item.sceneItemId})
         }
@@ -83,6 +102,8 @@ export const useOBS = defineStore('obs', () => {
     }
 
     _data.value = d
+
+    getScreenshot()
 
     loading.value = false
   }
@@ -138,6 +159,7 @@ export const useOBS = defineStore('obs', () => {
   }
 
   const setPreviewScene = async (name) => {
+    if (!data.value.studioModeEnabled) return setProgramScene(name)
     obs_ws.call("SetCurrentPreviewScene", { sceneName: name })
   }
 
@@ -156,7 +178,7 @@ export const useOBS = defineStore('obs', () => {
 
   const createOSCBotBrowserSource = async (url) => {
     var r = await obs_ws.call("CreateInput", {
-      sceneName: data.value.previewScene,
+      sceneName: data.value.programScene,
       inputName: OSCBotBrowserName,
       inputKind: "browser_source",
       inputSettings: {
@@ -215,7 +237,6 @@ export const useOBS = defineStore('obs', () => {
     }
   })
 
-  watch(preview, val => val ? getScreenshot() : null)
 
   return {
     connect, disconnect, connected,

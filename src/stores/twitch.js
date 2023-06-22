@@ -7,6 +7,8 @@ import { StaticAuthProvider, getTokenInfo } from '@twurple/auth'
 import { ApiClient } from '@twurple/api'
 import { EventSubWsListener } from '@twurple/eventsub-ws'
 import { ChatClient } from '@twurple/chat'
+import { useSettings } from './settings'
+
 // import { useRouter } from 'vue-router'
 
 const client_id = process.env.CLIENT_ID
@@ -15,14 +17,27 @@ const client_id = process.env.CLIENT_ID
 export const useTwitch = defineStore('twitch', () => {
 
   const $q = useQuasar()
+  const S = useSettings()
   // const router = useRouter()
 
-  const access_token = ref($q.localStorage.getItem("twitch_access_token") || "")
-  const state = ref($q.localStorage.getItem("twitch_state") || uid())
+  const access_token = ref(S.get("twitch.access_token") || "")
+  const state = ref(S.get("twitch.state") || uid())
 
   /*
     AUTH
   */
+  const logout = async () => {
+    access_token.value = ""
+    console.log("LOGOUT")
+    authProvider = null
+    apiClient = null
+    await chatClient.quit()
+    chat_connected.value = false
+    chatClient = null
+    await eventsub.stop()
+    eventsub = null
+    user.value = null
+  }
   const login = () => {
     var scope = [
       "bits:read",
@@ -30,7 +45,8 @@ export const useTwitch = defineStore('twitch', () => {
       "channel:read:redemptions", "channel:manage:redemptions",
       "user:read:follows",
       "channel:read:subscriptions",
-      "channel:read:polls", "channel:manage:polls"
+      "channel:read:polls", "channel:manage:polls",
+      "moderator:read:chatters", "moderator:read:followers"
     ]
     var params = {
       client_id,
@@ -42,14 +58,14 @@ export const useTwitch = defineStore('twitch', () => {
     var endpoint = "https://id.twitch.tv/oauth2/authorize?"
     var url = endpoint + Object.entries(params).map(kv => kv.map(encodeURIComponent).join("=")).join("&")
     // Save state
-    $q.localStorage.set("twitch_state", state.value)
+    S.set("twitch.state", state.value)
     // Save path for redirection
-    $q.localStorage.set("twitch_redirect", window.location.pathname)
+    S.set("twitch.redirect", window.location.pathname)
     // Redirect
     window.location.href = url
   }
 
-  watch(access_token, () => $q.localStorage.set("twitch_access_token", access_token.value))
+  watch(access_token, () => S.set("twitch.access_token", access_token.value))
 
   var authProvider
   var apiClient
@@ -59,6 +75,9 @@ export const useTwitch = defineStore('twitch', () => {
   var chat_connected = ref(false)
 
   watch(access_token, async () => {
+    // Ca vaut même pas la peine d'essayer
+    if (!access_token.value) return
+
     authProvider = new StaticAuthProvider(client_id, access_token.value)
     console.log("AUTH PROVIDER", authProvider)
 
@@ -66,8 +85,14 @@ export const useTwitch = defineStore('twitch', () => {
     console.log("API CLIENT", apiClient)
     // console.log("USER ID", authProvider._userId)
     // console.log(user.value)
-    var token_info = await getTokenInfo(access_token.value, client_id)
-    user.value = await apiClient.users.getUserById(token_info.userId)
+    try {
+      var token_info = await getTokenInfo(access_token.value, client_id)
+      user.value = await apiClient.users.getUserById(token_info.userId)
+      console.log("USER", user.value)
+    } catch (error) {
+      console.error(error)
+      return
+    }
 
     chatClient = new ChatClient(
       { authProvider,
@@ -97,8 +122,9 @@ export const useTwitch = defineStore('twitch', () => {
     eventsub.onChannelPollBegin(user.value, event => console.log("POLL BEGIN", event))
     eventsub.onChannelRewardUpdate(user.value, get_rewards)
 
-    // Rewards
-    get_rewards()
+    // Rewards si le user est au moins affilié
+    if(user.value.broadcasterType)
+      get_rewards()
 
   }, { immediate: true })
 
@@ -116,10 +142,11 @@ export const useTwitch = defineStore('twitch', () => {
 
   return {
     access_token, state,
-    login,
+    login, logout,
     chat_connected,
     user,
     rewards, reward_set_enabled,
+    apiClient
   }
 
 })

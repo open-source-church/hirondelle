@@ -3,22 +3,24 @@ import { ref, computed, watch } from 'vue'
 import _ from 'lodash'
 import { Peer } from "peerjs"
 import { useQuasar, copyToClipboard } from 'quasar'
+import { useSettings } from './settings'
 
 export const usePeer = defineStore('peer', () => {
 
   const $q = useQuasar()
+  const S = useSettings()
 
   const conn = ref({})
   const connected = computed(() => conn.value.connectionId != null)
 
   // PEER Connection
-  const peer_id = ref($q.localStorage.getItem("peer_id"))
+  const peer_id = ref(S.get("peer.id"))
 
   // New peer with peer_id from local storage or new
   var peer = new Peer(peer_id.value)
   // On store l'id
   peer.on("open", id => {
-    $q.localStorage.set("peer_id", id)
+    S.set("peer.id", id)
     peer_id.value = id
   })
 
