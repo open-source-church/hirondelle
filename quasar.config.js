@@ -94,6 +94,10 @@ module.exports = configure(function (/* ctx */) {
     framework: {
       config: {
         dark: true,
+        cssAddon: true,
+        loadingBar: {
+          color: "accent"
+        }
       },
 
       // iconSet: 'material-icons', // Quasar icon set
@@ -109,7 +113,8 @@ module.exports = configure(function (/* ctx */) {
       // Quasar plugins
       plugins: [
         'LocalStorage',
-        'Notify'
+        'Notify',
+        'LoadingBar'
       ]
     },
 

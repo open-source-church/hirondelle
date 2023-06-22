@@ -26,8 +26,8 @@
     </div>
 
     <!-- SCENES -->
-    <div class="col-12 row items-start q-my-md" v-if="obs.connected">
-      <q-btn flat icon="settings" class="col-auto">
+    <div class="col-12 q-my-md text-center" v-if="obs.connected">
+      <q-btn flat icon="settings" color="primary" class="float-right">
         <q-menu><q-list separator>
           <q-item>
             <q-item-section>
@@ -78,27 +78,27 @@
           </q-item>
         </q-list></q-menu>
       </q-btn>
-      <div v-if="!scenes_icon_only" class="col" >
+      <template v-if="!scenes_icon_only" >
         <q-chip square v-for="s in scenes_filtered" :key="s.sceneIndex" :label="s.sceneName" clickable
         :color="s.program ? 'green-9' : s.preview ? 'blue-9' : 'grey-9'"
         @click="obs.setPreviewScene(s.sceneName)"
         @dblclick="obs.setProgramScene(s.sceneName)"
         :icon="scenes_icon[s.sceneName]" />
-      </div>
-      <div v-else class="col">
+      </template>
+      <template v-else >
         <q-btn v-for="s in scenes_filtered" :key="s.sceneIndex" size="xl"
         :color="s.program ? 'green' : s.preview ? 'blue' : ''"
         @click="obs.setPreviewScene(s.sceneName)"
         @dblclick="obs.setProgramScene(s.sceneName)"
         :icon="scenes_icon[s.sceneName] || 'image'" />
-      </div>
+      </template>
 
     </div>
 
     <!-- Screenshots -->
     <div class="col-12 row" >
-      <q-img class="col" :src="obs.preview_img" no-transition v-if="obs.data.studioModeEnabled" />
-      <q-img class="col" :src="obs.program_img" no-transition />
+      <q-img class="col-xs-12 col-md-6" :src="obs.preview_img" no-transition v-if="obs.data.studioModeEnabled" />
+      <q-img class="col-xs-12 col-md-6" :src="obs.program_img" no-transition />
     </div>
 
     <!-- Browser source -->

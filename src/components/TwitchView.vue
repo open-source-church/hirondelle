@@ -47,7 +47,6 @@
             </q-tabs>
           </q-card-section>
           <q-card-section>
-            <q-btn flat icon="refresh" @click="get_chatters" class="float-right" color="accent"/>
             <q-tab-panels v-model="tab_info">
               <q-tab-panel name="chatters">
                 <q-list dense v-if="chatters.data">
@@ -58,6 +57,7 @@
                 </q-list>
               </q-tab-panel>
             </q-tab-panels>
+            <q-btn flat icon="refresh" @click="get_chatters" class="absolute-top-right" color="accent"/>
           </q-card-section>
           <q-separator />
           <q-card-section v-if="user_info.id">
@@ -94,6 +94,7 @@ import { useTwitch } from 'stores/twitch'
 import _ from 'lodash'
 
 const twitch = useTwitch()
+const $q = useQuasar()
 
 // Tabs
 const tab_info = ref("chatters")
@@ -101,12 +102,16 @@ const tab_info = ref("chatters")
 // Chatters
 const chatters = ref({})
 const get_chatters = async () => {
+  $q.loadingBar.start()
   chatters.value = await twitch.apiClient.chat.getChatters(twitch.user, twitch.user)
+  $q.loadingBar.stop()
   console.log(chatters.value)
 }
 const user_info = ref({})
 const get_user_info = async (userId) => {
+  $q.loadingBar.start()
   user_info.value = await twitch.apiClient.users.getUserById(userId)
+  $q.loadingBar.stop()
   // user_info.value = await twitch.apiClient.channels.getChannelFollowers(twitch.user, twitch.user, userId)
   console.log(user_info.value)
   console.log(user_info.value)
