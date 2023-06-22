@@ -115,6 +115,33 @@
         Connection status: <q-icon name="circle" size="md" :color="peer.connected ? 'green' : 'red'"/>
         <q-btn label="Send data" @click="peer.send" />
       </div>
+      <div class="col-12">
+        {{ twitch.access_token }} // {{ twitch.state }}
+        <q-btn label="Login Twitch" icon="login" @click="twitch.login()" color="primary"/>
+        <q-icon name="circle" size="sm" :color="twitch.chat_connected ? 'green' : 'red'"/> Connecté au chat
+        <hr />
+        <div v-if="twitch.user">
+          Connecté en tant que: {{ twitch.user.name }}
+          <q-avatar >
+            <img :src="twitch.user.profilePictureUrl" />
+          </q-avatar>
+        </div>
+        <q-list>
+          <q-item v-for="r in twitch.rewards" :key="r.id" :disable="!r.isManagable">
+            <q-item-section avatar>
+              <q-img :src="r.getImageUrl(1)" />
+            </q-item-section>
+            <q-item-section>
+              <q-item-label><q-badge>{{ r.cost }}</q-badge> {{ r.title }} </q-item-label>
+              <q-item-label caption>{{ r.prompt }}</q-item-label>
+            </q-item-section>
+            <q-item-section>
+              <q-checkbox label="active" :model-value="r.isEnabled"
+                v-on:update:model-value="twitch.reward_set_enabled(r.id, !r.isEnabled)" />
+            </q-item-section>
+          </q-item>
+        </q-list>
+      </div>
     </div>
   </q-page>
 </template>

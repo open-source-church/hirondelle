@@ -14,7 +14,10 @@
   },
   "dependencies": {
     "@quasar/extras": "^1.0.0",
-    "comfy.js": "^1.1.16",
+    "@twurple/api": "^6.2.1",
+    "@twurple/auth": "^6.2.1",
+    "@twurple/chat": "^6.2.1",
+    "@twurple/eventsub-ws": "^6.2.1",
     "dotenv": "^16.3.1",
     "lodash": "^4.17.21",
     "obs-websocket-js": "^5.0.3",

@@ -38,7 +38,7 @@ export const usePeer = defineStore('peer', () => {
   }
 
   // Source URL
-  const source_url = computed(() => window.location + "source/" + peer_id.value)
+  const source_url = computed(() => window.location.origin + "/source/" + peer_id.value)
   const copyURL = () => {
     copyToClipboard(source_url.value)
     $q.notify("URL copiée dans le presse-papier.")

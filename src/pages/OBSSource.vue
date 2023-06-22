@@ -14,8 +14,10 @@ import { useOBS } from 'stores/obs'
 import { useQuasar } from 'quasar'
 
 import { Peer } from "peerjs"
+import { useTwitch } from 'stores/twitch'
 
 const $q = useQuasar()
+const twitch = useTwitch()
 
 const props = defineProps(["peer_id"])
 
