@@ -11,8 +11,9 @@ import { useSettings } from './settings'
 
 // import { useRouter } from 'vue-router'
 
-const client_id = process.env.CLIENT_ID
-// const access_token = process.env.ACCESS_TOKEN
+// Default clientId for osc bot
+var CLIENT_ID = process.env.CLIENT_ID
+var client_id = CLIENT_ID
 
 export const useTwitch = defineStore('twitch', () => {
 
@@ -31,14 +32,19 @@ export const useTwitch = defineStore('twitch', () => {
     console.log("LOGOUT")
     authProvider = null
     apiClient = null
-    await chatClient.quit()
+    await chatClient.value.quit()
     chat_connected.value = false
-    chatClient = null
+    chatClient.value = null
     await eventsub.stop()
     eventsub = null
     user.value = null
   }
+
+  /*
+    Login with OAuth flow.
+  */
   const login = () => {
+    client_id = CLIENT_ID
     var scope = [
       "bits:read",
       "chat:read", "chat:edit",
@@ -65,14 +71,24 @@ export const useTwitch = defineStore('twitch', () => {
     window.location.href = url
   }
 
+  /*
+    Login by pasting access_token
+  */
+  const login_with_access_token = (token, clientId) => {
+    client_id = clientId
+    access_token.value = token
+  }
+
   watch(access_token, () => S.set("twitch.access_token", access_token.value))
 
   var authProvider
   var apiClient
-  var chatClient
+  const chatClient = ref()
   var eventsub
-  var user = ref()
-  var chat_connected = ref(false)
+  const user = ref()
+  const channel = ref()
+  const chat_connected = ref(false)
+  const channel_name = ref("")
 
   watch(access_token, async () => {
     // Ca vaut même pas la peine d'essayer
@@ -94,25 +110,25 @@ export const useTwitch = defineStore('twitch', () => {
       return
     }
 
-    chatClient = new ChatClient(
+    channel_name.value = user.value.name
+    chatClient.value = new ChatClient(
       { authProvider,
-        channels: ['opensourcechurch'],
+        channels: [user.value.name],
         // requestMembershipEvents: true
       });
-    chatClient.connect()
-    chatClient.onConnect(() => chat_connected.value = true)
-    chatClient.onDisconnect(() => chat_connected.value = false)
-    chatClient.onMessage((channel, user, text, msg) => console.log("MESSAGE", channel, user, text, msg))
-    chatClient.onAnnouncement((channel, user, announcementInfo, msg) => console.log("ACCOUNCEMENT", channel, user, announcementInfo, msg))
+      chatClient.value.connect()
+      chatClient.value.onConnect(() => chat_connected.value = true)
+      chatClient.value.onDisconnect(() => chat_connected.value = false)
+      chatClient.value.onMessage((channel, user, text, msg) => console.log("MESSAGE", channel, user, text, msg))
+      chatClient.value.onAnnouncement((channel, user, announcementInfo, msg) => console.log("ACCOUNCEMENT", channel, user, announcementInfo, msg))
     // chatClient.onSub((channel, user, subInfo, msg) => console.log("SUB", channel, user, subInfo, msg))
     // chatClient.onCommunitySub((channel, user, subInfo, msg) => console.log("COMMUNITY SUB", channel, user, subInfo, msg))
     // chatClient.onResub((channel, user, subInfo, msg) => console.log("RESUB", channel, user, subInfo, msg))
     // chatClient.onJoin((channel, user) => console.log("JOIN", channel, user))
     // chatClient.onRaid((channel, user, raidInfo, msg) => console.log("RAID", channel, user, raidInfo, msg))
-    console.log("CHAT CLIENT", chatClient)
+    console.log("CHAT CLIENT", chatClient.value)
 
     // EventSub
-
     eventsub = new EventSubWsListener({ apiClient })
     eventsub.start()
     // eventsub.onRevoke(sub => subscriptions.value[sub.])
@@ -127,7 +143,18 @@ export const useTwitch = defineStore('twitch', () => {
       get_rewards()
 
   }, { immediate: true })
+  watch(channel_name, async (val, old) => {
+    // Chat
+    if(old) chatClient.value.part(old)
+    if(!val) return channel_name.value = user.value.name
+    chatClient.value.join(val)
+    // User
+    channel.value = await apiClient.users.getUserByName(val)
+  })
 
+  /*
+    Rewards
+  */
   const rewards = ref([])
   const get_rewards = async () => {
     // Get all rewards
@@ -142,11 +169,11 @@ export const useTwitch = defineStore('twitch', () => {
 
   return {
     access_token, state,
-    login, logout,
+    login, logout, login_with_access_token,
     chat_connected,
-    user,
+    user, channel_name, channel,
     rewards, reward_set_enabled,
-    apiClient
+    apiClient, chatClient
   }
 
 })

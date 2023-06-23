@@ -11,9 +11,21 @@
         </q-chip>
         <q-btn label="Logout" icon="power_off" flat color="negative" @click="twitch.logout"/>
       </div>
-      <div v-else>
-        <q-btn label="Login Twitch" icon="login" @click="twitch.login()" color="primary" text-color="dark"/>
+      <div v-else class="col-12 row justify-center q-gutter-md">
+        <q-btn label="Login Twitch" icon="login" @click="twitch.login()" color="secondary" text-color="dark" />
+        <q-btn flat label="Access token" icon="content_paste" @click="twitch.login_with_access_token()" color="secondary">
+          <q-popup-proxy>
+            <div class="q-pa-md row q-gutter-md justify-center">
+              <q-input class="col-12" v-model="token" label="Access Token" />
+              <q-input class="col-12" v-model="client_id" label="Client ID" />
+              <q-btn class="col-auto" icon="check" @click="twitch.login_with_access_token(token, client_id)" color="accent"/>
+            </div>
+          </q-popup-proxy>
+        </q-btn>
       </div>
+    </div>
+    <div class="col-12 row" v-if="twitch.user">
+      <!-- Rewards -->
       <div class="col-6">
         <q-card class="q-ma-md">
           <q-card-section class="bg-secondary text-dark text-subtitle1">Rewards</q-card-section>
@@ -36,9 +48,23 @@
           </q-card-section>
         </q-card>
       </div>
+      <!-- Chat client -->
       <div class="col-6">
         <q-card class="q-ma-md">
-          <q-card-section class="bg-secondary text-dark text-subtitle1">Info</q-card-section>
+          <q-card-section class="bg-secondary text-dark text-subtitle1">
+            Chat <span v-if="twitch.channel_name">
+              <q-chip square class="bg-primary text-dark" >{{ twitch.channel_name }}</q-chip>
+              <q-btn flat size="sm" color="accent" icon="edit" >
+                <q-popup-proxy>
+                  <div class="q-pa-md row q-gutter-md justify-center">
+                    <q-input class="col-12" v-model="channel" label="Chaîne à rejoindre" />
+                    <q-btn class="col-auto" icon="check" color="accent"
+                      @click="twitch.channel_name = channel" v-close-popup/>
+                  </div>
+                </q-popup-proxy>
+              </q-btn>
+            </span>
+          </q-card-section>
           <q-card-section class="q-pa-none">
             <q-tabs v-model="tab_info">
               <q-tab name="chatters" label="Chatters" >
@@ -99,11 +125,20 @@ const $q = useQuasar()
 // Tabs
 const tab_info = ref("chatters")
 
+// Login
+const token = ref("")
+const client_id = ref("")
+const channel = ref("")
+
 // Chatters
 const chatters = ref({})
 const get_chatters = async () => {
   $q.loadingBar.start()
-  chatters.value = await twitch.apiClient.chat.getChatters(twitch.user, twitch.user)
+  try {
+    chatters.value = await twitch.apiClient.chat.getChatters(twitch.channel || twitch.user, twitch.user)
+  } catch (err) {
+    $q.notify(err.message)
+  }
   $q.loadingBar.stop()
   console.log(chatters.value)
 }
@@ -113,7 +148,6 @@ const get_user_info = async (userId) => {
   user_info.value = await twitch.apiClient.users.getUserById(userId)
   $q.loadingBar.stop()
   // user_info.value = await twitch.apiClient.channels.getChannelFollowers(twitch.user, twitch.user, userId)
-  console.log(user_info.value)
   console.log(user_info.value)
 }
 
