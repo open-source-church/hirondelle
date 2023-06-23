@@ -8,6 +8,7 @@ import { ApiClient } from '@twurple/api'
 import { EventSubWsListener } from '@twurple/eventsub-ws'
 import { ChatClient } from '@twurple/chat'
 import { useSettings } from './settings'
+import { useActions } from './actions'
 
 // import { useRouter } from 'vue-router'
 
@@ -19,6 +20,7 @@ export const useTwitch = defineStore('twitch', () => {
 
   const $q = useQuasar()
   const S = useSettings()
+  const A = useActions()
   // const router = useRouter()
 
   const access_token = ref(S.get("twitch.access_token") || "")
@@ -88,6 +90,7 @@ export const useTwitch = defineStore('twitch', () => {
   const user = ref()
   const channel = ref()
   const chat_connected = ref(false)
+  const eventsub_started = ref(false)
   const channel_name = ref("")
 
   watch(access_token, async () => {
@@ -132,9 +135,9 @@ export const useTwitch = defineStore('twitch', () => {
     eventsub = new EventSubWsListener({ apiClient })
     eventsub.start()
     // eventsub.onRevoke(sub => subscriptions.value[sub.])
-    eventsub.onUserSocketConnect(ev => console.log("CONNECT", ev))
-    eventsub.onUserSocketDisconnect(ev => console.log("DISCONNECT", ev))
-    eventsub.onChannelRedemptionAdd(user.value, event => console.log("REDEMPTION", event))
+    eventsub.onUserSocketConnect(ev => eventsub_started.value = true)
+    eventsub.onUserSocketDisconnect(ev => eventsub_started.value = false)
+    eventsub.onChannelRedemptionAdd(user.value, channelRedemptionEvent)
     eventsub.onChannelPollBegin(user.value, event => console.log("POLL BEGIN", event))
     eventsub.onChannelRewardUpdate(user.value, get_rewards)
 
@@ -165,6 +168,47 @@ export const useTwitch = defineStore('twitch', () => {
   }
   const reward_set_enabled = async (id, enabled = true) => {
     await apiClient.channelPoints.updateCustomReward(user.value, id, { isEnabled: enabled })
+  }
+
+  const rewards_title = computed(() => rewards.value.map(r => r.title))
+  // Reward event
+  var reward_action = A.register_action({
+    name:"Reward", source:"Twitch", description:"Une récompense a été récupérée",
+    active: eventsub_started,
+    params: [
+    { name: "userName", description: "Le nom de l'utilisateurice" },
+    { name: "rewardId", description: "L'id de la reward" },
+    { name: "rewardTitle", description: "Le titre de la récompense", options: rewards_title },
+    { name: "rewardCost", description: "Le coût de la récompense" },
+    { name: "input", description: "L'input de la récompense" },
+  ]})
+
+  const channelRedemptionEvent = event => {
+    console.log("REDEMPTION", event)
+    var opt = {
+      userName: event.userName,
+      rewardId: event.rewardId,
+      rewardTitle: event.rewardTitle,
+      rewardCost: event.rewardCost,
+      input: event.input
+    }
+    reward_action.start(opt)
+    /*
+    broadcasterDisplayName
+    broadcasterId
+    broadcasterName
+    id
+    input
+    redemptionDate
+    rewardCost
+    rewardId
+    rewardPrompt
+    rewardTitle
+    status
+    userDisplayName
+    userId
+    userName
+    */
   }
 
   return {

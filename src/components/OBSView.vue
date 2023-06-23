@@ -130,7 +130,7 @@
 
 <script setup>
 
-import { ref, computed, reactive, watch } from 'vue'
+import { ref, computed, reactive, watch, onMounted } from 'vue'
 import { useOBS } from 'stores/obs'
 import { useQuasar, copyToClipboard } from 'quasar'
 import { useIcons } from 'stores/material_icons'
@@ -151,6 +151,11 @@ const ip = ref(S.get("obs.ip") || "192.168.1.56")
 const port = ref(S.get("obs.port") || "4455")
 const password = ref(S.get("obs.password") || "password")
 
+// Auto connect
+if (ip.value && port.value && password.value)
+  obs.connect(ip.value, port.value, password.value)
+
+// Scenes
 const scenes_hide = ref(S.get("scenes.hidden") || [])
 const scenes_icon = ref(S.get("scenes.icons") || {})
 const scenes_icon_only = ref(false)
@@ -161,5 +166,6 @@ watch(scenes_hide, () => S.set("scenes.hidden", scenes_hide.value))
 watch(scenes_icon, () => S.set("scenes.icons", scenes_icon.value), { deep: true })
 
 const filter_scenes = ref("")
+
 
 </script>

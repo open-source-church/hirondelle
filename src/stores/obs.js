@@ -3,10 +3,12 @@ import OBSWebSocket from 'obs-websocket-js'
 import { ref, computed, watch } from 'vue'
 import _ from 'lodash'
 import { useSettings } from './settings'
+import { useActions } from './actions'
 
 export const useOBS = defineStore('obs', () => {
 
   const S = useSettings()
+  const A = useActions()
 
   const obs_ws = new OBSWebSocket()
   const connected = ref(false)
@@ -107,6 +109,10 @@ export const useOBS = defineStore('obs', () => {
 
     loading.value = false
   }
+
+  watch(connected, async () => {
+    if (connected.value) getInfo()
+  })
 
   const data = computed(() => {
 
@@ -216,9 +222,13 @@ export const useOBS = defineStore('obs', () => {
     getInfo()
   }
 
-  // Events
+  /*
+    Events
+  */
+  const scene_names = computed(() => data.value.scenes ? data.value.scenes.map(s => s.sceneName) : null)
+
   // https://github.com/obsproject/obs-websocket/blob/master/docs/generated/protocol.md#events
-  var events_lists_to_watch = [
+  var obs_update_info = [
     "CurrentPreviewSceneChanged",
     "CurrentProgramSceneChanged",
     "StudioModeStateChanged",
@@ -229,14 +239,67 @@ export const useOBS = defineStore('obs', () => {
     "CurrentSceneCollectionChanged",
     "SceneCollectionListChanged"
   ]
-  events_lists_to_watch.forEach(e => obs_ws.on(e, getInfo))
+  obs_update_info.forEach(e => obs_ws.on(e, getInfo))
 
-  watch(connected, async () => {
-    if (connected.value) {
-      getInfo()
+  // Register events
+  var events_lists_to_watch = [
+    {
+      name: "Scene Changed", obsname: "CurrentProgramSceneChanged", description: "La scène OBS change",
+      params: [ { name: "sceneName", description: "Nom de la nouvelle scène", options: scene_names } ]
+    },
+    {
+      name: "Preview Scene Changed", obsname: "CurrentPreviewSceneChanged", description: "La scène d'apperçu OBS change",
+      params: [ { name: "sceneName", description: "Nom de la nouvelle scène", options: scene_names } ]
+    },
+    {
+      name: "Studio Mode Changed", obsname: "StudioModeStateChanged", description: "Le mode studio a été activé ou désactivé",
+      params: [ { name: "studioModeEnabled", description: "Valeur" } ]
+    },
+    {
+      name: "Stream State Changed", obsname: "StreamStateChanged", description: "The state of the stream output has changed.",
+      params: [
+        { name: "outputActive", description: "Whether the output is active" },
+        { name: "outputState", description: "The specific state of the output" },
+      ]
+    },
+    {
+      name: "Profile Changed", obsname: "CurrentProfileChanged", description: "Le profile a changé",
+      params: [ { name: "profileName", description: "Le nom du nouveau profile" } ]
+    },
+    {
+      name: "Scene Collection Changed", obsname: "CurrentSceneCollectionChanged", description: "La collection de scènes a changé",
+      params: [ { name: "sceneCollectionName", description: "Nom de la nouvelle collection" } ]
+    }
+  ]
+
+  events_lists_to_watch.forEach(e => {
+    var action = A.register_action({
+      name: e.name, source: "OBS", description: e.description, params: e.params, active: connected})
+    obs_ws.on(e.obsname, (p) => action.start(p))
+  })
+
+
+  /*
+    Actions
+  */
+  A.register_action({
+    name: "Set scene", source: "OBS",
+    description: "Change la scène en cours sur OBS",
+    params: [ { name: "sceneName", description: "Nom de la scene", options: scene_names }],
+    active: connected,
+    callback: (opt) => {
+      console.log("OBS CHANGE SCENE", opt)
+      obs_ws.call("SetCurrentProgramScene", { sceneName: opt.sceneName })
     }
   })
 
+  A.register_action({
+    name: "Set preview scene", source: "OBS",
+    description: "Change la scène apperçu sur OBS",
+    params: [ { name: "sceneName", description: "Nom de la scene", options: scene_names }],
+    active: connected,
+    callback: (opt) => obs_ws.call("SetCurrentPreviewScene", { sceneName: opt.sceneName })
+  })
 
   return {
     connect, disconnect, connected,
