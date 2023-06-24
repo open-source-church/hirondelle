@@ -45,20 +45,36 @@ export const useActions = defineStore('actions', () => {
     }
     // On ajoute la fonction de lancement
     action.start = async function  (params) {
-      this.started = true
+      // this.started = true
       console.log("STARTED", this.name, "with", params)
 
       // On appelle le callback s'il y en a un
-      if (this.callback) this.callback(params)
+      if (this.callback) await this.callback(params)
 
       // On regarde s'il y a des actions connectées
       var r = await check_triggers(this.triggers, params)
 
-      this.started = false
+      // this.started = false
     }
     actions.value.push(action)
     return action
   }
+
+  // Default actions
+  function delay(time) {
+    return new Promise(resolve => setTimeout(resolve, time));
+  }
+  async function DA_wait (params) {
+    console.log("AND WE WAIT", params.time, "ms")
+    await delay(parseInt(params.time))
+    console.log("AND WE ARE DONE WAITING", params.time, "ms")
+  }
+  register_action({
+    name: "Timer", description: "Attendre un peu", source: "Bot",
+    callback: DA_wait,
+    params: [ {name: "time", description: "durée en ms", type: "number"} ]
+   })
+
 
   // load user actions
   var act = S.get("actions.user") || []
@@ -89,7 +105,9 @@ export const useActions = defineStore('actions', () => {
   var debounced_save = _.debounce(save, 1000, { 'leading': true, 'trailing': true })
 
   // On enregistre les actions et on ajoute les éventuels signaux
-  watch(actions, () => {
+  watch(actions, (val, old) => {
+    console.log(old)
+    console.log(val)
     // On ajoute les signaux depuis la sauvegarde s'il y en a
     if (signals.value.length) {
       signals.value.forEach(sig => {
@@ -115,9 +133,9 @@ export const useActions = defineStore('actions', () => {
   }
   const signature = obj => `${obj.source}:${obj.name}`
 
-  const check_triggers = (triggers, params) => {
+  const check_triggers = async (triggers, params) => {
     console.log(triggers, params)
-    triggers.filter(t => {
+    var triggers = triggers.filter(t => {
       if(!t.condition) return true
       console.log("CONDITION", t.condition)
       // Check condictions
@@ -125,12 +143,13 @@ export const useActions = defineStore('actions', () => {
       var b = get_param_value(t.condition[2], params)
       if (t.condition[1] == "=") return a == b
     })
-    .forEach(t => {
+    console.log("TRIGGERS", triggers)
+    for(var j in triggers) {
       var p = Object.fromEntries(
-        Object.keys(t.params).map(k => [k, get_param_value(t.params[k], params)])
+        Object.keys(triggers[j].params).map(k => [k, get_param_value(triggers[j].params[k], params)])
       )
-      t.target.start(p)
-    })
+      await triggers[j].target.start(p)
+    }
   }
 
   return {

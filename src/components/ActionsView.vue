@@ -54,11 +54,14 @@
           <q-btn icon="add" class="absolute-right" color="accent" @click="create_action()" />
         </q-card-section>
         <q-card-section class="row q-pa-sm q-gutter-sm" v-if="action" >
-          <q-input class="col" :readonly="action.source != 'User'" filled dense label="Nom" v-model="action.name"/>
-          <q-btn class="col-auto" v-if="action.source == 'User'" icon="delete" color="negative"
+          <q-input class="col-10" :readonly="action.source != 'User'" filled dense label="Nom" v-model="action.name"/>
+          <q-btn class="col" v-if="action.source == 'User'" icon="delete" color="negative"
             @click = "A.actions = A.actions.filter(a => a!= action)" />
 
-          <q-input class="col-12" :readonly="action.source != 'User'" filled dense label="Description" v-model="action.description"/>
+          <q-input class="col-10" :readonly="action.source != 'User'" filled dense label="Description" v-model="action.description"/>
+          <q-btn class="col" v-if="action.source == 'User'" icon="play_circle_filled" color="positive"
+            @click = "action.start()" />
+
           <div class="col-12 text-subtitle2">Params</div>
 
           <q-chip square v-for="p in action.params" :key="p.name" class="bg-grey-9">
@@ -117,8 +120,13 @@
                       <q-item-section side>
                         <div class="row">
                           <q-input filled dense v-model="t.params[p.name]" />
-                          <q-select v-if="p.options" filled dense :options="p.options"
-                          @update:model-value="val => t.params[p.name] = val" />
+                          <q-btn-dropdown v-if="p.options" >
+                            <q-list>
+                              <q-item clickable v-for="(o, i) in p.options" :key="o+i"
+                                @click="t.params[p.name] = o" v-close-popup
+                              >{{ o }}</q-item>
+                            </q-list>
+                          </q-btn-dropdown>
                         </div>
                       </q-item-section>
                     </q-item>
