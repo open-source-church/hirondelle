@@ -7,7 +7,7 @@ import { defineNode, NodeInterface, TextInputInterface, CheckboxInterface, Integ
 import DisplayInterface from "../components/nodes/interfaces/DisplayInterface.vue"
 import InputInterface from "../components/nodes/interfaces/InputInterface.vue"
 
-export const useNodes = defineStore('nodes', () => {
+export const useNodesBaklava = defineStore('nodes', () => {
 
   const $q = useQuasar()
 

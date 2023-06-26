@@ -19,7 +19,7 @@ import { useTwitch } from 'stores/twitch'
 // import { displayNode, myNode } from 'stores/nodes'
 import _ from 'lodash'
 import { useActions } from 'stores/actions'
-import { useNodes } from 'stores/nodes'
+import { useNodesBaklava } from 'stores/nodes_baklava'
 // Baklava
 import { useBaklava } from "@baklavajs/renderer-vue"
 import "@baklavajs/themes/dist/syrup-dark.css"
@@ -29,7 +29,7 @@ import { useSettings } from 'stores/settings'
 
 const $q = useQuasar()
 const A = useActions()
-const N = useNodes()
+const N = useNodesBaklava()
 const S = useSettings()
 useSystemNodes()
 

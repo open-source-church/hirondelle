@@ -1,15 +1,21 @@
 <template>
   <div
-    class="Heditor"
-    @wheel.self="PZ.mouseWheel"
-    @pointermove.self="PZ.onPointerMove"
-    @pointerdown="PZ.onPointerDown"
-    @pointerup="PZ.onPointerUp"
+    class="h-editor"
+    @wheel.self="e => PZ.mouseWheel(e, _graph.view)"
+    @pointermove.self="e => PZ.onPointerMove(e, _graph.view)"
+    @pointerdown.self="e => PZ.onPointerDown(e, _graph.view)"
+    @pointerup.self="PZ.onPointerUp"
   >
-    <div class="Hbackground" :style="styles">Hirondelle</div>
-    <div class="H-node-container" :style="view.style">
-      <q-btn label="Coucou" color="accent" icon="add" class="" style="left:100px; top: 200px;"/>
+    <div class="h-background" :style="styles" ></div>
+    <!-- Nodes -->
+    <div class="h-node-container" :style="transformStyle">
+      <HNode v-for="(n, i) in _graph.nodes" :key="'node'+i" :node="n"
+        v-touch-pan.prevent.mouse="e => PZ.move(e, n, _graph.view)"/>
     </div>
+    <!-- Connections -->
+    <svg class="h-connections-container" :style="transformStyle">
+      <HConnection v-for="(c, i) in _graph.connections" :key="'connection'+i" :connection="c" />
+    </svg>
   </div>
 </template>
 
@@ -18,20 +24,33 @@
 import { ref, computed, reactive, watch, onMounted } from 'vue'
 import { useHirondelle } from "./hirondelle.js"
 import { useMovePanZoom } from "./movePanZoom.js"
+import HNode from "src/hirondelle/HNode.vue"
+import HConnection from "src/hirondelle/HConnection.vue"
 
 const H = useHirondelle()
 const PZ = useMovePanZoom()
-const view = H.editor.view
 
-// Events
+const props = defineProps({
+  graph: { type: Object, required: false }
+})
 
+const _graph = computed(() => props.graph)
+
+console.log("GRAPH", _graph.value.view)
+
+const transformStyle = computed(() => ({
+  "transform-origin": "0 0",
+  "transform": `scale(${_graph.value.view.scaling})
+  translate(${_graph.value.view.panning.x}px, ${_graph.value.view.panning.y}px)`
+}))
 
 // Background
 const gridSize = 100
 const subGridSize = 20
 const styles = computed(() => {
+  const view = _graph.value.view
   return {
-    backgroundPosition: `left ${view.panning.x}px top ${view.panning.y}px`,
+    backgroundPosition: `left ${view.panning.x * view.scaling}px top ${view.panning.y * view.scaling}px`,
     backgroundSize: `${gridSize * view.scaling}px ${gridSize * view.scaling}px,
                      ${gridSize * view.scaling}px ${gridSize * view.scaling}px,
                      ${subGridSize * view.scaling}px ${subGridSize * view.scaling}px,
@@ -39,32 +58,15 @@ const styles = computed(() => {
   }
 })
 
+
 const color = "#222222"
 const lineColor = "#333333"
-
-// const styles = computed(() => {
-  //   const config = viewModel.value.settings.background;
-//   const positionLeft = graph.value.panning.x * graph.value.scaling;
-//   const positionTop = graph.value.panning.y * graph.value.scaling;
-//   const size = graph.value.scaling * config.gridSize;
-//   const subSize = size / config.gridDivision;
-//   const backgroundSize = `${size}px ${size}px, ${size}px ${size}px`;
-//   const subGridBackgroundSize =
-//       graph.value.scaling > config.subGridVisibleThreshold
-//           ? `, ${subSize}px ${subSize}px, ${subSize}px ${subSize}px`
-//           : "";
-//   return {
-  //       backgroundPosition: `left ${positionLeft}px top ${positionTop}px`,
-//       backgroundSize: `${backgroundSize} ${subGridBackgroundSize}`,
-//   }
-// })
 
 </script>
 
 <style lang="scss">
 
-
-.Heditor {
+.h-editor {
   width: 100%;
   height: 100%;
   position: relative;
@@ -72,7 +74,7 @@ const lineColor = "#333333"
   outline: none !important;
   touch-action: none;
 
-  .Hbackground {
+  .h-background {
     background-color: v-bind("color");
     background-image: linear-gradient(v-bind("lineColor") 2px, transparent 2px),
         linear-gradient(90deg, v-bind("lineColor") 2px, transparent 2px),
@@ -84,10 +86,22 @@ const lineColor = "#333333"
     pointer-events: none !important;
   }
 
-  .H-node-container {
+  .h-node-container {
     position: absolute;
     top: 0;
     left: 0;
+    z-index: 1;
+  }
+
+  .h-connections-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    overflow: visible;
+  }
+
+  .h-node {
+    position: fixed;
   }
 }
 

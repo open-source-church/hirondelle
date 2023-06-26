@@ -1,16 +1,18 @@
 import { defineStore } from 'pinia'
 import OBSWebSocket from 'obs-websocket-js'
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, toRef } from 'vue'
 import _ from 'lodash'
 import { useSettings } from './settings'
 import { useActions } from './actions'
-import { useNodes } from './nodes'
+import { useNodesBaklava } from './nodes_baklava'
+import { useHirondelle } from 'src/hirondelle/hirondelle.js'
 
 export const useOBS = defineStore('obs', () => {
 
   const S = useSettings()
   const A = useActions()
-  const N = useNodes()
+  const NBaklava = useNodesBaklava()
+  const H = useHirondelle()
 
   const obs_ws = new OBSWebSocket()
   const connected = ref(false)
@@ -280,7 +282,30 @@ export const useOBS = defineStore('obs', () => {
     obs_ws.on(e.obsname, (p) => action.start(p))
   })
 
-  N.registerNode("OBS", {
+  // Hirondelle
+  events_lists_to_watch.forEach(e => {
+    H.registerNodeType({
+      type: `OBS:${e.obsname}`,
+      title: e.name,
+      accepts_input: false,
+      category: "OBS",
+      active: connected,
+      outputs: Object.fromEntries(e.params.map(e => [e.name, { type: "string", description: e.description, options: e.options }])),
+      callback: (opt) => {
+        console.log("SETTING SCENE NAME", opt)
+        if (opt.sceneName)
+          obs_ws.call("SetCurrentProgramScene", { sceneName: opt.sceneName })
+        return {}
+      }
+    })
+
+    A.register_action({
+      name: e.name, source: "OBS", description: e.description, params: e.params, active: connected})
+    obs_ws.on(e.obsname, (p) => action.start(p))
+  })
+
+  // Baklava
+  NBaklava.registerNode("OBS", {
     type: "OBS:CurrentPreviewSceneChanged",
     title: "Preview Scene Changed",
     outputs: { sceneName: "string" },
@@ -310,7 +335,41 @@ export const useOBS = defineStore('obs', () => {
     callback: (opt) => obs_ws.call("SetCurrentPreviewScene", { sceneName: opt.sceneName })
   })
 
-  N.registerNode("OBS", {
+  // Hirondelle
+
+  H.registerNodeType({
+    type: "OBS:SetCurrentProgramScene",
+    title: "Set Program Scene",
+    category: "OBS",
+    inputs: {
+      sceneName: {
+        type: "string",
+        options: toRef(scene_names)
+     } },
+    // outputs: { sceneName: "string" },
+    callback: (opt) => {
+      console.log("SETTING SCENE NAME", opt)
+      if (opt.sceneName)
+        obs_ws.call("SetCurrentProgramScene", { sceneName: opt.sceneName })
+      return {}
+    }
+  })
+
+  H.registerNodeType({
+    type: "OBS:SetCurrentPreviewScene",
+    title: "Set Preview Scene",
+    category: "OBS",
+    inputs: { sceneName: { type: "string", options: toRef(scene_names) } },
+    callback: (opt) => {
+      if (opt.sceneName)
+        obs_ws.call("SetCurrentPreviewScene", { sceneName: opt.sceneName })
+      return {}
+    }
+  })
+
+  // Baklava
+
+  NBaklava.registerNode("OBS", {
     type: "OBS:SetCurrentProgramScene",
     title: "Set Program Scene",
     inputs: { sceneName: { type: "string" } },
@@ -323,7 +382,7 @@ export const useOBS = defineStore('obs', () => {
     }
   })
 
-  N.registerNode("OBS", {
+  NBaklava.registerNode("OBS", {
     type: "OBS:SetCurrentPreviewScene",
     title: "Set Preview Scene",
     inputs: { sceneName: { type: "string" } },

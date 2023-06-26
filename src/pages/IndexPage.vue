@@ -15,7 +15,7 @@
 
     <q-tab-panels v-model="tab" animated class="col">
       <q-tab-panel name="obs">
-        <!-- <obs-view /> -->
+        <obs-view />
       </q-tab-panel>
       <q-tab-panel name="twitch">
         <!-- <twitch-view /> -->

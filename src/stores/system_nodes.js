@@ -3,12 +3,12 @@ import { ref, computed, watch, markRaw } from 'vue'
 import _ from 'lodash'
 import { useQuasar } from 'quasar'
 
-import { useNodes } from './nodes';
+import { useNodesBaklava } from './nodes_baklava';
 
 export const useSystemNodes = defineStore('systemnodes', () => {
 
   const $q = useQuasar()
-  const N = useNodes()
+  const N = useNodesBaklava()
 
 
   // Default actions

@@ -106,8 +106,6 @@ export const useActions = defineStore('actions', () => {
 
   // On enregistre les actions et on ajoute les éventuels signaux
   watch(actions, (val, old) => {
-    console.log(old)
-    console.log(val)
     // On ajoute les signaux depuis la sauvegarde s'il y en a
     if (signals.value.length) {
       signals.value.forEach(sig => {

@@ -1,12 +1,22 @@
 <template>
   <div class="column fit fixed">
-    <div class="col-auto">
+    <div class="col-auto row">
       <q-btn label="calculate" color="accent" flat icon="play_circle"/>
-      {{ H.editor.view }}
-      {{ PZ.pointers }}
+      <!-- Node types -->
+      <q-btn-dropdown flat color="primary" label="Node Types">
+        <q-list>
+          <q-item v-for="t in graph.nodeTypes" :key="t.type" clickable
+            @click="graph.addNode(t)">
+            <q-item-section><q-item-label>
+              <q-badge color="accent">{{t.category}}</q-badge>
+              {{ t.title }}
+            </q-item-label></q-item-section>
+          </q-item>
+        </q-list>
+      </q-btn-dropdown>
     </div>
     <div class="col fit" style="min-width: 100px; min-height:100px;" >
-      <HEditor />
+      <HEditor :graph="graph"/>
     </div>
   </div>
 </template>
@@ -15,25 +25,34 @@
 
 import { ref, computed, reactive, watch, onMounted } from 'vue'
 import { useQuasar, copyToClipboard } from 'quasar'
-import { usePeer } from 'stores/peer'
-import { useIcons } from 'stores/material_icons'
-import { useTwitch } from 'stores/twitch'
-// import { displayNode, myNode } from 'stores/nodes'
 import _ from 'lodash'
 import { useActions } from 'stores/actions'
 import { useSettings } from 'stores/settings'
 // Node
 import HEditor from "src/hirondelle/HEditor.vue"
 import { useHirondelle } from "src/hirondelle/hirondelle.js"
-import { useMovePanZoom } from "src/hirondelle/movePanZoom.js"
 
 const $q = useQuasar()
 const A = useActions()
 const S = useSettings()
 
 const H = useHirondelle()
-const PZ = useMovePanZoom()
 
+const graph = H.graph
+
+// Loading and saving
+var state = S.get("graph.state")
+if (state) {
+  graph.load(state)
+}
+
+const save = _.debounce(() => {
+  console.log("GRAPH CHANGED", graph)
+  S.set("graph.state", graph.save())
+}, 1000)
+watch(graph, () => {
+  save()
+}, { deep: true })
 
 </script>
 
