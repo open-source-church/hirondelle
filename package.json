@@ -13,13 +13,11 @@
     "build": "quasar build"
   },
   "dependencies": {
-    "@baklavajs/renderer-vue": "^2.0.2-beta.4",
     "@quasar/extras": "^1.0.0",
     "@twurple/api": "^6.2.1",
     "@twurple/auth": "^6.2.1",
     "@twurple/chat": "^6.2.1",
     "@twurple/eventsub-ws": "^6.2.1",
-    "baklavajs": "^2.0.2-beta.4",
     "dotenv": "^16.3.1",
     "lodash": "^4.17.21",
     "obs-websocket-js": "^5.0.3",

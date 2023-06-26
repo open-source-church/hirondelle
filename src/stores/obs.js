@@ -4,14 +4,12 @@ import { ref, computed, watch, toRef } from 'vue'
 import _ from 'lodash'
 import { useSettings } from './settings'
 import { useActions } from './actions'
-import { useNodesBaklava } from './nodes_baklava'
 import { useHirondelle } from 'src/hirondelle/hirondelle.js'
 
 export const useOBS = defineStore('obs', () => {
 
   const S = useSettings()
   const A = useActions()
-  const NBaklava = useNodesBaklava()
   const H = useHirondelle()
 
   const obs_ws = new OBSWebSocket()
@@ -295,15 +293,6 @@ export const useOBS = defineStore('obs', () => {
     obs_ws.on(e.obsname, (p) => H.graph.startNodeType(`OBS:${e.obsname}`, p))
   })
 
-  // Baklava
-  NBaklava.registerNode("OBS", {
-    type: "OBS:CurrentPreviewSceneChanged",
-    title: "Preview Scene Changed",
-    outputs: { sceneName: "string" },
-  })
-
-
-
   /*
     Actions
   */
@@ -356,33 +345,6 @@ export const useOBS = defineStore('obs', () => {
     action: (opt) => {
       if (opt.input.sceneName)
         obs_ws.call("SetCurrentPreviewScene", { sceneName: opt.input.sceneName })
-      return {}
-    }
-  })
-
-  // Baklava
-
-  NBaklava.registerNode("OBS", {
-    type: "OBS:SetCurrentProgramScene",
-    title: "Set Program Scene",
-    inputs: { sceneName: { type: "string" } },
-    // outputs: { sceneName: "string" },
-    calculate: (opt) => {
-      console.log("SETTING SCENE NAME", opt)
-      if (opt.sceneName)
-        obs_ws.call("SetCurrentProgramScene", { sceneName: opt.sceneName })
-      return {}
-    }
-  })
-
-  NBaklava.registerNode("OBS", {
-    type: "OBS:SetCurrentPreviewScene",
-    title: "Set Preview Scene",
-    inputs: { sceneName: { type: "string" } },
-    // outputs: { sceneName: "string" },
-    calculate: (opt) => {
-      if (opt.sceneName)
-        obs_ws.call("SetCurrentPreviewScene", { sceneName: opt.sceneName })
       return {}
     }
   })

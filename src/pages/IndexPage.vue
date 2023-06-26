@@ -8,12 +8,11 @@
         <q-badge floating :color="twitch.chat_connected ? 'green' : 'red'" />
       </q-tab>
       <q-tab name="actions" label="Actions" icon="arrow_right"/>
-      <q-tab name="graph" label="Baklava" icon="account_tree" />
-      <q-tab name="graph2" label="Node editor" icon="account_tree" />
+      <q-tab name="graph" label="Node editor" icon="account_tree" />
       <q-tab name="options" label="Options" icon="settings" />
     </q-tabs>
 
-    <q-tab-panels v-model="tab" animated class="col">
+    <q-tab-panels v-model="tab" animated class="col" keep-alive>
       <q-tab-panel name="obs">
         <obs-view />
       </q-tab-panel>
@@ -25,9 +24,6 @@
       </q-tab-panel>
       <q-tab-panel class="q-pa-none" name="graph">
         <graph-view />
-      </q-tab-panel>
-      <q-tab-panel class="q-pa-none" name="graph2">
-        <my-graph-view />
       </q-tab-panel>
     </q-tab-panels>
   </q-page>
@@ -46,7 +42,7 @@ const $q = useQuasar()
 const twitch = useTwitch()
 
 // Tabs
-const tab = ref("graph2")
+const tab = ref("graph")
 
 
 </script>

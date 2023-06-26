@@ -1,5 +1,6 @@
 <template>
-  <q-card  class="h-node" :style="`left:${node.state?.x}px; top: ${node.state?.y}px;`" :data-node-id="node.id">
+  <q-card  class="h-node" :style="`left:${node.state?.x}px; top: ${node.state?.y}px;`" :data-node-id="node.id"
+    @mouseenter="open=true" @mouseleave="open=false">
     <q-card-section :class="`row items-center text-dark q-pa-sm ${node.type.accepts_input ? 'bg-primary' : 'bg-accent text-white'}`">
       <q-icon class="col-auto q-pr-xs" name="circle" size="xs" :color="node.type.active ? 'green' : 'red'"/>
       <div class="col">{{ node.type.title }} </div>
@@ -18,7 +19,7 @@
       {{ node.values }}
     </q-card-section> -->
     <!-- Outputs -->
-    <q-card-section class="q-pr-none q-pl-xl q-py-xs">
+    <q-card-section class="q-pr-none q-pl-xl q-py-xs" v-if="open || !auto_open">
       <q-list>
         <q-item v-for="(input, name) in node.type.outputs" :key="name">
           <q-item-section>
@@ -31,7 +32,7 @@
       </q-list>
     </q-card-section>
     <!-- Inputs -->
-    <q-card-section class="q-pl-none q-pr-xl q-pt-none q-pb-xs">
+    <q-card-section class="q-pl-none q-pr-xl q-pt-none q-pb-xs" v-if="open || !auto_open">
       <q-list>
         <q-item v-for="(input, name) in node.type.inputs" :key="name">
           <q-item-section>
@@ -55,6 +56,9 @@ const props = defineProps({
 })
 
 const node = computed(() => props.node)
+
+const open = ref(false)
+const auto_open = ref(false)
 
 const findAttribute = (n, attr) => {
   while(n) {

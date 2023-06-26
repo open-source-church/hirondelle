@@ -1,10 +1,21 @@
 <template>
   <div class="column fit fixed">
-    <div class="col-auto">
-      <q-btn label="calculate" color="accent" flat icon="play_circle" @click="calculate"/>
+    <div class="col-auto row">
+      <!-- Node types -->
+      <q-btn-dropdown flat color="primary" label="Node Types">
+        <q-list>
+          <q-item v-for="t in graph.nodeTypes" :key="t.type" clickable
+            @click="graph.addNode(t)">
+            <q-item-section><q-item-label>
+              <q-badge color="accent">{{t.category}}</q-badge>
+              {{ t.title }}
+            </q-item-label></q-item-section>
+          </q-item>
+        </q-list>
+      </q-btn-dropdown>
     </div>
-    <div class="col bg-yellow fit" style="min-width: 100px; min-height:100px;" >
-      <baklava-editor :view-model="baklava" />
+    <div class="col fit" style="min-width: 100px; min-height:100px;" >
+      <HEditor :graph="graph"/>
     </div>
   </div>
 </template>
@@ -13,89 +24,39 @@
 
 import { ref, computed, reactive, watch, onMounted } from 'vue'
 import { useQuasar, copyToClipboard } from 'quasar'
-import { usePeer } from 'stores/peer'
-import { useIcons } from 'stores/material_icons'
-import { useTwitch } from 'stores/twitch'
-// import { displayNode, myNode } from 'stores/nodes'
 import _ from 'lodash'
 import { useActions } from 'stores/actions'
-import { useNodesBaklava } from 'stores/nodes_baklava'
-// Baklava
-import { useBaklava } from "@baklavajs/renderer-vue"
-import "@baklavajs/themes/dist/syrup-dark.css"
-import { DependencyEngine, applyResult } from "@baklavajs/engine";
-import { useSystemNodes } from 'stores/system_nodes'
 import { useSettings } from 'stores/settings'
+// Node
+import HEditor from "src/hirondelle/HEditor.vue"
+import { useHirondelle } from "src/hirondelle/hirondelle.js"
+import { useBaseActions } from "src/hirondelle/base-actions.js"
 
 const $q = useQuasar()
 const A = useActions()
-const N = useNodesBaklava()
 const S = useSettings()
-useSystemNodes()
 
-const baklava = useBaklava()
-N.nodes.forEach(c => c.nodes.forEach(n => {
-  baklava.editor.registerNodeType(n, { category: c.source })
-}))
+const H = useHirondelle()
+useBaseActions()
 
-baklava.settings.enableMinimap = true
+const graph = H.graph
 
-// const engine = new DependencyEngine(baklava.editor);
-// const token = Symbol();
-// engine.events.afterRun.subscribe(token, (result) => {
-//     engine.pause();
-//     applyResult(result, baklava.editor);
-//     engine.resume();
-// });
-// engine.start()
-N.engine.setEditor(baklava.editor)
-
-const calculate = async () => {
-  console.log("CALCULATING")
-  // const result = await engine.runOnce({ foo: "bar" });
-  var result = N.engine.run()
-  console.log("RESULTS", result)
+// Loading and saving
+var state = S.get("graph.state")
+if (state) {
+  graph.load(state)
 }
 
-// Loading previous saved state
-var saved = S.get("baklava.state")
-console.log("SAVED STATE:", saved)
-if(saved)
-  baklava.editor.load(saved)
-
-console.log(baklava)
-
-// Saving
-const state = ref()
-onMounted(() => setInterval(() => {
-  console.log("SAVING")
-  state.value = baklava.editor.save()
-  S.set("baklava.state", state.value)
-}, 5000))
+const save = _.debounce(() => {
+  console.log("GRAPH CHANGED", graph)
+  S.set("graph.state", graph.save())
+}, 1000)
+watch(graph, () => {
+  save()
+}, { deep: true })
 
 </script>
 
 <style lang="scss">
-
-.baklava-editor {
-  font-size: 12px;
-}
-
-.baklava-toolbar {
-  margin: 0;
-  height: unset;
-  padding: 0.5rem;
-  height: 42px;
-}
-
-.baklava-node-palette {
-  top: 42px;
-  padding: 0.5rem;
-  h1 {
-    font-size: 1rem;
-    line-height: unset;
-    margin-top: 0;
-  }
-}
 
 </style>
