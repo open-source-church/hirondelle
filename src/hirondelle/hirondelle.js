@@ -56,6 +56,9 @@ export const useHirondelle = defineStore('hirondelle', () => {
     connections: [
       // {from: {id: "33abce08-a4a0-4860-8fc2-856395f9d80d"}, to: {id: "8ee944e1-927d-44fd-bac1-12a200498a8d"}}
     ],
+    paramConnections: [
+      // { from: id, to: id, }
+    ],
     nodeTypes: toRef(nodeTypes),
     view: {
       scaling: 1,
@@ -88,6 +91,9 @@ export const useHirondelle = defineStore('hirondelle', () => {
           node.children().forEach(c => c.start())
         }
       }
+      watch(node.values, (val, old) => {
+        console.log("VALUE CHANGED", old, val)
+      }, { deep: true })
       this.nodes.push(node)
     },
     addConnection(node1, node2) {
@@ -106,6 +112,12 @@ export const useHirondelle = defineStore('hirondelle', () => {
         return
       }
       this.connections.push({ from: node1, to: node2, graph: this })
+    },
+    addParamConnection(nodeId1, param1, nodeId2, param2) {
+      var node1 = this.nodes.find(n => n.id == nodeId1)
+      var node2 = this.nodes.find(n => n.id == nodeId2)
+
+
     },
     removeConnection(from, to) {
       this.connections = this.connections.filter(c => c.from.id != from.id || c.to.id != to.id)

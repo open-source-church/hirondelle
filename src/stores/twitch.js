@@ -9,6 +9,7 @@ import { EventSubWsListener } from '@twurple/eventsub-ws'
 import { ChatClient } from '@twurple/chat'
 import { useSettings } from './settings'
 import { useActions } from './actions'
+import { useHirondelle } from 'src/hirondelle/hirondelle.js'
 
 // import { useRouter } from 'vue-router'
 
@@ -21,6 +22,7 @@ export const useTwitch = defineStore('twitch', () => {
   const $q = useQuasar()
   const S = useSettings()
   const A = useActions()
+  const H = useHirondelle()
   // const router = useRouter()
 
   const access_token = ref(S.get("twitch.access_token") || "")

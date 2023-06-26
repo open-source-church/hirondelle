@@ -7,10 +7,12 @@
       <q-btn flat dense icon="delete" class="col-auto text-negative" @click="node.remove"/>
     </q-card-section>
     <!-- Ports -->
-    <q-btn v-if="node.type.accepts_input" flat round dense icon="circle" class="absolute-top-left" color="red" size="sm" style="left:-12px; top: 14px"
-      @mousedown.stop @touchstart.stop data-port="input" />
-    <q-btn v-if="node.type.accepts_output" @touchstart.stop flat round dense icon="circle" class="absolute-top-right" color="red" size="sm" style="right:-11px; top: 14px"
-      @mousedown.stop="startConnection" data-port="output" />
+    <q-btn v-if="node.type.accepts_input" flat round dense icon="circle" class="absolute-top-left"
+      color="red" size="sm" style="left:-12px; top: 14px"
+      @mousedown.stop @touchstart.stop data-port-type="input" data-port-class="main" />
+    <q-btn v-if="node.type.accepts_output" @touchstart.stop flat round dense icon="circle"
+      class="absolute-top-right" color="red" size="sm" style="right:-11px; top: 14px"
+      @mousedown.stop="startConnection()" data-port-type="output" data-port-class="main" />
     <!-- Values -->
     <!-- <q-card-section>
       {{ node.values }}
@@ -23,7 +25,7 @@
             <q-select v-if="input.options" :label="name" dense filled clearable v-model="node.values.output[name]" :options="input.options" />
             <q-input v-else dense filled :label="name" v-model="node.values.output[name]" />
             <q-btn flat round dense icon="circle" class="absolute-top-right" color="grey" size="xs" style="right:-10px; top: 20px"
-                @mousedown.stop @touchstart.stop data-port="input" />
+              @mousedown.stop="startConnection(name)" @touchstart.stop data-port="output" data-port-class="param" />
           </q-item-section>
         </q-item>
       </q-list>
@@ -36,7 +38,7 @@
             <q-select v-if="input.options" :label="name" dense filled clearable v-model="node.values.input[name]" :options="input.options" />
             <q-input v-else dense filled :label="name" v-model="node.values.input[name]" />
             <q-btn flat round dense icon="circle" class="absolute-top-left" color="grey" size="xs" style="left:-12px; top: 20px"
-                @mousedown.stop @touchstart.stop data-port="input" />
+                @mousedown.stop @touchstart.stop data-port="input" :data-param-name="name" data-port-class="param" />
           </q-item-section>
         </q-item>
       </q-list>
@@ -63,12 +65,22 @@ const findAttribute = (n, attr) => {
   }
 }
 
-const startConnection = () => {
+const startConnection = (param) => {
   var l = addEventListener("mouseup", (event) => {
     var t = event.target
-    var port_type = findAttribute(t, "data-port")
+    var port_type = findAttribute(t, "data-port-type")
+    var port_class = findAttribute(t, "data-port-class")
     var nodeId = findAttribute(t, "data-node-id")
-    if (nodeId && nodeId != node.value.id) node.value.graph.addConnection(node.value.id, nodeId)
+    if (nodeId && nodeId != node.value.id) {
+      console.log("WE MAY HAVE A MATCH")
+      if (!param) // main connection
+        node.value.graph.addConnection(node.value.id, nodeId)
+      else {
+        var param_name = findAttribute(t, "data-param-name")
+        console.log("MAKE CONNECTION", param, nodeId, param_name)
+        // node.value.graph.addParamConnection(node.value.id, param, nodeId, param_name)
+      }
+    }
   }, { once: true});
 }
 
