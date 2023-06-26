@@ -1,7 +1,6 @@
 <template>
   <div class="column fit fixed">
     <div class="col-auto row">
-      <q-btn label="calculate" color="accent" flat icon="play_circle"/>
       <!-- Node types -->
       <q-btn-dropdown flat color="primary" label="Node Types">
         <q-list>
@@ -31,12 +30,14 @@ import { useSettings } from 'stores/settings'
 // Node
 import HEditor from "src/hirondelle/HEditor.vue"
 import { useHirondelle } from "src/hirondelle/hirondelle.js"
+import { useBaseActions } from "src/hirondelle/base-actions.js"
 
 const $q = useQuasar()
 const A = useActions()
 const S = useSettings()
 
 const H = useHirondelle()
+useBaseActions()
 
 const graph = H.graph
 

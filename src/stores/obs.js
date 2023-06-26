@@ -290,18 +290,9 @@ export const useOBS = defineStore('obs', () => {
       accepts_input: false,
       category: "OBS",
       active: connected,
-      outputs: Object.fromEntries(e.params.map(e => [e.name, { type: "string", description: e.description, options: e.options }])),
-      callback: (opt) => {
-        console.log("SETTING SCENE NAME", opt)
-        if (opt.sceneName)
-          obs_ws.call("SetCurrentProgramScene", { sceneName: opt.sceneName })
-        return {}
-      }
+      outputs: Object.fromEntries(e.params.map(e => [e.name, { type: String, description: e.description, options: e.options }])),
     })
-
-    A.register_action({
-      name: e.name, source: "OBS", description: e.description, params: e.params, active: connected})
-    obs_ws.on(e.obsname, (p) => action.start(p))
+    obs_ws.on(e.obsname, (p) => H.graph.startNodeType(`OBS:${e.obsname}`, p))
   })
 
   // Baklava
@@ -341,16 +332,17 @@ export const useOBS = defineStore('obs', () => {
     type: "OBS:SetCurrentProgramScene",
     title: "Set Program Scene",
     category: "OBS",
+    active: connected,
     inputs: {
       sceneName: {
-        type: "string",
+        type: String,
         options: toRef(scene_names)
      } },
     // outputs: { sceneName: "string" },
-    callback: (opt) => {
+    action: (opt) => {
       console.log("SETTING SCENE NAME", opt)
-      if (opt.sceneName)
-        obs_ws.call("SetCurrentProgramScene", { sceneName: opt.sceneName })
+      if (opt.input.sceneName)
+        obs_ws.call("SetCurrentProgramScene", { sceneName: opt.input.sceneName })
       return {}
     }
   })
@@ -359,10 +351,11 @@ export const useOBS = defineStore('obs', () => {
     type: "OBS:SetCurrentPreviewScene",
     title: "Set Preview Scene",
     category: "OBS",
-    inputs: { sceneName: { type: "string", options: toRef(scene_names) } },
-    callback: (opt) => {
-      if (opt.sceneName)
-        obs_ws.call("SetCurrentPreviewScene", { sceneName: opt.sceneName })
+    active: connected,
+    inputs: { sceneName: { type: String, options: toRef(scene_names) } },
+    action: (opt) => {
+      if (opt.input.sceneName)
+        obs_ws.call("SetCurrentPreviewScene", { sceneName: opt.input.sceneName })
       return {}
     }
   })
