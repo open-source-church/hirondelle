@@ -5,11 +5,11 @@
         <q-badge floating :color="obs.connected ? 'green' : 'red'" />
       </q-tab>
       <q-tab name="twitch" label="Twitch" icon="stream" >
-        <q-badge floating :color="twitch.chat_connected ? 'green' : 'red'" />
+        <!-- <q-badge floating :color="twitch.chat_connected ? 'green' : 'red'" /> -->
       </q-tab>
       <q-tab name="actions" label="Actions" icon="arrow_right"/>
       <q-tab name="graph" label="Baklava" icon="account_tree" />
-      <q-tab name="graph2" label="Baklava" icon="account_tree" />
+      <q-tab name="graph2" label="Node editor" icon="account_tree" />
       <q-tab name="options" label="Options" icon="settings" />
     </q-tabs>
 
@@ -43,7 +43,7 @@ import _ from 'lodash'
 
 const obs = useOBS()
 const $q = useQuasar()
-const twitch = useTwitch()
+// const twitch = useTwitch()
 
 // Tabs
 const tab = ref("graph2")
