@@ -4,11 +4,13 @@ import { ref, computed, watch } from 'vue'
 import _ from 'lodash'
 import { useSettings } from './settings'
 import { useActions } from './actions'
+import { useNodes } from './nodes'
 
 export const useOBS = defineStore('obs', () => {
 
   const S = useSettings()
   const A = useActions()
+  const N = useNodes()
 
   const obs_ws = new OBSWebSocket()
   const connected = ref(false)
@@ -278,6 +280,13 @@ export const useOBS = defineStore('obs', () => {
     obs_ws.on(e.obsname, (p) => action.start(p))
   })
 
+  N.registerNode("OBS", {
+    type: "OBS:CurrentPreviewSceneChanged",
+    title: "Preview Scene Changed",
+    outputs: { sceneName: "string" },
+  })
+
+
 
   /*
     Actions
@@ -285,7 +294,7 @@ export const useOBS = defineStore('obs', () => {
   A.register_action({
     name: "Set scene", source: "OBS",
     description: "Change la scène en cours sur OBS",
-    params: [ { name: "sceneName", description: "Nom de la scene", options: scene_names }],
+    params: [ { name: "sceneName", description: "Nom de la scene" }],
     active: connected,
     callback: (opt) => {
       console.log("OBS CHANGE SCENE", opt)
@@ -296,9 +305,34 @@ export const useOBS = defineStore('obs', () => {
   A.register_action({
     name: "Set preview scene", source: "OBS",
     description: "Change la scène apperçu sur OBS",
-    params: [ { name: "sceneName", description: "Nom de la scene", options: scene_names }],
+    params: [ { name: "sceneName", description: "Nom de la scene" }],
     active: connected,
     callback: (opt) => obs_ws.call("SetCurrentPreviewScene", { sceneName: opt.sceneName })
+  })
+
+  N.registerNode("OBS", {
+    type: "OBS:SetCurrentProgramScene",
+    title: "Set Program Scene",
+    inputs: { sceneName: { type: "string" } },
+    // outputs: { sceneName: "string" },
+    calculate: (opt) => {
+      console.log("SETTING SCENE NAME", opt)
+      if (opt.sceneName)
+        obs_ws.call("SetCurrentProgramScene", { sceneName: opt.sceneName })
+      return {}
+    }
+  })
+
+  N.registerNode("OBS", {
+    type: "OBS:SetCurrentPreviewScene",
+    title: "Set Preview Scene",
+    inputs: { sceneName: { type: "string" } },
+    // outputs: { sceneName: "string" },
+    calculate: (opt) => {
+      if (opt.sceneName)
+        obs_ws.call("SetCurrentPreviewScene", { sceneName: opt.sceneName })
+      return {}
+    }
   })
 
   return {
