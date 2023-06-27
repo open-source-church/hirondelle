@@ -132,19 +132,21 @@
 
 <script setup>
 
-import { ref, computed, reactive, watch, onMounted } from 'vue'
+import { ref, computed, reactive, watch, onMounted, toRef } from 'vue'
 import { useOBS } from 'stores/obs'
 import { useQuasar, copyToClipboard } from 'quasar'
 import { useIcons } from 'stores/material_icons'
 import _ from 'lodash'
 import { usePeer } from 'stores/peer'
 import { useSettings } from 'stores/settings'
+import { useHirondelle } from "src/hirondelle/hirondelle.js"
 
 const obs = useOBS()
 const $q = useQuasar()
 const peer = usePeer()
 const icons = useIcons()
 const S = useSettings()
+const H = useHirondelle()
 
 // Tabs
 const tab = ref("obs")
@@ -169,5 +171,44 @@ watch(scenes_icon, () => S.set("scenes.icons", scenes_icon.value), { deep: true 
 
 const filter_scenes = ref("")
 
+
+// Actions
+const connected = computed(() => peer.connected)
+H.registerNodeType({
+    type: "OBSSource:Confettis",
+    title: "Confettis",
+    category: "OBSSource",
+    active: toRef(connected),
+    inputs: {
+      bursts: { type: "number", default: 10 },
+      duration: { type: "number", default: 5000 },
+      number: { type: "number", default: 30 },
+      radius: { type: "number", default: 10 },
+      colors: { type: "string", default: "#ffd400, #00ffdd, #d700d7" },
+      useEmojis: { type: "boolean", default: false },
+      emojiSize: { type: "number", default: 30 },
+      emojis: { type: "string", default: "🌈, ⚡️, 💥, ✨, 💫, 🌸, ❤️, 💚, 🩵, 💙, 💜, 💛, 🤍, 🤎" },
+    },
+    action: (opt) => {
+      console.log(opt)
+
+      var d = {
+        action: "confettis",
+        bursts: opt.input.bursts,
+        duration: opt.input.duration,
+        confettiNumber: opt.input.number,
+      }
+      if (opt.input.useEmojis) {
+        d.emojis = opt.input.emojis.split(",").map(c => encodeURI(c.trim()))
+        d.emojiSize = opt.input.emojiSize
+      } else {
+        d.confettiRadius = opt.input.radius
+        d.confettiColors = opt.input.colors.split(",").map(c => c.trim())
+      }
+      console.log(d)
+      peer.send(d)
+    },
+  accepts_output: false,
+  })
 
 </script>

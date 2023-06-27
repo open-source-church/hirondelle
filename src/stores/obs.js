@@ -335,7 +335,7 @@ export const useOBS = defineStore('obs', () => {
     active: connected,
     inputs: {
       sceneName: {
-        type: String,
+        type: "string",
         options: toRef(scene_names)
      } },
     // outputs: { sceneName: "string" },
@@ -352,7 +352,7 @@ export const useOBS = defineStore('obs', () => {
     title: "Set Preview Scene",
     category: "OBS",
     active: connected,
-    inputs: { sceneName: { type: String, options: toRef(scene_names) } },
+    inputs: { sceneName: { type: "string", options: toRef(scene_names) } },
     action: (opt) => {
       if (opt.input.sceneName)
         obs_ws.call("SetCurrentPreviewScene", { sceneName: opt.input.sceneName })

@@ -43,8 +43,7 @@
       <q-list>
         <q-item v-for="(input, name) in node.type.inputs" :key="name">
           <q-item-section>
-            <q-select v-if="input.options" :label="name" dense filled clearable v-model="node.values.input[name]" :options="input.options" />
-            <q-input v-else dense filled :label="name" v-model="node.values.input[name]" />
+            <HParam :param="input" :name="name" v-model="node.values.input[name]" />
             <q-btn flat round dense icon="circle" class="absolute-top-left" color="grey" size="xs" style="left:-12px; top: 20px"
                 @mousedown.stop @touchstart.stop data-port="input" :data-param-name="name" data-port-class="param" />
           </q-item-section>
@@ -176,6 +175,7 @@
 
 import { ref, computed, reactive, watch, onMounted } from 'vue'
 import _ from 'lodash'
+import HParam from "src/hirondelle/HParam.vue"
 
 const props = defineProps({
   node: { type: Object, required: true }

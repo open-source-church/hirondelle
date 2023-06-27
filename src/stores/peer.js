@@ -47,8 +47,8 @@ export const usePeer = defineStore('peer', () => {
   })
 
   // Debug send function
-  const send = () => {
-    conn.value.send("Coucou: " + Math.random().toString(36).substring(4))
+  const send = (d) => {
+    conn.value.send(d)
   }
 
   // Source URL

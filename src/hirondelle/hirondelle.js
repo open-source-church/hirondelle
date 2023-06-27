@@ -71,7 +71,9 @@ export const useHirondelle = defineStore('hirondelle', () => {
         console.error("Un node existe déjà avec cet id:", id)
         return
       }
-      var values = values || { input: {}, output: {} }
+      var values = values || {
+        input: _.mapValues(nodeType.inputs, p => p.default),
+        output: _.mapValues(nodeType.outputs, p => p.default) }
       var id = id || uid()
       var node = {
         type: nodeType,
