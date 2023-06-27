@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed, watch, toRef } from 'vue'
 import _ from 'lodash'
 import { useQuasar, copyToClipboard, uid } from 'quasar'
+import OBSWebSocket from 'obs-websocket-js'
 
 export const useHirondelle = defineStore('hirondelle', () => {
 
@@ -56,15 +57,15 @@ export const useHirondelle = defineStore('hirondelle', () => {
     connections: [
       // {from: {id: "33abce08-a4a0-4860-8fc2-856395f9d80d"}, to: {id: "8ee944e1-927d-44fd-bac1-12a200498a8d"}}
     ],
-    paramConnections: [
-      // { from: id, to: id, }
-    ],
     nodeTypes: toRef(nodeTypes),
     view: {
       scaling: 1,
       panning: { x: 0, y: 0}
     },
-    addNode(nodeType, pos, id, values) {
+    settings: {
+      autoCloseNodes: false
+    },
+    addNode(nodeType, pos, id, values, options) {
       if (typeof(nodeType) == "string") nodeType = this.nodeTypes.find(t => t.type == nodeType)
       if (this.nodes.map(n => n.id).includes(id)) {
         console.error("Un node existe déjà avec cet id:", id)
@@ -79,13 +80,16 @@ export const useHirondelle = defineStore('hirondelle', () => {
         id: id,
         values: values,
         running: ref(false),
+        options: options || {},
         children: () => this.children(id),
         remove: () => this.removeNode(id),
         async start () {
           console.log("STARTING",this.type.title, this.type.category)
           console.log("With params:", node.values)
           node.running.value = true
-          if (this.type.action) await this.type.action(node.values)
+
+          // Main action
+          if (this.type.action) await this.type.action(node.values, node)
           node.running.value = false
           console.log("And done.")
           node.children().forEach(c => c.start())
@@ -96,38 +100,45 @@ export const useHirondelle = defineStore('hirondelle', () => {
       }, { deep: true })
       this.nodes.push(node)
     },
-    addConnection(node1, node2) {
-      if (typeof(node1) == "string") {
-        node1 = this.nodes.find(n => n.id == node1)
+    addConnection({from, to, type="main", param1=null, param2=null, condition=null}) {
+      if (typeof(from) == "string") {
+        from = this.nodes.find(n => n.id == from)
       }
-      if (typeof(node2) == "string") {
-        node2 = this.nodes.find(n => n.id == node2)
+      if (typeof(to) == "string") {
+        to = this.nodes.find(n => n.id == to)
       }
-      if (!node1 || !node2) {
-        console.error("Il manque des nodes:", node1, node2)
+      if (!from || !to) {
+        console.error("Il manque des nodes:", from, to)
         return
       }
-      if(this.connections.find(c => c.from.id == node1.id && c.to.id == node2.id)) {
+      // On vérifie si la connection existe déjà
+      if(this.connections.find(c => c.from.id == from.id && c.to.id == to.id
+        && c.type == type && c.param1 == param1 && c.param2 == param2 && c.condition == condition)) {
         console.log("Cette connection existe déjà")
         return
       }
-      this.connections.push({ from: node1, to: node2, graph: this })
+      var connection = { from: from, to: to, graph: this, type:type }
+      if (type == "condition") connection.condition = condition
+      this.connections.push(connection)
     },
-    addParamConnection(nodeId1, param1, nodeId2, param2) {
-      var node1 = this.nodes.find(n => n.id == nodeId1)
-      var node2 = this.nodes.find(n => n.id == nodeId2)
-
-
-    },
-    removeConnection(from, to) {
-      this.connections = this.connections.filter(c => c.from.id != from.id || c.to.id != to.id)
+    removeConnection(connection) {
+      this.connections = this.connections.filter(c => c != connection)
     },
     removeNode(id) {
       this.nodes = this.nodes.filter(n => n.id != id)
       this.connections = this.connections.filter(c => c.from.id != id && c.to.id != id)
     },
-    children(id) {
-      return this.connections.filter(c => c.from.id == id).map(c => c.to)
+    children(nodeId) {
+      return this.connections.filter(c => c.from.id == nodeId && c.type == "main").map(c => c.to)
+    },
+    childrenCondition(nodeId) {
+      return {
+        true: this.connections.filter(c => c.from.id == nodeId && c.type == "condition" && c.condition).map(c => c.to),
+        false: this.connections.filter(c => c.from.id == nodeId && c.type == "condition" && !c.condition).map(c => c.to),
+      }
+    },
+    sources(nodeId) {
+      return this.connections.filter(c => c.to.id == nodeId).map(c => c.from)
     },
     save() {
       var obj = {}
@@ -135,19 +146,28 @@ export const useHirondelle = defineStore('hirondelle', () => {
         type: n.type.type,
         id: n.id,
         state: n.state,
-        values: n.values
+        values: n.values,
+        options: n.options
       }) )
-      obj.connections = this.connections.map(c => ({ from: c.from.id, to: c.to.id }))
+      var connections = _.cloneDeep(this.connections)
+      connections.forEach(c => {
+        c.from = c.from.id
+        c.to = c.to.id
+        delete c.graph
+      })
+      obj.connections = connections
       obj.view = this.view
+      obj.settings = this.settings
       return obj
     },
     load(obj) {
       console.log("LOADING", obj)
       if (obj.nodes)
-        obj.nodes.forEach(n => this.addNode(n.type, n.state, n.id, n.values))
+        obj.nodes.forEach(n => this.addNode(n.type, n.state, n.id, n.values, n.options))
       if (obj.connections)
-        obj.connections.forEach(c => this.addConnection(c.from, c.to))
+        obj.connections.forEach(c => this.addConnection(c))
       if (obj.view) this.view = obj.view
+      if (obj.settings) this.settings = obj.settings
       console.log(this.nodes.length, this.nodes)
     },
     startNodeType(typeName, outputValues) {

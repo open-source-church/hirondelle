@@ -288,7 +288,7 @@ export const useOBS = defineStore('obs', () => {
       accepts_input: false,
       category: "OBS",
       active: connected,
-      outputs: Object.fromEntries(e.params.map(e => [e.name, { type: String, description: e.description, options: e.options }])),
+      outputs: Object.fromEntries(e.params.map(e => [e.name, { type: "string", description: e.description, options: e.options }])),
     })
     obs_ws.on(e.obsname, (p) => H.graph.startNodeType(`OBS:${e.obsname}`, p))
   })

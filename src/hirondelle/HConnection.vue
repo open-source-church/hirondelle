@@ -1,6 +1,6 @@
 <template>
    <path class="Hconnection cursor-pointer" :d="d"
-    stroke="red" fill="none" width="2" stroke-width="3" stroke-dasharray=""
+    :stroke="color" fill="none" width="2" stroke-width="3" stroke-dasharray=""
     @click="remove"/>
 </template>
 
@@ -13,13 +13,27 @@ const props = defineProps({
 })
 
 const remove = () => {
-  props.connection.graph.removeConnection(props.connection.from, props.connection.to)
+  props.connection.graph.removeConnection(props.connection)
 }
+
+const color = computed(() => {
+  if (props.connection.type == 'main') return "green"
+  if (props.connection.type == 'condition' && props.connection.condition) return "green"
+  if (props.connection.type == 'condition' && !props.connection.condition) return "red"
+  else return "blue"
+})
+
+const deltaY = computed(() => {
+  if (props.connection.type == 'main') return 25
+  if (props.connection.type == 'condition' && props.connection.condition) return 65
+  if (props.connection.type == 'condition' && !props.connection.condition) return 87
+  else return 0
+})
 
 const d = computed(() => {
   var n1 = {
     x: props.connection.from.state.x + 300,
-    y: props.connection.from.state.y + 25
+    y: props.connection.from.state.y + deltaY.value
   }
   var n2 = {
     x: props.connection.to.state.x,

@@ -33,10 +33,7 @@ const PZ = useMovePanZoom()
 const props = defineProps({
   graph: { type: Object, required: false }
 })
-
 const _graph = computed(() => props.graph)
-
-console.log("GRAPH", _graph.value.view)
 
 const transformStyle = computed(() => ({
   "transform-origin": "0 0",

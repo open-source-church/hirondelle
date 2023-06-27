@@ -185,6 +185,35 @@ export const useTwitch = defineStore('twitch', () => {
     { name: "input", description: "L'input de la récompense" },
   ]})
 
+  H.registerNodeType({
+    type: "Twitch:onReward",
+    title: "Une récompense a été récupérée",
+    category: "Twitch",
+    active: eventsub_started,
+    outputs: {
+      userName: { type: "string" },
+      rewardId: { type: "number" },
+      rewardTitle: { type: "string", options: rewards_title },
+      rewardCost: { type: "number" },
+      input: { type: "string" },
+    },
+    accepts_input: false,
+  })
+
+  H.registerNodeType({
+    type: "Twitch:onMessage",
+    title: "Un message est envoyé dans le chat",
+    category: "Twitch",
+    active: chat_connected,
+    outputs: {
+      channel: { type: "string" },
+      user: { type: "string" },
+      text: { type: "string" },
+      msg: { type: "string" },
+    },
+    accepts_input: false,
+  })
+
   const channelRedemptionEvent = event => {
     console.log("REDEMPTION", event)
     var opt = {

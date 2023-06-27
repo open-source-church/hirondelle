@@ -13,6 +13,7 @@
           </q-item>
         </q-list>
       </q-btn-dropdown>
+      <q-toggle v-model="graph.settings.autoCloseNodes" label="Auto-Close Nodes" />
     </div>
     <div class="col fit" style="min-width: 100px; min-height:100px;" >
       <HEditor :graph="graph"/>
@@ -48,7 +49,6 @@ if (state) {
 }
 
 const save = _.debounce(() => {
-  console.log("GRAPH CHANGED", graph)
   S.set("graph.state", graph.save())
 }, 1000)
 watch(graph, () => {
