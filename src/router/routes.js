@@ -5,7 +5,14 @@ const routes = [
     component: () => import('layouts/MainLayout.vue'),
     children: [
       { path: '', component: () => import('pages/IndexPage.vue') },
-      { path: 'source/:peer_id', component: () => import('pages/OBSSource.vue'), props: true },
+      // { path: 'source/:peer_id', component: () => import('pages/OBSSource.vue'), props: true },
+    ]
+  },
+  {
+    path: '/source/',
+    component: () => import('layouts/SourceLayout.vue'),
+    children: [
+      { path: ':peer_id', component: () => import('pages/OBSSource.vue'), props: true },
     ]
   },
 
