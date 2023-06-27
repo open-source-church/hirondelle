@@ -42,7 +42,7 @@ const $q = useQuasar()
 const twitch = useTwitch()
 
 // Tabs
-const tab = ref("graph")
+const tab = ref("obs")
 
 
 </script>

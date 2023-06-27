@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import OBSWebSocket from 'obs-websocket-js'
-import { ref, computed, watch, toRef } from 'vue'
+import { ref, computed, watch, toRef, onMounted } from 'vue'
 import _ from 'lodash'
 import { useSettings } from './settings'
 import { useActions } from './actions'
@@ -46,6 +46,13 @@ export const useOBS = defineStore('obs', () => {
     }
   }
 
+  // Auto connect
+  onMounted(() => {
+    console.log("AUTO CONNECT?")
+    if (S.get("obs.ip") && S.get("obs.port") && S.get("obs.password"))
+      connect(S.get("obs.ip"), S.get("obs.port"), S.get("obs.password"))
+  })
+
   obs_ws.on("ConnectionClosed", (v) => {
     console.log("ConnectionClosed", v)
     connected.value = false
@@ -87,8 +94,9 @@ export const useOBS = defineStore('obs', () => {
         var item = r.sceneItems.find(i => i.sourceName == OSCBotBrowserName)
         // Si c'est la scene en cours, on ajoute
         if (s.sceneName == d.currentPreviewSceneName || s.sceneName == d.currentProgramSceneName) {
-          if (!item)
-            var r = await obs_ws.call("CreateSceneItem", { sceneName: s.sceneName, sourceName: OSCBotBrowserName })
+          if (!item) {
+            var { sceneItemId } = await obs_ws.call("CreateSceneItem", { sceneName: s.sceneName, sourceName: OSCBotBrowserName })
+          }
         }
       }
       // On enlève le bot des scènes ou il doit pas y etre
@@ -195,7 +203,9 @@ export const useOBS = defineStore('obs', () => {
             "reroute_audio": false,
             "restart_when_active": false,
             "url": url,
-            "webpage_control_level": 1
+            "webpage_control_level": 1,
+            "width": data.value.baseWidth,
+            "height": data.value.baseHeight,
       }
     })
     getInfo()
@@ -286,6 +296,7 @@ export const useOBS = defineStore('obs', () => {
       type: `OBS:${e.obsname}`,
       title: e.name,
       accepts_input: false,
+      trigger: true,
       category: "OBS",
       active: connected,
       outputs: Object.fromEntries(e.params.map(e => [e.name, { type: "string", description: e.description, options: e.options }])),

@@ -115,16 +115,16 @@ export const useTwitch = defineStore('twitch', () => {
       return
     }
 
-    channel_name.value = user.value.name
+    channel_name.value = S.get("twitch.channel") || user.value.name
     chatClient.value = new ChatClient(
       { authProvider,
-        channels: [user.value.name],
+        channels: [channel_name.value],
         // requestMembershipEvents: true
       });
       chatClient.value.connect()
       chatClient.value.onConnect(() => chat_connected.value = true)
       chatClient.value.onDisconnect(() => chat_connected.value = false)
-      chatClient.value.onMessage((channel, user, text, msg) => console.log("MESSAGE", channel, user, text, msg))
+      chatClient.value.onMessage(messageEvent)
       chatClient.value.onAnnouncement((channel, user, announcementInfo, msg) => console.log("ACCOUNCEMENT", channel, user, announcementInfo, msg))
     // chatClient.onSub((channel, user, subInfo, msg) => console.log("SUB", channel, user, subInfo, msg))
     // chatClient.onCommunitySub((channel, user, subInfo, msg) => console.log("COMMUNITY SUB", channel, user, subInfo, msg))
@@ -155,6 +155,7 @@ export const useTwitch = defineStore('twitch', () => {
     chatClient.value.join(val)
     // User
     channel.value = await apiClient.users.getUserByName(val)
+    S.set("twitch.channel", val)
   })
 
   /*
@@ -198,6 +199,7 @@ export const useTwitch = defineStore('twitch', () => {
       input: { type: "string" },
     },
     accepts_input: false,
+    trigger: true
   })
 
   H.registerNodeType({
@@ -209,10 +211,17 @@ export const useTwitch = defineStore('twitch', () => {
       channel: { type: "string" },
       user: { type: "string" },
       text: { type: "string" },
-      msg: { type: "string" },
+      isFirst: { type: "boolean" }
     },
     accepts_input: false,
+    trigger: true
   })
+
+  const messageEvent = (channel, user, text, msg) => {
+    console.log(channel, user, text, msg)
+    H.graph.startNodeType("Twitch:onMessage", {channel, user, text,
+      isFirst: msg.isFirst})
+  }
 
   const channelRedemptionEvent = event => {
     console.log("REDEMPTION", event)
@@ -224,6 +233,7 @@ export const useTwitch = defineStore('twitch', () => {
       input: event.input
     }
     reward_action.start(opt)
+    H.graph.startNodeType("Twitch:onReward", opt)
     /*
     broadcasterDisplayName
     broadcasterId

@@ -1,10 +1,5 @@
 <template>
   <q-page >
-    <div class="row">
-      Dernier message: {{ last_message }}
-      <q-btn @click="connect" label="connect" />
-      <h1>Connected: {{ peer_connected }}</h1>
-    </div>
   </q-page>
 </template>
 
@@ -23,7 +18,7 @@ const props = defineProps(["peer_id"])
 
 var conn = ref({})
 var peer = new Peer()
-const peer_connected = computed(() => conn.value.connectionId != null)
+const peer_connected = computed(() => conn.value.peer == props.peer_id)
 
 peer.on("error", err => {
   console.log("Error", err)

@@ -24,14 +24,26 @@ export const usePeer = defineStore('peer', () => {
     peer_id.value = id
   })
 
+  peer.on('disconnected', () => {
+    console.log("Connection lost :(")
+  });
+
+  peer.on("error", err => {
+    console.log("Error", err)
+  })
+
   // Connection
   peer.on("connection", c => {
     console.log("Connection", c)
     conn.value = c
-  })
-
-  peer.on("error", err => {
-    console.log("Error", err)
+    conn.value.on("close", () => {
+      console.log("Connection closed")
+      conn.value = {}
+    })
+    conn.value.on("error", (err) => {
+      console.log("Connection error", err)
+      conn.value = {}
+    })
   })
 
   // Debug send function
@@ -48,7 +60,7 @@ export const usePeer = defineStore('peer', () => {
 
 
   return {
-    connected,
+    connected, conn,
     send,
     source_url, copyURL
   }

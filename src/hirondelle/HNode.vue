@@ -2,7 +2,7 @@
   <q-card  class="h-node" :style="`left:${node.state?.x}px; top: ${node.state?.y}px;`" :data-node-id="node.id"
     @mouseenter="open=true" @mouseleave="open=false">
     <!-- Title -->
-    <q-card-section :class="`row items-center text-dark q-pa-sm ${node.type.accepts_input ? 'bg-primary' : 'bg-accent text-white'}`">
+    <q-card-section :class="`row items-center text-dark q-pa-sm ${node.type.trigger ? 'bg-accent text-white' : 'bg-primary'}`">
       <q-icon class="col-auto q-pr-xs" name="circle" size="xs" :color="node.type.active ? 'green' : 'red'"/>
       <div class="col">{{ node.type.title }} </div>
       <q-btn flat dense :disable="node.running || !node.type.active" icon="play_circle" class="col-auto text-positive" @click="node.start()"/>
@@ -22,11 +22,15 @@
     <!-- Outputs -->
     <q-card-section v-if="(open || !node.graph.settings.autoCloseNodes) && _.size(node.type.outputs)"
       class="q-pr-none q-pl-xl q-py-xs">
+      <div class="text-caption">
+        Last values:
+      </div>
       <q-list>
         <q-item v-for="(input, name) in node.type.outputs" :key="name">
           <q-item-section>
             <q-select v-if="input.options" :label="name" dense filled clearable v-model="node.values.output[name]" :options="input.options" />
-            <q-input v-else dense filled :label="name" v-model="node.values.output[name]" />
+            <q-toggle v-else-if="input.type == 'boolean'" :label="name" dense v-model="node.values.output[name]"/>
+            <q-input v-else dense filled :label="name" v-model="node.values.output[name]" :type="input.type" />
             <q-btn flat round dense icon="circle" class="absolute-top-right" color="grey" size="xs" style="right:-10px; top: 20px"
               @mousedown.stop="startConnection({type:'param', param:name})" @touchstart.stop data-port="output" data-port-class="param" />
           </q-item-section>
@@ -136,6 +140,29 @@
               <q-input v-if="['>', '< x <'].includes(node.options?.[k].filterType)" class="col" dense filled type="number" v-model="node.options[k].greaterThan" label="Plus grand que"/>
               <span v-if="node.options?.[k].filterType == '< x <'" class="col-auto text-center q-px-sm">et</span>
               <q-input v-if="['<', '< x <'].includes(node.options?.[k].filterType)" class="col" dense filled type="number" v-model="node.options[k].lesserThan" label="Plus petit que"/>
+            </div>
+            <!-- Boolean -->
+            <div v-if="p.type == 'boolean'" class="row items-center">
+              <q-chip square class="col-auto cursor-pointer bg-grey-9 q-mr-sm">
+                <q-icon v-if="!node.options?.[k].filterType" name="expand_more" />
+                <span>{{ node.options?.[k].filterType || ""}}</span>
+                <q-menu>
+                  <q-list dense>
+                    <q-item clickable v-close-popup
+                      v-for="o in [
+                        { type: '', label: 'Ignorer', icon: ''},
+                        { type: '=', label: 'Égal', icon: ''},
+                      ]" :key="o.type"
+                      @click="node.options[k].filterType = o.type">
+                      <q-item-section avatar>
+                        <q-chip dense square class="col-auto bg-grey-9"> {{ o.type}} </q-chip>
+                      </q-item-section>
+                      <q-item-section>{{ o.label }}</q-item-section>
+                    </q-item>
+                  </q-list>
+                </q-menu>
+              </q-chip>
+              <q-toggle v-if="node.options?.[k].filterType" v-model="node.options[k].equals" :label="node.options[k].equals ? 'True' : 'False'"/>
             </div>
           </div>
         </div>

@@ -107,19 +107,21 @@
         <q-card-section class="bg-secondary text-dark">Source navigateur</q-card-section>
         <q-card-section class="row items-center">
           <p class="col-12">On peut créer une source navigateur dans OBS qui permet d'afficher des choses.</p>
-          <q-input v-if="false" class="col-12" readonly v-model="peer.source_url" filled dense >
+          <q-input class="col-12 q-pa-md" readonly v-model="peer.source_url" filled dense >
             <template v-slot:append>
               <q-btn @click="peer.copyURL" icon="content_copy"/>
             </template>
           </q-input>
-          <q-btn v-if="!obs.data.botCreated" class="col-auto" :disable="!obs.connected" @click="obs.createOSCBotBrowserSource(peer.source_url)"
-          label="Créer" color="positive"/>
+          <q-btn v-if="!obs.data.botCreated" class="col-auto"
+            :disable="!obs.connected" @click="obs.createOSCBotBrowserSource(peer.source_url)"
+            label="Créer automatiquement sur toutes les scènes" color="positive"/>
           <q-btn v-else class="col-auto" :disable="!obs.connected" @click="obs.removeOSCBotBrowserSource()"
           label="Supprimer" color="negative"/>
-          <div v-if="obs.data.botCreated" class="col-auto q-ml-md">
+          <div class="col-auto q-ml-md">
               Connection status: <q-icon name="circle" size="md" :color="peer.connected ? 'green' : 'red'"/>
               <q-btn label="Send test data" @click="peer.send" />
           </div>
+          Connection: {{ peer.conn.peer }}
         </q-card-section>
         <q-card-section>
         </q-card-section>

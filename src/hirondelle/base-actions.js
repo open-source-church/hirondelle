@@ -88,8 +88,12 @@ export const useBaseActions = defineStore('baseActions', () => {
           if(filterType == "<") return p < filter.lesserThan
           if(filterType == "< x <") return filter.greaterThan < p && p < filter.lesserThan
         }
+        else if (source.type.outputs[k].type == "boolean") {
+          if(filterType == "=") return p == filter.equals
+        }
         return false
       })
+      console.log(test)
       // On appelle tous les noeuds connectés selon le résultat
       var children = node.graph.childrenCondition(node.id)
       children[test].forEach(c => c.start())
