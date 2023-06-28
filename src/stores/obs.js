@@ -5,12 +5,14 @@ import _ from 'lodash'
 import { useSettings } from './settings'
 import { useActions } from './actions'
 import { useHirondelle } from 'src/hirondelle/hirondelle.js'
+import { usePeer } from './peer'
 
 export const useOBS = defineStore('obs', () => {
 
   const S = useSettings()
   const A = useActions()
   const H = useHirondelle()
+  const peer = usePeer()
 
   const obs_ws = new OBSWebSocket()
   const connected = ref(false)

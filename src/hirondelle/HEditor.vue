@@ -6,7 +6,7 @@
     @pointerdown.self="e => PZ.onPointerDown(e, _graph.view)"
     @pointerup.self="PZ.onPointerUp"
     @click="selected = []"
-    >
+  >
     <div class="absolute-top-left">
       <q-breadcrumbs>
         <q-breadcrumbs-el v-for="b in breadcrumbs" :key="b.id" :label="b.type?.title || 'Root'" @click="setParent(b)"/>

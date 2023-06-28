@@ -1,8 +1,11 @@
 import { defineStore } from 'pinia'
 import { ref, computed, watch, toRef } from 'vue'
 import _ from 'lodash'
+import { useHirondelle } from './hirondelle'
 
 export const useMovePanZoom = defineStore('movePanZoom', () => {
+
+  const H = useHirondelle()
 
   const setScaling = (view, pos, newScale) => {
     const point = [ pos.x / view.scaling - view.panning.x, pos.y / view.scaling - view.panning.y ]
@@ -73,6 +76,6 @@ export const useMovePanZoom = defineStore('movePanZoom', () => {
 
   return {
     mouseWheel, onPointerMove, onPointerDown, onPointerUp,
-    move
+    move, 
   }
 })

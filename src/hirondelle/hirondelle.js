@@ -67,7 +67,6 @@ export const useHirondelle = defineStore('hirondelle', () => {
     view: {
       scaling: 1,
       panning: { x: 0, y: 0},
-      yop: 14,
       to(pos){
         return { x: (pos.x / this.scaling) - this.panning.x, y: (pos.y / this.scaling) - this.panning.y }
       }
@@ -78,15 +77,13 @@ export const useHirondelle = defineStore('hirondelle', () => {
     newGroup(nodes) {
       var parent = nodes[0].parent
       var g = this.addNode({ type: "group", title: "New group", nodes: nodes }, parent)
-      // Remove unexisting connections
-      console.log("BEFORE", this.connections.length)
+      // Fixing connections
       this.connections.forEach(c => {
         if (c.from.parent != c.to.parent) {
           if (c.from.parent.parent == c.to.parent) c.from = c.from.parent
           if (c.from.parent == c.to.parent.parent) c.to = c.to.parent
         }
       })
-      console.log("After", this.connections.length)
       return g
     },
     findNode(nodeId, parent=null) {
@@ -107,7 +104,6 @@ export const useHirondelle = defineStore('hirondelle', () => {
         return
       }
       if(!newNode.type) console.error("Pas trouvé de type pour", newNode)
-      console.log("ADDING NODE", newNode)
       var values = newNode.values || {
         input: _.mapValues(newNode.type.inputs, p => p.default),
         output: _.mapValues(newNode.type.outputs, p => p.default) }
@@ -123,17 +119,18 @@ export const useHirondelle = defineStore('hirondelle', () => {
         options: newNode.options || {},
         title: newNode.title,
         targets: () => this.targets(id),
-        async start () {
-          console.log("STARTING",this.type.title, this.type.category)
-          console.log("With params:", node.values.value)
-          node.running.value = true
+      }
+      node.start = async function () {
+        console.log("STARTING", this.type.title, this.type.category)
+        console.log("With params:", node.values.value)
+        node.running.value = true
 
-          // Main action
-          if (this.type.action) await this.type.action(node.values.value, node)
-          node.running.value = false
-          console.log("And done.")
-          node.targets().forEach(c => c.start())
-        }
+        // Main action
+        console.log(this.type.active)
+        if (this.type.action) await this.type.action(node.values.value, node)
+        node.running.value = false
+        console.log("And done.")
+        node.targets().forEach(c => c.start())
       }
       node.remove = () => this.removeNode(node)
       // On ajoute les éventuels enfants
@@ -141,10 +138,8 @@ export const useHirondelle = defineStore('hirondelle', () => {
         // Est-ce que le node a déjà été crée
         if (newNode.nodes[0].start)
           newNode.nodes.forEach(n => {
-            console.log("BEFORE", n.parent)
             n.parent.nodes = n.parent.nodes.filter(nn => nn != n)
             n.parent = node
-            console.log("AFTER", n.parent)
             node.nodes.push(n)
           })
         else
