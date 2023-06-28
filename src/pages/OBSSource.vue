@@ -47,9 +47,14 @@ const confetti = (opt) => {
   }
 }
 
+const test = () => {
+  
+}
+
 const onMessage = (data) => {
   console.log(data)
   if (data.action == "confettis") confetti(data)
+  else test()
 }
 
 onMounted(() => {

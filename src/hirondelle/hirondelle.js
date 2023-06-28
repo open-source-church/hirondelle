@@ -60,7 +60,11 @@ export const useHirondelle = defineStore('hirondelle', () => {
     nodeTypes: toRef(nodeTypes),
     view: {
       scaling: 1,
-      panning: { x: 0, y: 0}
+      panning: { x: 0, y: 0},
+      yop: 14,
+      to(pos){
+        return { x: (pos.x / this.scaling) - this.panning.x, y: (pos.y / this.scaling) - this.panning.y }
+      }
     },
     settings: {
       autoCloseNodes: false
@@ -114,17 +118,25 @@ export const useHirondelle = defineStore('hirondelle', () => {
         return
       }
       // On vérifie si la connection existe déjà
-      if(this.connections.find(c => c.from.id == from.id && c.to.id == to.id
-        && c.type == type && c.param1 == param1 && c.param2 == param2 && c.condition == condition)) {
+      if(this.connections.find(
+        // Memes paramètres
+        (c => c.from.id == from.id && c.to.id == to.id
+        && c.type == type && c.param1 == param1 && c.param2 == param2 && c.condition == condition)
+        // Connection temporaire (il ne peut y en avoir qu'une)
+        || (c.type == "connection" && type == "connection"))) {
         console.log("Cette connection existe déjà")
         return
       }
       var connection = { from: from, to: to, graph: this, type:type }
       if (type == "condition") connection.condition = condition
       this.connections.push(connection)
+      return connection
     },
     removeConnection(connection) {
       this.connections = this.connections.filter(c => c != connection)
+    },
+    removeTemporaryConnection() {
+      this.connections = this.connections.filter(c => c.type != "temporary")
     },
     removeNode(id) {
       this.nodes = this.nodes.filter(n => n.id != id)
@@ -151,14 +163,14 @@ export const useHirondelle = defineStore('hirondelle', () => {
         values: n.values,
         options: n.options
       }) )
-      var connections = _.cloneDeep(this.connections)
+      var connections = _.cloneDeep(this.connections).filter(c => c.type != "temporary")
       connections.forEach(c => {
         c.from = c.from.id
         c.to = c.to.id
         delete c.graph
       })
       obj.connections = connections
-      obj.view = this.view
+      obj.view = { scaling: this.view.scaling, panning: this.view.panning }
       obj.settings = this.settings
       return obj
     },
@@ -168,7 +180,10 @@ export const useHirondelle = defineStore('hirondelle', () => {
         obj.nodes.forEach(n => this.addNode(n.type, n.state, n.id, n.values, n.options))
       if (obj.connections)
         obj.connections.forEach(c => this.addConnection(c))
-      if (obj.view) this.view = obj.view
+      if (obj.view) {
+        this.view.scaling = obj.view.scaling
+        this.view.panning = obj.view.panning
+      }
       if (obj.settings) this.settings = obj.settings
       console.log(this.nodes.length, this.nodes)
     },

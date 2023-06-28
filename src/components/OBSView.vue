@@ -119,7 +119,7 @@
           label="Supprimer" color="negative"/>
           <div class="col-auto q-ml-md">
               Connection status: <q-icon name="circle" size="md" :color="peer.connected ? 'green' : 'red'"/>
-              <q-btn label="Send test data" @click="peer.send" />
+              <q-btn label="Send test data" @click="peer.send()" />
           </div>
           Connection: {{ peer.conn.peer }}
         </q-card-section>

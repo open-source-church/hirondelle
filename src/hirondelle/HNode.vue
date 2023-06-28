@@ -14,7 +14,7 @@
       @mousedown.stop @touchstart.stop data-port-type="input" data-port-class="main" />
     <q-btn v-if="node.type.accepts_output" @touchstart.stop flat round dense icon="circle"
       class="absolute-top-right" color="red" size="sm" style="right:-11px; top: 14px"
-      @mousedown.stop="startConnection({type: main})" data-port-type="output" data-port-class="main" />
+      @mousedown.stop="e => startConnection({type: main, event: e})" data-port-type="output" data-port-class="main" />
     <!-- Values -->
     <!-- <q-card-section>
       {{ node.values }}
@@ -32,7 +32,7 @@
             <q-toggle v-else-if="input.type == 'boolean'" :label="name" dense v-model="node.values.output[name]"/>
             <q-input v-else dense filled :label="name" v-model="node.values.output[name]" :type="input.type" />
             <q-btn flat round dense icon="circle" class="absolute-top-right" color="grey" size="xs" style="right:-10px; top: 20px"
-              @mousedown.stop="startConnection({type:'param', param:name})" @touchstart.stop data-port="output" data-port-class="param" />
+              @mousedown.stop="e => startConnection({type:'param', param:name, event: e})" @touchstart.stop data-port="output" data-port-class="param" />
           </q-item-section>
         </q-item>
       </q-list>
@@ -57,11 +57,11 @@
         <span class="col-12">Si le test est valide:</span>
         <q-btn @touchstart.stop flat round dense icon="circle"
         class="absolute" color="green" size="sm" style="right:-12px; top: 6px"
-        @mousedown.stop="startConnection({type:'condition', condition:true})" data-port-type="output" data-port-class="condition" />
+        @mousedown.stop="e => startConnection({type:'condition', condition:true, event: e})" data-port-type="output" data-port-class="condition" />
         <span class="col-12">Sinon:</span>
         <q-btn @touchstart.stop flat round dense icon="circle"
         class="absolute" color="red" size="sm" style="right:-12px; top: 28px"
-        @mousedown.stop="startConnection({type:'condition', condition:false})" data-port-type="output" data-port-class="condition" />
+        @mousedown.stop="e => startConnection({type:'condition', condition:false, event: e})" data-port-type="output" data-port-class="condition" />
       </div>
       <div v-if="(open || !node.graph.settings.autoCloseNodes)">
         <div class="text-warning" v-if="sources.length != 1">
@@ -208,8 +208,24 @@ const findAttribute = (n, attr) => {
   }
 }
 
-const startConnection = ({type="main", param=null, condition=null}) => {
-  var l = addEventListener("mouseup", (event) => {
+var temporaryConnection = ref()
+const updateConnection = (event) => {
+  let view = node.value.graph.view
+  temporaryConnection.value.to.state = view.to({x: event.pageX, y: event.pageY - 88})
+}
+var startPos = {}
+const startConnection = ({type="main", param=null, condition=null, event}) => {
+  console.log(event)
+  startPos = { x: event.pageX, y: event.pageY - 88}
+  // On ajoute une connection temporaire
+  temporaryConnection.value = node.value.graph.addConnection({
+    from: { state: node.value.graph.view.to(startPos)},
+    to: { state: node.value.graph.view.to(startPos)},
+    type: "temporary"
+  })
+  addEventListener("mousemove", updateConnection)
+
+  addEventListener("mouseup", (event) => {
     var t = event.target
     var port_type = findAttribute(t, "data-port-type")
     var port_class = findAttribute(t, "data-port-class")
@@ -227,7 +243,10 @@ const startConnection = ({type="main", param=null, condition=null}) => {
         // node.value.graph.addParamConnection(node.value.id, param, nodeId, param_name)
       }
     }
+    removeEventListener("mousemove", updateConnection)
+    node.value.graph.removeTemporaryConnection()
   }, { once: true});
+
 }
 
 </script>
