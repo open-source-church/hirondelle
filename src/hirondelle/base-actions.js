@@ -95,8 +95,8 @@ export const useBaseActions = defineStore('baseActions', () => {
       })
       console.log(test)
       // On appelle tous les noeuds connectés selon le résultat
-      var children = node.graph.childrenCondition(node.id)
-      children[test].forEach(c => c.start())
+      var targets = node.graph.targetsCondition(node.id)
+      targets[test].forEach(n => n.start())
     }
   })
 

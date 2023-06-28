@@ -5,7 +5,7 @@
       <q-btn-dropdown flat color="primary" label="Triggers">
         <q-list>
           <q-item v-for="t in graph.nodeTypes.filter(t => t.trigger)" :key="t.type" clickable
-            @click="graph.addNode(t)">
+            @click="graph.addNode({type: t}, parent)">
             <q-item-section><q-item-label>
               <q-badge color="accent">{{t.category}}</q-badge>
               {{ t.title }}
@@ -17,7 +17,7 @@
       <q-btn-dropdown flat color="primary" label="Actions">
         <q-list>
           <q-item v-for="t in graph.nodeTypes.filter(t => !t.trigger)" :key="t.type" clickable
-            @click="graph.addNode(t)">
+            @click="graph.addNode({type: t}, parent)">
             <q-item-section><q-item-label>
               <q-badge color="accent">{{t.category}}</q-badge>
               {{ t.title }}
@@ -28,7 +28,7 @@
       <q-toggle v-model="graph.settings.autoCloseNodes" label="Auto-Close Nodes" />
     </div>
     <div class="col fit" style="min-width: 100px; min-height:100px;" >
-      <HEditor :graph="graph"/>
+      <HEditor :graph="graph" @selected="selected=$event" @parentChanged="parent=$event" />
     </div>
   </div>
 </template>
@@ -53,6 +53,8 @@ const H = useHirondelle()
 useBaseActions()
 
 const graph = H.graph
+const selected = ref([])
+const parent = ref()
 
 // Loading and saving
 var state = S.get("graph.state")

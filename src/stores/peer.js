@@ -14,13 +14,13 @@ export const usePeer = defineStore('peer', () => {
   const connected = computed(() => conn.value.connectionId != null)
 
   // PEER Connection
-  const peer_id = ref(S.get("peer.id"))
+  const peer_id = ref(S.get("obs.peer.id"))
 
   // New peer with peer_id from local storage or new
   var peer = new Peer(peer_id.value)
   // On store l'id
   peer.on("open", id => {
-    S.set("peer.id", id)
+    S.set("obs.peer.id", id)
     peer_id.value = id
   })
 

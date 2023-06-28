@@ -2,9 +2,14 @@
   <q-card  class="h-node" :style="`left:${node.state?.x}px; top: ${node.state?.y}px;`" :data-node-id="node.id"
     @mouseenter="open=true" @mouseleave="open=false">
     <!-- Title -->
-    <q-card-section :class="`row items-center text-dark q-pa-sm ${node.type.trigger ? 'bg-accent text-white' : 'bg-primary'}`">
-      <q-icon class="col-auto q-pr-xs" name="circle" size="xs" :color="node.type.active ? 'green' : 'red'"/>
-      <div class="col">{{ node.type.title }} </div>
+    <q-card-section
+      :class="`row items-center text-dark q-pa-sm ${node.type.type == 'group' ? 'bg-secondary' : node.type.trigger ? 'bg-accent text-white' : 'bg-primary'}`">
+      <q-icon class="col-auto q-pr-xs" name="circle" size="xs" :color="node.type.active ? 'green' : 'red'" />
+      <div class="col">
+        {{ node.title || node.type.title }}
+        <q-badge v-if="node.nodes.length" class="bg-accent">{{ node.nodes.length }}</q-badge>
+      </div>
+      <q-btn flat dense v-if="node.type.type == 'group'" icon="edit" class="col-auto" @click="$emit('edit', node)"/>
       <q-btn flat dense :disable="node.running || !node.type.active" icon="play_circle" class="col-auto text-positive" @click="node.start()"/>
       <q-btn flat dense icon="delete" class="col-auto text-negative" @click="node.remove"/>
     </q-card-section>
@@ -15,10 +20,10 @@
     <q-btn v-if="node.type.accepts_output" @touchstart.stop flat round dense icon="circle"
       class="absolute-top-right" color="red" size="sm" style="right:-11px; top: 14px"
       @mousedown.stop="e => startConnection({type: main, event: e})" data-port-type="output" data-port-class="main" />
-    <!-- Values -->
-    <!-- <q-card-section>
-      {{ node.values }}
-    </q-card-section> -->
+    <!-- Group -->
+    <q-card-section v-if="node.type.type == 'group' && (open || !node.graph.settings.autoCloseNodes)">
+      <q-input dense filled v-model="node.title" label="Title"/>
+    </q-card-section>
     <!-- Outputs -->
     <q-card-section v-if="(open || !node.graph.settings.autoCloseNodes) && _.size(node.type.outputs)"
       class="q-pr-none q-pl-xl q-py-xs">
@@ -180,6 +185,7 @@ import HParam from "src/hirondelle/HParam.vue"
 const props = defineProps({
   node: { type: Object, required: true }
 })
+const emits = defineEmits(["edit"])
 
 const node = computed(() => props.node)
 
@@ -231,8 +237,10 @@ const startConnection = ({type="main", param=null, condition=null, event}) => {
     var port_class = findAttribute(t, "data-port-class")
     var nodeId = findAttribute(t, "data-node-id")
     if (nodeId && nodeId != node.value.id) {
-      if (type == "main") // main connection
+      if (type == "main") { // main connection
+        console.log("CONNECTION", node.value.id, nodeId)
         node.value.graph.addConnection({from: node.value.id, to: nodeId})
+      }
       else if (type == "param" ) {
         var param_name = findAttribute(t, "data-param-name")
         console.log("MAKE CONNECTION", param, nodeId, param_name)
