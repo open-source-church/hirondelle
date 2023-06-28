@@ -11,7 +11,8 @@ export const usePeer = defineStore('peer', () => {
   const S = useSettings()
 
   const conn = ref({})
-  const connected = computed(() => conn.value.connectionId != null)
+  const connected = ref(false)
+  watch(conn, () => connected.value = conn.value.connectionId != null)
 
   // PEER Connection
   const peer_id = ref(S.get("obs.peer.id"))
@@ -44,6 +45,7 @@ export const usePeer = defineStore('peer', () => {
       console.log("Connection error", err)
       conn.value = {}
     })
+    conn.value.on("data", d => console.log("Data:", d))
   })
 
   // Debug send function

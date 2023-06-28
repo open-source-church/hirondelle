@@ -98,6 +98,7 @@ export const useOBS = defineStore('obs', () => {
         if (s.sceneName == d.currentPreviewSceneName || s.sceneName == d.currentProgramSceneName) {
           if (!item) {
             var { sceneItemId } = await obs_ws.call("CreateSceneItem", { sceneName: s.sceneName, sourceName: OSCBotBrowserName })
+            await obs_ws.call("SetSceneItemLocked", { sceneName: s.sceneName, sceneItemId, sceneItemLocked: true })
           }
         }
       }
@@ -361,12 +362,12 @@ export const useOBS = defineStore('obs', () => {
       return {}
     }
   })
-
+  const peer_connected = computed(() => peer.connected)
   H.registerNodeType({
     type: "OBSSource:Confettis",
     title: "Confettis",
     category: "OBSSource",
-    active: toRef(connected),
+    active: peer_connected,
     inputs: {
       bursts: { type: "number", default: 10 },
       duration: { type: "number", default: 5000 },
@@ -405,6 +406,6 @@ export const useOBS = defineStore('obs', () => {
     createOSCBotBrowserSource, removeOSCBotBrowserSource, OSCBotBrowserKeepOnAllScenes,
     preview,
     preview_img, program_img,
-    data
+    data,
   }
 })

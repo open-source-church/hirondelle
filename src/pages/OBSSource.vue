@@ -1,5 +1,9 @@
 <template>
   <q-page >
+    <h1>Peer connected: {{ peer_connected }}</h1>
+    <Transition>
+      <p v-if="show">Message</p>
+    </Transition>
   </q-page>
 </template>
 
@@ -29,7 +33,14 @@ const connect = async () => {
   conn.value = peer.connect(props.peer_id)
 
   conn.value.on("data", onMessage)
+  conn.value.on("close", connect)
+  conn.value.on("error", connect)
 }
+watch(peer_connected, val => {
+  if (!val) connect()
+})
+
+setInterval(() => conn.value.send("ping"), 5000)
 
 const confetti = (opt) => {
   for(var i in _.range(opt.bursts || 1)) {
@@ -47,13 +58,15 @@ const confetti = (opt) => {
   }
 }
 
+const show = ref(false)
 const test = () => {
-  
+  show.value = true
+  setTimeout(() => show.value = false, 2000)
 }
 
 const onMessage = (data) => {
   console.log(data)
-  if (data.action == "confettis") confetti(data)
+  if (data?.action == "confettis") confetti(data)
   else test()
 }
 

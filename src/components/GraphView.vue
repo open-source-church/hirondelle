@@ -4,7 +4,7 @@
       <!-- Triggers -->
       <q-btn-dropdown flat color="primary" label="Triggers">
         <q-list>
-          <q-item v-for="t in graph.nodeTypes.filter(t => t.trigger)" :key="t.type" clickable
+          <q-item v-for="t in H.nodeTypes.filter(t => t.trigger)" :key="t.type" clickable
             @click="graph.addNode({type: t}, parent)">
             <q-item-section><q-item-label>
               <q-badge color="accent">{{t.category}}</q-badge>
@@ -16,7 +16,7 @@
       <!-- Actions -->
       <q-btn-dropdown flat color="primary" label="Actions">
         <q-list>
-          <q-item v-for="t in graph.nodeTypes.filter(t => !t.trigger)" :key="t.type" clickable
+          <q-item v-for="t in H.nodeTypes.filter(t => !t.trigger)" :key="t.type" clickable
             @click="graph.addNode({type: t}, parent)">
             <q-item-section><q-item-label>
               <q-badge color="accent">{{t.category}}</q-badge>
@@ -38,7 +38,6 @@
 import { ref, computed, reactive, watch, onMounted } from 'vue'
 import { useQuasar, copyToClipboard } from 'quasar'
 import _ from 'lodash'
-import { useActions } from 'stores/actions'
 import { useSettings } from 'stores/settings'
 // Node
 import HEditor from "src/hirondelle/HEditor.vue"
@@ -46,7 +45,6 @@ import { useHirondelle } from "src/hirondelle/hirondelle.js"
 import { useBaseActions } from "src/hirondelle/base-actions.js"
 
 const $q = useQuasar()
-const A = useActions()
 const S = useSettings()
 
 const H = useHirondelle()

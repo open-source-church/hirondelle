@@ -45,6 +45,7 @@ export const useHirondelle = defineStore('hirondelle', () => {
         let param = opt[type][k]
       })
     )
+    // opt.active = ref(opt.active)
     nodeTypes.value.push(opt)
   }
   registerNodeType({
@@ -63,7 +64,6 @@ export const useHirondelle = defineStore('hirondelle', () => {
       // {from: {id: "33abce08-a4a0-4860-8fc2-856395f9d80d"}, to: {id: "8ee944e1-927d-44fd-bac1-12a200498a8d"}}
     ],
     groups: [],
-    nodeTypes: toRef(nodeTypes),
     view: {
       scaling: 1,
       panning: { x: 0, y: 0},
@@ -98,9 +98,9 @@ export const useHirondelle = defineStore('hirondelle', () => {
     },
     addNode(newNode, parent=null) {
       // nodeType, pos, id, values, options
-      if (typeof(newNode.type) == "string") newNode.type = this.nodeTypes.find(t => t.type == newNode.type)
+      if (typeof(newNode.type) == "string") newNode.type = nodeTypes.value.find(t => t.type == newNode.type)
       if (this.nodes.map(n => n.id).includes(newNode.id)) {
-        console.error("Un node existe déjà avec cet id:", id)
+        console.error("Un node existe déjà avec cet id:", newNode.id)
         return
       }
       if(!newNode.type) console.error("Pas trouvé de type pour", newNode)
@@ -133,6 +133,7 @@ export const useHirondelle = defineStore('hirondelle', () => {
         node.targets().forEach(c => c.start())
       }
       node.remove = () => this.removeNode(node)
+
       // On ajoute les éventuels enfants
       if (newNode.nodes?.length) {
         // Est-ce que le node a déjà été crée
@@ -145,10 +146,9 @@ export const useHirondelle = defineStore('hirondelle', () => {
         else
           newNode.nodes.forEach(n => this.addNode(n, node))
       }
-
-      watch(node.values, (val, old) => {
-        console.log("VALUE CHANGED", old, val)
-      }, { deep: true })
+      // watch(node.values, (val, old) => {
+      //   console.log("VALUE CHANGED", old, val)
+      // }, { deep: true })
 
       if (!parent) parent = this
       node.parent = parent
@@ -235,7 +235,7 @@ export const useHirondelle = defineStore('hirondelle', () => {
     load(obj) {
       console.log("LOADING", obj)
       if (obj.nodes)
-        obj.nodes.forEach(n => this.addNode(n))
+        obj.nodes.forEach(n => this.addNode(_.cloneDeep(n)))
       if (obj.connections)
         obj.connections.forEach(c => this.addConnection(c))
       if (obj.view) {

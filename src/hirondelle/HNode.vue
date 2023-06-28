@@ -4,7 +4,7 @@
     <!-- Title -->
     <q-card-section
       :class="`row items-center text-dark q-pa-sm ${node.type.type == 'group' ? 'bg-secondary' : node.type.trigger ? 'bg-accent text-white' : 'bg-primary'}`">
-      <q-icon class="col-auto q-pr-xs" name="circle" size="xs" :color="node.type.active ? 'green' : 'red'" />
+      <q-icon v-if="!node.type.active" class="col-auto q-pr-xs" name="warning" size="md" color="negative" />
       <div class="col">
         {{ node.title || node.type.title }}
         <q-badge v-if="node.nodes.length" class="bg-accent">{{ node.nodes.length }}</q-badge>
@@ -202,6 +202,8 @@ watch(source, () => {
     })
   }
 })
+
+console.log("ACTIVE", props.node.type.type, props.node.type.active, typeof(props.node.type.active))
 
 const open = ref(false)
 
