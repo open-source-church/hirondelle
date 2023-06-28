@@ -142,6 +142,8 @@ export const useTwitch = defineStore('twitch', () => {
     eventsub.onChannelRedemptionAdd(user.value, channelRedemptionEvent)
     eventsub.onChannelPollBegin(user.value, event => console.log("POLL BEGIN", event))
     eventsub.onChannelRewardUpdate(user.value, get_rewards)
+    eventsub.onChannelRewardAdd(user.value, get_rewards)
+    eventsub.onChannelRewardRemove(user.value, get_rewards)
 
     // Rewards si le user est au moins affilié
     if(user.value.broadcasterType)
@@ -168,9 +170,6 @@ export const useTwitch = defineStore('twitch', () => {
     // Get those that are managable by the api
     var managable = await apiClient.channelPoints.getCustomRewards(user.value, true)
     managable.forEach(r => rewards.value.find(_r => _r.id == r.id).isManagable = true)
-  }
-  const reward_set_enabled = async (id, enabled = true) => {
-    await apiClient.channelPoints.updateCustomReward(user.value, id, { isEnabled: enabled })
   }
 
   const rewards_title = computed(() => rewards.value.map(r => r.title))
@@ -257,7 +256,7 @@ export const useTwitch = defineStore('twitch', () => {
     login, logout, login_with_access_token,
     chat_connected,
     user, channel_name, channel,
-    rewards, reward_set_enabled,
+    rewards,
     apiClient, chatClient
   }
 

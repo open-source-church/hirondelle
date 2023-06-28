@@ -80,18 +80,18 @@ export const useHirondelle = defineStore('hirondelle', () => {
         state: pos || { x: 0, y: 0},
         graph: this,
         id: id,
-        values: values,
+        values: toRef(values),
         running: ref(false),
         options: options || {},
         children: () => this.children(id),
         remove: () => this.removeNode(id),
         async start () {
           console.log("STARTING",this.type.title, this.type.category)
-          console.log("With params:", node.values)
+          console.log("With params:", node.values.value)
           node.running.value = true
 
           // Main action
-          if (this.type.action) await this.type.action(node.values, node)
+          if (this.type.action) await this.type.action(node.values.value, node)
           node.running.value = false
           console.log("And done.")
           node.children().forEach(c => c.start())
