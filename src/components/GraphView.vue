@@ -1,10 +1,22 @@
 <template>
   <div class="column fit fixed">
     <div class="col-auto row">
-      <!-- Node types -->
-      <q-btn-dropdown flat color="primary" label="Node Types">
+      <!-- Triggers -->
+      <q-btn-dropdown flat color="primary" label="Triggers">
         <q-list>
-          <q-item v-for="t in graph.nodeTypes" :key="t.type" clickable
+          <q-item v-for="t in graph.nodeTypes.filter(t => t.trigger)" :key="t.type" clickable
+            @click="graph.addNode(t)">
+            <q-item-section><q-item-label>
+              <q-badge color="accent">{{t.category}}</q-badge>
+              {{ t.title }}
+            </q-item-label></q-item-section>
+          </q-item>
+        </q-list>
+      </q-btn-dropdown>
+      <!-- Actions -->
+      <q-btn-dropdown flat color="primary" label="Actions">
+        <q-list>
+          <q-item v-for="t in graph.nodeTypes.filter(t => !t.trigger)" :key="t.type" clickable
             @click="graph.addNode(t)">
             <q-item-section><q-item-label>
               <q-badge color="accent">{{t.category}}</q-badge>

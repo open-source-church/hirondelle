@@ -51,7 +51,6 @@ const d = computed(() => {
     x: props.connection.to.state.x,
     y: props.connection.to.state.y + deltaY2.value
   }
-  console.log(deltaY.value, deltaY2.value)
   if (false)
     return `M ${n1.x} ${n1.y} L ${n2.x} ${n2.y}`;
   else {

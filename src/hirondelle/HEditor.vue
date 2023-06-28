@@ -1,16 +1,21 @@
 <template>
   <div
     class="h-editor"
+    @click.self="selected = []"
+    >
+    <div class="h-background" :style="styles"
     @wheel.self="e => PZ.mouseWheel(e, _graph.view)"
-    @pointermove.self="e => PZ.onPointerMove(e, _graph.view)"
-    @pointerdown.self="e => PZ.onPointerDown(e, _graph.view)"
-    @pointerup.self="PZ.onPointerUp"
-  >
-    <div class="h-background" :style="styles" ></div>
+    @pointermove.stop.self="e => PZ.onPointerMove(e, _graph.view)"
+    @pointerdown.stop.self="e => PZ.onPointerDown(e, _graph.view)"
+    @pointerup.stop.self="PZ.onPointerUp"
+    ></div>
     <!-- Nodes -->
     <div class="h-node-container" :style="transformStyle">
       <HNode v-for="(n, i) in _graph.nodes" :key="'node'+i" :node="n"
-        v-touch-pan.prevent.mouse="e => PZ.move(e, n, _graph.view)"/>
+        v-touch-pan.prevent.mouse="e => PZ.move(e, selected.includes(n) ? selected : [n], _graph.view)"
+        :class="selected.includes(n) ? 'selected' : ''"
+        @click.ctrl.stop="selected = _.xor(selected, [n])"
+        @click.exact.stop="selected = [n]" />
     </div>
     <!-- Connections -->
     <svg class="h-connections-container" :style="transformStyle">
@@ -26,6 +31,7 @@ import { useHirondelle } from "./hirondelle.js"
 import { useMovePanZoom } from "./movePanZoom.js"
 import HNode from "src/hirondelle/HNode.vue"
 import HConnection from "src/hirondelle/HConnection.vue"
+import _ from "lodash"
 
 const H = useHirondelle()
 const PZ = useMovePanZoom()
@@ -34,6 +40,8 @@ const props = defineProps({
   graph: { type: Object, required: false }
 })
 const _graph = computed(() => props.graph)
+
+const selected = ref([])
 
 const transformStyle = computed(() => ({
   "transform-origin": "0 0",
@@ -80,7 +88,6 @@ const lineColor = "#333333"
     background-repeat: repeat;
     width: 100%;
     height: 100%;
-    pointer-events: none !important;
   }
 
   .h-node-container {
@@ -88,6 +95,10 @@ const lineColor = "#333333"
     top: 0;
     left: 0;
     z-index: 1;
+  }
+
+  .selected {
+    border: 1px solid #00ffdd;
   }
 
   .h-connections-container {

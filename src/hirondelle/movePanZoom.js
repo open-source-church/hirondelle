@@ -62,13 +62,14 @@ export const useMovePanZoom = defineStore('movePanZoom', () => {
   // Moving objects
   var startingPos
   var movingObject
-  const move = (event, obj, view) => {
-    if (event.isFirst) startingPos = _.cloneDeep(obj.state)
-    obj.state.x = ~~(startingPos.x + event.offset.x / view.scaling)
-    obj.state.y = ~~(startingPos.y + event.offset.y / view.scaling)
+  const move = (event, objs) => {
+    if (!objs.length) return
+    if (event.isFirst) startingPos = objs.map(obj => _.cloneDeep(obj.state))
+    objs.forEach((obj, i) => {
+      obj.state.x = ~~(startingPos[i].x + event.offset.x / obj.graph.view.scaling)
+      obj.state.y = ~~(startingPos[i].y + event.offset.y / obj.graph.view.scaling)
+    })
   }
-
-
 
   return {
     mouseWheel, onPointerMove, onPointerDown, onPointerUp,
