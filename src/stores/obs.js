@@ -374,7 +374,7 @@ export const useOBS = defineStore('obs', () => {
       number: { type: "number", default: 30 },
       radius: { type: "number", default: 10 },
       colors: { type: "string", default: "#ffd400, #00ffdd, #d700d7" },
-      useEmojis: { type: "boolean", default: false },
+      useEmojis: { type: "boolean", default: false, description: "Use emojis" },
       emojiSize: { type: "number", default: 30 },
       emojis: { type: "string", default: "🌈, ⚡️, 💥, ✨, 💫, 🌸, ❤️, 💚, 🩵, 💙, 💜, 💛, 🤍, 🤎" },
     },
@@ -393,6 +393,44 @@ export const useOBS = defineStore('obs', () => {
       } else {
         d.confettiRadius = opt.input.radius
         d.confettiColors = opt.input.colors.split(",").map(c => c.trim())
+      }
+      console.log(d)
+      peer.send(d)
+    },
+  accepts_output: false,
+  })
+
+  // From https://www.transition.style/
+  var transitions = [
+    "circle:hesitate", "circle:center", "circle:top-right", "circle:top-left", "circle:bottom-right", "circle:bottom-left",
+    "square:center", "square:hesitate", "square:top-right", "square:top-left", "square:bottom-right", "square:bottom-left",
+    "wipe:right", "wipe:left", "wipe:up", "wipe:down",
+    "wipe:top-right", "wipe:top-left", "wipe:bottom-right", "wipe:bottom-left", "wipe:cinematic",
+    "diamond:center", "diamond:hesitate",
+    "polygon:opposing-corners", "custom:circle-swoop"
+  ]
+
+  H.registerNodeType({
+    type: "OBSSource:MessageBox",
+    title: "MessageBox",
+    category: "OBSSource",
+    active: peer_connected,
+    inputs: {
+      message: { type: "string", default: "Coucou." },
+      duration: { type: "number", default: 5000 },
+      random: { type: "boolean", default: false, description: "Random transitions"},
+      transition_in: { type: "string", default: "circle:hesitate", options: transitions },
+      transition_out: { type: "string", default: "wipe:up", options: transitions },
+      rect: { type: "rect", default: {x: 20, y: 20, width: 200, height: 75} },
+      background: { type: "color", default: "#d700d799" },
+      style: { type: "string", default: "font-size: 50px;" },
+    },
+    action: (opt) => {
+      var d = { action: "messageBox" }
+      _.assign(d, opt.input)
+      if (d.random) {
+        d.transition_in = _.sample(transitions)
+        d.transition_out = _.sample(transitions)
       }
       console.log(d)
       peer.send(d)

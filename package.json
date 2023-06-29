@@ -25,6 +25,7 @@
     "peerjs": "^1.4.7",
     "pinia": "^2.1.4",
     "quasar": "^2.6.0",
+    "transition-style": "^0.1.3",
     "vue": "^3.0.0",
     "vue-router": "^4.0.0"
   },

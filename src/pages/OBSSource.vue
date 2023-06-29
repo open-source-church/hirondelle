@@ -1,9 +1,10 @@
 <template>
   <q-page >
-    <h1>Peer connected: {{ peer_connected }}</h1>
-    <Transition>
-      <p v-if="show">Message</p>
-    </Transition>
+    <div v-for="(t, i) in messageBoxes" :key="'tb-'+i"
+      :transition-style="t.transition" class="fixed row items-center justify-around"
+      :style="`background-color: ${t.background}; left:${t.rect.x}px; top: ${t.rect.y}px; width: ${t.rect.width}px; height:${t.rect.height}px; ${t.style}`">
+      {{ t.message }}
+  </div>
   </q-page>
 </template>
 
@@ -12,6 +13,7 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
 import { Peer } from "peerjs"
 import _ from "lodash"
+import 'transition-style'
 import JSConfetti from 'js-confetti'
 const jsConfetti = new JSConfetti()
 
@@ -58,15 +60,25 @@ const confetti = (opt) => {
   }
 }
 
-const show = ref(false)
+const messageBoxes = ref([])
+const messageBox = (opt) => {
+  console.log(opt)
+  opt.transition = "in:" + opt.transition_in
+  messageBoxes.value.push(opt)
+  setTimeout(() => {
+    console.log("Removing")
+    opt.transition = "out:" + opt.transition_out
+    messageBoxes.value = messageBoxes.value.filter(tb => tb != opt)
+  }, opt.duration)
+}
 const test = () => {
-  show.value = true
-  setTimeout(() => show.value = false, 2000)
+  textBox()
 }
 
 const onMessage = (data) => {
   console.log(data)
   if (data?.action == "confettis") confetti(data)
+  if (data?.action == "messageBox") messageBox(data)
   else test()
 }
 
