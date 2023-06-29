@@ -1,7 +1,7 @@
 <template>
   <q-page >
     <div v-for="(t, i) in messageBoxes" :key="'tb-'+i"
-      :transition-style="t.transition" class="fixed row items-center justify-around"
+      :transition-style="t.transition" class="fixed row items-center justify-around text-center"
       :style="`background-color: ${t.background}; left:${t.rect.x}px; top: ${t.rect.y}px; width: ${t.rect.width}px; height:${t.rect.height}px; ${t.style}`">
       {{ t.message }}
   </div>

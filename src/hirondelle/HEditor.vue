@@ -72,7 +72,10 @@ const setParent = (parent) => {
 // })
 const connections_in_group = computed(() => {
   return props.graph.connections.filter(c =>
-    c.from.parent == (parentNode.value || props.graph) && c.to.parent == (parentNode.value || props.graph))
+    (c.from.parent == (parentNode.value || props.graph) &&
+    c.to.parent == (parentNode.value || props.graph)) ||
+    c.type == "temporary"
+    )
 })
 
 const breadcrumbs = computed(() => {

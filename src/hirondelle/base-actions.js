@@ -8,7 +8,7 @@ export const useBaseActions = defineStore('baseActions', () => {
 
   const H = useHirondelle()
 
-// WAIT
+  // WAIT
 
   function delay(time) {
     return new Promise(resolve => setTimeout(resolve, time));
@@ -98,6 +98,30 @@ export const useBaseActions = defineStore('baseActions', () => {
       var targets = node.graph.targetsCondition(node.id)
       targets[test].forEach(n => n.start())
     }
+  })
+
+  // Text builder
+  H.registerNodeType({
+    type: `BA:Text`,
+    title: "Text Builder",
+    category: "Base",
+    info: "Connectez des variables, et utilisez les dans la template, par exemple 'Merci [userName]!'",
+    active: true,
+    inputs: {
+      template: { type: "textarea" },
+      vars: { type: "object" }
+    },
+    outputs: {
+      text: { type: "textarea" },
+    },
+    compute (params) {
+      console.log("COMPUTING", params)
+      var t = params.input.template
+      _.forEach(params.input.vars, (val, param) => t = t.replaceAll(`[${param}]`, val))
+      params.output.text = t
+    },
+    accepts_output: false,
+    accepts_input: false,
   })
 
 

@@ -26,6 +26,8 @@
         </q-list>
       </q-btn-dropdown>
       <q-toggle v-model="graph.settings.autoCloseNodes" label="Auto-Close Nodes" />
+      <q-space />
+      <q-btn dense flat color="primary" label="Create Group" @click="graph.newGroup(selected)"/>
     </div>
     <div class="col fit" style="min-width: 100px; min-height:100px;" >
       <HEditor :graph="graph" @selected="selected=$event" @parentChanged="parent=$event" />
@@ -53,6 +55,8 @@ useBaseActions()
 const graph = H.graph
 const selected = ref([])
 const parent = ref()
+
+
 
 // Loading and saving
 var state = S.get("graph.state")

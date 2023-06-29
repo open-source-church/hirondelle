@@ -1,6 +1,6 @@
 <template>
-  <q-card  class="h-node" :style="`left:${node.state?.x}px; top: ${node.state?.y}px;`" :data-node-id="node.id"
-    @mouseenter="open=true" @mouseleave="open=false">
+  <q-card class="h-node" :style="`left:${node.state?.x}px; top: ${node.state?.y}px;`" :data-node-id="node.id"
+    @mouseenter="open=true" @mouseleave="open=false" :id="node.id">
     <!-- Title -->
     <q-card-section
       :class="`row items-center text-dark q-pa-sm ${node.type.type == 'group' ? 'bg-secondary' : node.type.trigger ? 'bg-accent text-white' : 'bg-primary'}`">
@@ -10,16 +10,15 @@
         <q-badge v-if="node.nodes.length" class="bg-accent">{{ node.nodes.length }}</q-badge>
       </div>
       <q-btn flat dense v-if="node.type.type == 'group'" icon="edit" class="col-auto" @click="$emit('edit', node)"/>
-      <q-btn flat dense :disable="node.running || !node.type.active" icon="play_circle" class="col-auto text-positive" @click="node.start()"/>
+      <q-btn flat dense v-if="node.type.info" icon="info" color="info" class="col-auto">
+        <q-tooltip>{{ node.type.info }}</q-tooltip>
+      </q-btn>
+      <q-btn flat dense v-if="node.type.accepts_output || node.type.action" :disable="node.running || !node.type.active" icon="play_circle" class="col-auto text-positive" @click="node.start()"/>
       <q-btn flat dense icon="delete" class="col-auto text-negative" @click="node.remove"/>
     </q-card-section>
     <!-- Ports -->
-    <q-btn v-if="node.type.accepts_input" flat round dense icon="circle" class="absolute-top-left"
-      color="red" size="sm" style="left:-12px; top: 14px"
-      @mousedown.stop @touchstart.stop data-port-type="input" data-port-class="main" />
-    <q-btn v-if="node.type.accepts_output" @touchstart.stop flat round dense icon="circle"
-      class="absolute-top-right" color="red" size="sm" style="right:-11px; top: 14px"
-      @mousedown.stop="e => startConnection({type: main, event: e})" data-port-type="output" data-port-class="main" />
+    <HConnector v-if="node.type.accepts_input" port-type="input" port-class="main" :node="node" />
+    <HConnector v-if="node.type.accepts_output" port-type="output" port-class="main" :node="node" />
     <!-- Group -->
     <q-card-section v-if="node.type.type == 'group' && (open || !node.graph.settings.autoCloseNodes)">
       <q-input dense filled v-model="node.title" label="Title"/>
@@ -36,8 +35,7 @@
             <q-select v-if="input.options" :label="name" dense filled clearable v-model="node.values.output[name]" :options="input.options" />
             <q-toggle v-else-if="input.type == 'boolean'" :label="name" dense v-model="node.values.output[name]"/>
             <q-input v-else dense filled :label="name" v-model="node.values.output[name]" :type="input.type" />
-            <q-btn flat round dense icon="circle" class="absolute-top-right" color="grey" size="xs" style="right:-10px; top: 20px"
-              @mousedown.stop="e => startConnection({type:'param', param:name, event: e})" @touchstart.stop data-port="output" data-port-class="param" />
+            <HConnector port-type="output" port-class="param" :node="node" :param="name" :ref="`input-${name}`" :id="`output-${node.id}-${name}`"/>
           </q-item-section>
         </q-item>
       </q-list>
@@ -48,9 +46,8 @@
       <q-list>
         <q-item v-for="(input, name) in node.type.inputs" :key="name">
           <q-item-section>
-            <HParam :param="input" :name="name" v-model="node.values.input[name]" />
-            <q-btn flat round dense icon="circle" class="absolute-top-left" color="grey" size="xs" style="left:-12px; top: 20px"
-                @mousedown.stop @touchstart.stop data-port="input" :data-param-name="name" data-port-class="param" />
+            <HParam :param="input" :name="name" v-model="node.values.input[name]" :node="node" />
+            <HConnector port-type="input" port-class="param" :node="node" :param="name" :id="`input-${node.id}-${name}`"/>
           </q-item-section>
         </q-item>
       </q-list>
@@ -60,13 +57,9 @@
       <!-- Condition ports -->
       <div class="text-right row q-pr-sm">
         <span class="col-12">Si le test est valide:</span>
-        <q-btn @touchstart.stop flat round dense icon="circle"
-        class="absolute" color="green" size="sm" style="right:-12px; top: 6px"
-        @mousedown.stop="e => startConnection({type:'condition', condition:true, event: e})" data-port-type="output" data-port-class="condition" />
+        <HConnector port-type="output" port-class="condition" :node="node" :condition="true"/>
         <span class="col-12">Sinon:</span>
-        <q-btn @touchstart.stop flat round dense icon="circle"
-        class="absolute" color="red" size="sm" style="right:-12px; top: 28px"
-        @mousedown.stop="e => startConnection({type:'condition', condition:false, event: e})" data-port-type="output" data-port-class="condition" />
+        <HConnector port-type="output" port-class="condition" :node="node" :condition="false"/>
       </div>
       <div v-if="(open || !node.graph.settings.autoCloseNodes)">
         <div class="text-warning" v-if="sources.length != 1">
@@ -170,9 +163,9 @@
             </div>
           </div>
         </div>
-
       </div>
     </q-card-section>
+    <q-resize-observer @resize="updatePortPositions" />
   </q-card>
 </template>
 
@@ -181,6 +174,7 @@
 import { ref, computed, reactive, watch, onMounted } from 'vue'
 import _ from 'lodash'
 import HParam from "src/hirondelle/HParam.vue"
+import HConnector from "src/hirondelle/HConnector.vue"
 
 const props = defineProps({
   node: { type: Object, required: true }
@@ -203,61 +197,34 @@ watch(source, () => {
   }
 })
 
-console.log("ACTIVE", props.node.type.type, props.node.type.active, typeof(props.node.type.active))
-
 const open = ref(false)
 
-const findAttribute = (n, attr) => {
-  while(n) {
-    try {
-      if(n.getAttribute(attr)) return n.getAttribute(attr)
-    } catch {}
-    n = n.parentNode
-  }
-}
+const updatePortPositions = () => {
+  var n = document.getElementById(node.value.id)?.getBoundingClientRect()
+  if (!n) return
+  var scaling = node.value.graph.view.scaling
 
-var temporaryConnection = ref()
-const updateConnection = (event) => {
-  let view = node.value.graph.view
-  temporaryConnection.value.to.state = view.to({x: event.pageX, y: event.pageY - 88})
-}
-var startPos = {}
-const startConnection = ({type="main", param=null, condition=null, event}) => {
-  console.log(event)
-  startPos = { x: event.pageX, y: event.pageY - 88}
-  // On ajoute une connection temporaire
-  temporaryConnection.value = node.value.graph.addConnection({
-    from: { state: node.value.graph.view.to(startPos)},
-    to: { state: node.value.graph.view.to(startPos)},
-    type: "temporary"
-  })
-  addEventListener("mousemove", updateConnection)
-
-  addEventListener("mouseup", (event) => {
-    var t = event.target
-    var port_type = findAttribute(t, "data-port-type")
-    var port_class = findAttribute(t, "data-port-class")
-    var nodeId = findAttribute(t, "data-node-id")
-    if (nodeId && nodeId != node.value.id) {
-      if (type == "main") { // main connection
-        console.log("CONNECTION", node.value.id, nodeId)
-        node.value.graph.addConnection({from: node.value.id, to: nodeId})
-      }
-      else if (type == "param" ) {
-        var param_name = findAttribute(t, "data-param-name")
-        console.log("MAKE CONNECTION", param, nodeId, param_name)
-        // node.value.graph.addParamConnection(node.value.id, param, nodeId, param_name)
-      }
-      else if (type == "condition" ) {
-        node.value.graph.addConnection({from: node.value.id, to: nodeId, type: type, condition: condition})
-        // node.value.graph.addParamConnection(node.value.id, param, nodeId, param_name)
-      }
+  node.value.connectors_state = { input: {}, output: {}}
+  _.forEach(node.value.type.inputs, (input, name) => {
+    var c = document.getElementById(`input-${node.value.id}-${name}`)?.getBoundingClientRect()
+    if (c)
+    node.value.connectors_state.input[name] = {
+      x: (c.left - n.left + c.width / 2) / scaling,
+      y: (c.top - n.top + c.height / 2) / scaling
     }
-    removeEventListener("mousemove", updateConnection)
-    node.value.graph.removeTemporaryConnection()
-  }, { once: true});
-
+  })
+  _.forEach(node.value.type.outputs, (input, name) => {
+    var c = document.getElementById(`output-${node.value.id}-${name}`)?.getBoundingClientRect()
+    if (c)
+    node.value.connectors_state.output[name] = {
+      x: (c.left - n.left + c.width / 2) / scaling,
+      y: (c.top - n.top + c.height / 2) / scaling
+    }
+  })
 }
+
+onMounted(() => {
+})
 
 </script>
 

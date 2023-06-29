@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, computed, watch, toRef } from 'vue'
+import { ref, computed, watch, toRef, nextTick } from 'vue'
 import _ from 'lodash'
 import { useQuasar, copyToClipboard, uid } from 'quasar'
 import OBSWebSocket from 'obs-websocket-js'
@@ -55,6 +55,15 @@ export const useHirondelle = defineStore('hirondelle', () => {
     active: true
   })
 
+  const defaultValuesForParamType = {
+    string: "",
+    textarea: "",
+    number: 0,
+    object: {},
+    rect: {x: 0, y: 0, width: 0, height: 0},
+    boolean: false
+  }
+
   /*
     Un graph contient des nodes, et des connections
   */
@@ -105,8 +114,8 @@ export const useHirondelle = defineStore('hirondelle', () => {
       }
       if(!newNode.type) console.error("Pas trouvé de type pour", newNode)
       var values = newNode.values || {
-        input: _.mapValues(newNode.type.inputs, p => p.default),
-        output: _.mapValues(newNode.type.outputs, p => p.default) }
+        input: _.mapValues(newNode.type.inputs, p => p.default || defaultValuesForParamType[p.type]),
+        output: _.mapValues(newNode.type.outputs, p => p.default || defaultValuesForParamType[p.type]) }
       var id = newNode.id || uid()
       var node = {
         type: newNode.type,
@@ -126,7 +135,6 @@ export const useHirondelle = defineStore('hirondelle', () => {
         node.running.value = true
 
         // Main action
-        console.log(this.type.active)
         if (this.type.action) await this.type.action(node.values.value, node)
         node.running.value = false
         console.log("And done.")
@@ -146,15 +154,27 @@ export const useHirondelle = defineStore('hirondelle', () => {
         else
           newNode.nodes.forEach(n => this.addNode(n, node))
       }
-      // watch(node.values, (val, old) => {
-      //   console.log("VALUE CHANGED", old, val)
-      // }, { deep: true })
+      watch(node.values, (val) => {
+        console.log("UPDATING PARAMS FOR", node.type.title)
+        // On compute s'il y a des choses à faire
+        if (node.type.compute) node.type.compute(val)
+        // On update les params connections
+        var connections = this.connections.filter(c => c.from.id == node.id && c.type == "param")
+        // Warning: si plusieurs paramètres connectés sur la même valeurs, ça prend le dernier
+        connections.forEach(c => {
+          console.log("YOP", c.input, c.output, c.to.type.inputs)
+          if (c.to.type.inputs[c.input].type == 'object')
+            c.to.values.input[c.input][c.output] = val.output[c.output]
+          else
+            c.to.values.input[c.input] = val.output[c.output]
+        })
+      }, { deep: true })
 
       if (!parent) parent = this
       node.parent = parent
       parent.nodes.push(node)
     },
-    addConnection({from, to, type="main", param1=null, param2=null, condition=null}) {
+    addConnection({from, to, type="main", input=null, output=null, condition=null}) {
       if (typeof(from) == "string") {
         from = this.findNode(from)
       }
@@ -169,13 +189,13 @@ export const useHirondelle = defineStore('hirondelle', () => {
       if(this.connections.find(
         // Memes paramètres
         (c => c.from.id == from.id && c.to.id == to.id
-        && c.type == type && c.param1 == param1 && c.param2 == param2 && c.condition == condition)
+        && c.type == type && c.input == input && c.output == output && c.condition == condition)
         // Connection temporaire (il ne peut y en avoir qu'une)
         || (c.type == "connection" && type == "connection"))) {
         console.log("Cette connection existe déjà")
         return
       }
-      var connection = { from: from, to: to, graph: this, type:type }
+      var connection = { from, to, input, output, graph: this, type:type }
       if (type == "condition") connection.condition = condition
       this.connections.push(connection)
       return connection
@@ -192,18 +212,26 @@ export const useHirondelle = defineStore('hirondelle', () => {
       parent.nodes = parent.nodes.filter(n => n.id != node.id)
       this.connections = this.connections.filter(c => c.from.id != node.id && c.to.id != node.id)
     },
+    // La list des noeuds connectés depuis
     targets(nodeId) {
       return this.connections.filter(c => c.from.id == nodeId && c.type == "main").map(c => c.to)
     },
+    // La list des noeuds connectés par conditions
     targetsCondition(nodeId) {
       return {
         true: this.connections.filter(c => c.from.id == nodeId && c.type == "condition" && c.condition).map(c => c.to),
         false: this.connections.filter(c => c.from.id == nodeId && c.type == "condition" && !c.condition).map(c => c.to),
       }
     },
-    sources(nodeId) {
-      return this.connections.filter(c => c.to.id == nodeId).map(c => c.from)
+    // La list des noeuds connectés vers
+    sources(targetNodeId) {
+      return this.connections.filter(c => c.to.id == targetNodeId && c.type == "main").map(c => c.from)
     },
+    // La liste des paramètres connectés vers le param
+    // paramSources(targetNodeId, inputName) {
+    //   var conns = this.connections.filter(c => c.to.id == targetNodeId && c.type == "param" && c.input == inputName)
+    //   return _.chain(conns).keyBy("output").mapValues(c => c.from.values.output[c.output]).value()
+    // },
     saveNodes(parent) {
       return parent.nodes.map(n => {
         var node = {
@@ -244,9 +272,12 @@ export const useHirondelle = defineStore('hirondelle', () => {
       }
       if (obj.settings) this.settings = obj.settings
     },
-    startNodeType(typeName, outputValues) {
+    async startNodeType(typeName, outputValues) {
       var nodes = this.nodes.filter(n => n.type.type == typeName)
-      nodes.forEach(n => Object.assign(n.values.output, outputValues))
+      nodes.forEach(n => {
+        Object.assign(n.values.output, outputValues)
+      })
+      await nextTick() // Let reactivity do its thing
       nodes.forEach(n => n.start())
     }
   })
