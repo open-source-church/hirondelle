@@ -296,10 +296,9 @@ export const useOBS = defineStore('obs', () => {
   // Hirondelle
   events_lists_to_watch.forEach(e => {
     H.registerNodeType({
-      type: `OBS:${e.obsname}`,
+      id: `OBS:${e.obsname}`,
       title: e.name,
-      accepts_input: false,
-      trigger: true,
+      type: "trigger",
       category: "OBS",
       active: connected,
       outputs: Object.fromEntries(e.params.map(e => [e.name, { type: "string", description: e.description, options: e.options }])),
@@ -332,7 +331,8 @@ export const useOBS = defineStore('obs', () => {
   // Hirondelle
 
   H.registerNodeType({
-    type: "OBS:SetCurrentProgramScene",
+    id: "OBS:SetCurrentProgramScene",
+    type: "action",
     title: "Set Program Scene",
     category: "OBS",
     active: connected,
@@ -351,7 +351,8 @@ export const useOBS = defineStore('obs', () => {
   })
 
   H.registerNodeType({
-    type: "OBS:SetCurrentPreviewScene",
+    id: "OBS:SetCurrentPreviewScene",
+    type: "action",
     title: "Set Preview Scene",
     category: "OBS",
     active: connected,
@@ -364,7 +365,8 @@ export const useOBS = defineStore('obs', () => {
   })
   const peer_connected = computed(() => peer.connected)
   H.registerNodeType({
-    type: "OBSSource:Confettis",
+    id: "OBSSource:Confettis",
+    type: "action",
     title: "Confettis",
     category: "OBSSource",
     active: peer_connected,
@@ -411,7 +413,8 @@ export const useOBS = defineStore('obs', () => {
   ]
 
   H.registerNodeType({
-    type: "OBSSource:MessageBox",
+    id: "OBSSource:MessageBox",
+    type: "action",
     title: "MessageBox",
     category: "OBSSource",
     active: peer_connected,
@@ -436,6 +439,47 @@ export const useOBS = defineStore('obs', () => {
       peer.send(d)
     },
   accepts_output: false,
+  })
+
+  // Get scene item rect
+  const getSceneItemRecs = async (sceneName) => {
+    var r = await obs_ws.call("GetSceneItemList", { sceneName })
+    console.log(r)
+    return r.sceneItems.map(i => ({
+      id: i.sceneItemId,
+      name: i.sourceName,
+      rect: {
+        x: i.sceneItemTransform.positionX,
+        y: i.sceneItemTransform.positionY,
+        width: i.sceneItemTransform.width - (i.sceneItemTransform.cropLeft + i.sceneItemTransform.cropRight) * i.sceneItemTransform.scaleX,
+        height: i.sceneItemTransform.height - (i.sceneItemTransform.cropTop + i.sceneItemTransform.cropBottom) * i.sceneItemTransform.scaleY,
+      }
+    }))
+  }
+  H.registerNodeType({
+    id: `OBS:GetSceneItemRect`,
+    title: "Get scene item rect",
+    type: "param",
+    category: "OBS",
+    active: connected,
+    inputs: {
+      sceneName: { type: "string", options: scene_names },
+      sceneItemId: { type: "number", optionLabel: "name", optionValue: "id" }
+    },
+    outputs: {
+      rect: { type: "rect" },
+    },
+    async compute (params, node) {
+      console.log("GETTHING", params)
+      var sceneItems = await getSceneItemRecs(params.input.sceneName)
+      node.setInputOptions("sceneItemId", sceneItems)
+      var rect = sceneItems.find(i => i.id == params.input.sceneItemId)?.rect
+      if (rect && !_.isEqual(rect, params.output.rect)) params.output.rect = rect
+    },
+  })
+  // FIXME: trigger pas :(
+  obs_ws.on("SceneItemTransformChanged", (p) => {
+    H.graph.updateValuesFoNodeTypes("OBS:GetSceneItemRect")
   })
 
   return {

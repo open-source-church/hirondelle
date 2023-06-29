@@ -3,7 +3,7 @@
   <template v-if="param.type == 'boolean'">
     <q-toggle :label="param.description || name" :model-value="modelValue" @update:model-value="update" />
   </template>
-  <!-- Colot -->
+  <!-- Color -->
   <template v-else-if="param.type == 'color'">
     <div class="row">
       <q-btn class="col-auto q-px-md" square flat dense :style="`background-color:${modelValue}`" />
@@ -47,8 +47,10 @@
   <!-- Textarea -->
   <!-- String, Number -->
   <template v-else>
-    <q-select v-if="param.options" :label="name" dense filled clearable :options="param.options"
-    :model-value="modelValue" @update:model-value="update"/>
+    <q-select v-if="param.options || node.inputOptions[name]" options-dense
+      :label="name" dense filled clearable :options="param.options || node.inputOptions[name]"
+      :option-label="param.optionLabel || 'text'" :option-value="param.optionValue || 'id'" emit-value map-options
+      :model-value="modelValue" @update:model-value="update"/>
     <q-input v-else dense filled :label="name" :type="param.type" :autogrow="param.type=='textarea'"
       :model-value="modelValue" @update:model-value="update" />
   </template>

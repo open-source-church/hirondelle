@@ -11,47 +11,61 @@ export const useHirondelle = defineStore('hirondelle', () => {
     Node Types
 
     @type: string, must be unique
-    @title: string
+    @id: string unique
     @category: string,
+    @type: string parmi trigger, action, param
     @params accepts_input: accepts inputs
     @params accepts_output: accepts ouputs
     @params opt.inputs: {
       description: string
       type: string|object|boolean|number,
       options?: array of values,
+      optionLabel?: string, key affiché dans la list si options est array of objects
+      optionValue?: string, key retournée si options est array of objects
     }
+    @action: callback appelé quand le node est trigger
+    @compute: callback quand un des paramètres input change
   */
   const nodeTypes = ref([])
-  const nodeTypesList = computed(() => nodeTypes.value.map(n => n.type))
+  const nodeTypesListIds = computed(() => nodeTypes.value.map(n => n.id))
   const registerNodeType = (opt) => {
-    if(!opt.type) {
+    if(!opt.id) {
       throw new Error("Il faut un type (unique).")
       return
     }
-    if(nodeTypesList.value.includes(opt.type)) {
-      throw new Error(`Il y a déjà un type '${opt.type}' enregistré`)
+    if(nodeTypesListIds.value.includes(opt.id)) {
+      throw new Error(`Il y a déjà un type '${opt.id}' enregistré`)
       return
     }
     opt.accepts_input = opt.accepts_input != false
     opt.accepts_output = opt.accepts_output != false
-    if (!opt.title) opt.title = opt.type
-    if (!opt.category) opt.category = "Uncategorised"
+    if (!opt.title) opt.title = opt.id
     // On map les interfaces
     if (!opt.inputs) opt.inputs = []
     if (!opt.outputs) opt.outputs = []
-    var both = ["inputs", "outputs"]
-    both.forEach(type =>
-      Object.keys(opt[type]).forEach(k => {
-        let param = opt[type][k]
-      })
-    )
+    // var both = ["inputs", "outputs"]
+    // both.forEach(type =>
+    //   Object.keys(opt[type]).forEach(k => {
+    //     let param = opt[type][k]
+    //   })
+    // )
+    if(!opt.type) opt.type = "action"
+    if(opt.type == "trigger") opt.accepts_input = false
+    if(opt.type == "param") {
+      opt.accepts_input = false
+      opt.accepts_output = false
+    }
+    opt.isTrigger = opt.type == "trigger"
+    opt.isAction = opt.type == "action"
+    opt.isParam = opt.type == "param"
+    opt.isSystem = opt.type == "system"
     // opt.active = ref(opt.active)
     nodeTypes.value.push(opt)
   }
   registerNodeType({
-    type: `group`,
+    id: `group`,
     title: "Group",
-    category: "system",
+    type: "system",
     active: true
   })
 
@@ -107,7 +121,7 @@ export const useHirondelle = defineStore('hirondelle', () => {
     },
     addNode(newNode, parent=null) {
       // nodeType, pos, id, values, options
-      if (typeof(newNode.type) == "string") newNode.type = nodeTypes.value.find(t => t.type == newNode.type)
+      if (typeof(newNode.type) == "string") newNode.type = nodeTypes.value.find(t => t.id == newNode.type)
       if (this.nodes.map(n => n.id).includes(newNode.id)) {
         console.error("Un node existe déjà avec cet id:", newNode.id)
         return
@@ -119,23 +133,25 @@ export const useHirondelle = defineStore('hirondelle', () => {
       var id = newNode.id || uid()
       var node = {
         type: newNode.type,
-        state: newNode.state || { x: 0, y: 0},
+        state: newNode.state || { x: 0, y: 0, open: true},
         graph: this,
         id: id,
         values: toRef(values),
         running: ref(false),
         nodes: [],
-        options: newNode.options || {},
+        options: newNode.options || {}, // to store things, used for condition now
+        inputOptions: ref({}), // to update input types conditions for specific nodes
         title: newNode.title,
         targets: () => this.targets(id),
       }
+      node.setInputOptions = (param, val) => node.inputOptions.value[param] = val
       node.start = async function () {
-        console.log("STARTING", this.type.title, this.type.category)
+        console.log("STARTING", node.type.title, node.type.category)
         console.log("With params:", node.values.value)
         node.running.value = true
 
         // Main action
-        if (this.type.action) await this.type.action(node.values.value, node)
+        if (node.type.action) await node.type.action(node.values.value, node)
         node.running.value = false
         console.log("And done.")
         node.targets().forEach(c => c.start())
@@ -155,24 +171,28 @@ export const useHirondelle = defineStore('hirondelle', () => {
           newNode.nodes.forEach(n => this.addNode(n, node))
       }
       watch(node.values, (val) => {
-        console.log("UPDATING PARAMS FOR", node.type.title)
-        // On compute s'il y a des choses à faire
-        if (node.type.compute) node.type.compute(val)
-        // On update les params connections
-        var connections = this.connections.filter(c => c.from.id == node.id && c.type == "param")
-        // Warning: si plusieurs paramètres connectés sur la même valeurs, ça prend le dernier
-        connections.forEach(c => {
-          console.log("YOP", c.input, c.output, c.to.type.inputs)
-          if (c.to.type.inputs[c.input].type == 'object')
-            c.to.values.input[c.input][c.output] = val.output[c.output]
-          else
-            c.to.values.input[c.input] = val.output[c.output]
-        })
-      }, { deep: true })
+        this.updateValues(node)
+      }, { deep: true, immediate: true })
 
       if (!parent) parent = this
       node.parent = parent
       parent.nodes.push(node)
+    },
+    // Update values for node
+    updateValues(node) {
+      console.log("UPDATING VALUES", node.type.title)
+      var val = node.values.value || node.values // FIXME: pourquoi des fois c'est une ref et des fois pas?
+      // On compute s'il y a des choses à faire
+      if (node.type.compute) node.type.compute(val, node)
+      // On update les params connections
+      var connections = this.connections.filter(c => c.from.id == node.id && c.type == "param")
+      // Warning: si plusieurs paramètres connectés sur la même valeurs, ça prend le dernier
+      connections.forEach(c => {
+        if (c.to.type.inputs[c.input].type == 'object')
+          c.to.values.input[c.input][c.output] = val.output[c.output]
+        else
+          c.to.values.input[c.input] = val.output[c.output]
+      })
     },
     addConnection({from, to, type="main", input=null, output=null, condition=null}) {
       if (typeof(from) == "string") {
@@ -198,6 +218,10 @@ export const useHirondelle = defineStore('hirondelle', () => {
       var connection = { from, to, input, output, graph: this, type:type }
       if (type == "condition") connection.condition = condition
       this.connections.push(connection)
+      // Quand on crée une connections de paramètres, on update direct les values
+      if (connection.type == "param") {
+        this.updateValues(from)
+      }
       return connection
     },
     removeConnection(connection) {
@@ -235,7 +259,7 @@ export const useHirondelle = defineStore('hirondelle', () => {
     saveNodes(parent) {
       return parent.nodes.map(n => {
         var node = {
-          type: n.type.type,
+          type: n.type.id,
           id: n.id,
           state: n.state,
           values: n.values,
@@ -272,13 +296,17 @@ export const useHirondelle = defineStore('hirondelle', () => {
       }
       if (obj.settings) this.settings = obj.settings
     },
-    async startNodeType(typeName, outputValues) {
-      var nodes = this.nodes.filter(n => n.type.type == typeName)
+    async startNodeType(typeId, outputValues) {
+      var nodes = this.nodes.filter(n => n.type.id == typeId)
       nodes.forEach(n => {
         Object.assign(n.values.output, outputValues)
       })
       await nextTick() // Let reactivity do its thing
       nodes.forEach(n => n.start())
+    },
+    updateValuesFoNodeTypes(typeId) {
+      var nodes = this.nodes.filter(n => n.type.id == typeId)
+      nodes.forEach(n => n.updateValues())
     }
   })
 

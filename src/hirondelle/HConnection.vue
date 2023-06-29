@@ -42,26 +42,56 @@ const deltaX = computed(() => {
 })
 
 const d = computed(() => {
-  if (props.connection.type == "param" && !_.isEmpty(props.connection.from.connectors_state?.output)) {
-    var n1 = {
+  var n1 = {
+    x: props.connection.from.state.x + deltaX.value,
+    y: props.connection.from.state.y + deltaY.value
+  }
+  var n2 = {
+    x: props.connection.to.state.x,
+    y: props.connection.to.state.y + deltaY2.value
+  }
+  if (props.connection.type == "main" && props.connection.from.connectors_state) {
+    n1 = {
+      x: props.connection.from.state.x + props.connection.from.connectors_state.main_output.x,
+      y: props.connection.from.state.y + props.connection.from.connectors_state.main_output.y
+    }
+    n2 = {
+      x: props.connection.to.state.x + props.connection.to.connectors_state.main_input.x,
+      y: props.connection.to.state.y + props.connection.to.connectors_state.main_input.y
+    }
+  }
+  if (props.connection.type == "condition" && props.connection.from.connectors_state) {
+    if (props.connection.condition) {
+      n1 = {
+        x: props.connection.from.state.x + props.connection.from.connectors_state.condition_true.x,
+        y: props.connection.from.state.y + props.connection.from.connectors_state.condition_true.y
+      }
+    } else {
+      n1 = {
+        x: props.connection.from.state.x + props.connection.from.connectors_state.condition_false.x,
+        y: props.connection.from.state.y + props.connection.from.connectors_state.condition_false.y
+      }
+    }
+    // n2 = {
+    //   x: props.connection.to.state.x + props.connection.to.connectors_state.main_input.x,
+    //   y: props.connection.to.state.y + props.connection.to.connectors_state.main_input.y
+    // }
+  }
+  if (props.connection.type == "param") {
+    if (props.connection.from.state.open && props.connection.from.connectors_state)
+    n1 = {
       x: props.connection.from.state.x + props.connection.from.connectors_state.output[props.connection.output]?.x,
       y: props.connection.from.state.y + props.connection.from.connectors_state.output[props.connection.output]?.y
     }
-    var n2 = {
+    if (props.connection.to.state.open && props.connection.from.connectors_state)
+    n2 = {
       x: props.connection.to.state.x + props.connection.to.connectors_state.input[props.connection.input]?.x,
       y: props.connection.to.state.y + props.connection.to.connectors_state.input[props.connection.input]?.y
     }
   }
-  else {
-    var n1 = {
-      x: props.connection.from.state.x + deltaX.value,
-      y: props.connection.from.state.y + deltaY.value
-    }
-    var n2 = {
-      x: props.connection.to.state.x,
-      y: props.connection.to.state.y + deltaY2.value
-    }
-  }
+  // console.log(props.connection)
+  // console.log(props.connection.from.state.open, props.connection.to.state.open)
+  // console.log(n1, n2)
 
   if (false)
     return `M ${n1.x} ${n1.y} L ${n2.x} ${n2.y}`;

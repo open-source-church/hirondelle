@@ -37,6 +37,13 @@
     <svg class="h-connections-container" :style="transformStyle">
       <HConnection v-for="(c, i) in connections_in_group" :key="'connection'+i" :connection="c" />
     </svg>
+    <!-- Context menu -->
+    <q-menu
+        touch-position
+        context-menu
+      >
+      <HMenu :items="contextMenu" />
+    </q-menu>
   </div>
 </template>
 
@@ -46,6 +53,7 @@ import { ref, computed, reactive, watch, onMounted, toRef } from 'vue'
 import { useHirondelle } from "./hirondelle.js"
 import { useMovePanZoom } from "./movePanZoom.js"
 import HNode from "src/hirondelle/HNode.vue"
+import HMenu from "src/hirondelle/HMenu.vue"
 import HConnection from "src/hirondelle/HConnection.vue"
 import _ from "lodash"
 
@@ -78,6 +86,30 @@ const connections_in_group = computed(() => {
     )
 })
 
+// Context menu
+const nodeTypesCategories = computed(() => _.uniq(H.nodeTypes.map(t => t.category)).filter(c => c))
+const contextMenu = computed(() => {
+  var menu = []
+  // New Triggers
+  menu.push({
+    title: "New…",
+    items: nodeTypesCategories.value.map(cat => ({
+      title: cat,
+      items: H.nodeTypes.filter(t => t.category == cat).map(t => ({
+        title: t.title,
+        type: t
+      }))
+    }))
+  })
+
+  // New Actions
+  // New Transforms
+
+  return menu
+})
+
+// Breadcrumbs
+
 const breadcrumbs = computed(() => {
   var b = []
   var p = parentNode.value
@@ -87,6 +119,8 @@ const breadcrumbs = computed(() => {
   }
   return b.reverse()
 })
+
+// Transform
 
 const transformStyle = computed(() => ({
   "transform-origin": "0 0",
@@ -107,6 +141,7 @@ const styles = computed(() => {
                      ${subGridSize * view.scaling}px ${subGridSize * view.scaling}px`
   }
 })
+const scaling = computed(() => _graph.value.view.scaling)
 
 
 const color = "#222222"
@@ -143,7 +178,7 @@ const lineColor = "#333333"
   }
 
   .selected {
-    border: 1px solid #00ffdd;
+    box-shadow: 0px 0px calc(14px / v-bind("scaling")) #00ffdd;
   }
 
   .h-connections-container {

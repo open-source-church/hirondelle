@@ -1,47 +1,55 @@
 <template>
   <q-card class="h-node" :style="`left:${node.state?.x}px; top: ${node.state?.y}px;`" :data-node-id="node.id"
-    @mouseenter="open=true" @mouseleave="open=false" :id="node.id">
+    @mouseenter="node.graph.settings.autoCloseNodes ? node.state.open = true : ''"
+    @mouseleave="node.graph.settings.autoCloseNodes ? node.state.open = false : ''" :id="node.id">
     <!-- Title -->
     <q-card-section
-      :class="`row items-center text-dark q-pa-sm ${node.type.type == 'group' ? 'bg-secondary' : node.type.trigger ? 'bg-accent text-white' : 'bg-primary'}`">
+      :class="`row items-center text-dark q-pa-xs
+        ${node.type.isSystem ? 'bg-secondary'
+          : node.type.isTrigger ? 'bg-accent text-white'
+          : node.type.isAction ? 'bg-primary'
+          : 'bg-grey-8 text-white'}`">
+      <q-btn flat dense class="col-auto q-pr-xs" :icon="node.state.open ? 'expand_more' : 'expand_less'" size="sm"
+        @click="node.state.open = !node.state.open" />
       <q-icon v-if="!node.type.active" class="col-auto q-pr-xs" name="warning" size="md" color="negative" />
       <div class="col">
         {{ node.title || node.type.title }}
         <q-badge v-if="node.nodes.length" class="bg-accent">{{ node.nodes.length }}</q-badge>
       </div>
-      <q-btn flat dense v-if="node.type.type == 'group'" icon="edit" class="col-auto" @click="$emit('edit', node)"/>
-      <q-btn flat dense v-if="node.type.info" icon="info" color="info" class="col-auto">
+      <q-btn flat dense v-if="node.type.id == 'group'" icon="edit" class="col-auto" @click="$emit('edit', node)"/>
+      <q-btn flat dense v-if="node.type.info && node.state.open" icon="info" color="info" class="col-auto">
         <q-tooltip>{{ node.type.info }}</q-tooltip>
       </q-btn>
       <q-btn flat dense v-if="node.type.accepts_output || node.type.action" :disable="node.running || !node.type.active" icon="play_circle" class="col-auto text-positive" @click="node.start()"/>
       <q-btn flat dense icon="delete" class="col-auto text-negative" @click="node.remove"/>
     </q-card-section>
     <!-- Ports -->
-    <HConnector v-if="node.type.accepts_input" port-type="input" port-class="main" :node="node" />
-    <HConnector v-if="node.type.accepts_output" port-type="output" port-class="main" :node="node" />
+    <HConnector v-if="node.type.accepts_input" port-type="input" port-class="main" :node="node" :id="`input-${node.id}`"/>
+    <HConnector v-if="node.type.accepts_output" port-type="output" port-class="main" :node="node" :id="`output-${node.id}`" />
     <!-- Group -->
-    <q-card-section v-if="node.type.type == 'group' && (open || !node.graph.settings.autoCloseNodes)">
+    <q-card-section v-if="node.type.id == 'group' && (open)">
       <q-input dense filled v-model="node.title" label="Title"/>
     </q-card-section>
     <!-- Outputs -->
-    <q-card-section v-if="(open || !node.graph.settings.autoCloseNodes) && _.size(node.type.outputs)"
+    <q-card-section v-if="(node.state.open) && _.size(node.type.outputs)"
       class="q-pr-none q-pl-xl q-py-xs">
       <div class="text-caption">
         Last values:
       </div>
       <q-list>
-        <q-item v-for="(input, name) in node.type.outputs" :key="name">
+        <q-item v-for="(output, name) in node.type.outputs" :key="name">
           <q-item-section>
-            <q-select v-if="input.options" :label="name" dense filled clearable v-model="node.values.output[name]" :options="input.options" />
+            <!-- <q-select v-if="input.options" :label="name" dense filled clearable v-model="node.values.output[name]" :options="input.options" />
             <q-toggle v-else-if="input.type == 'boolean'" :label="name" dense v-model="node.values.output[name]"/>
-            <q-input v-else dense filled :label="name" v-model="node.values.output[name]" :type="input.type" />
-            <HConnector port-type="output" port-class="param" :node="node" :param="name" :ref="`input-${name}`" :id="`output-${node.id}-${name}`"/>
+            <q-input v-else dense filled :label="name" v-model="node.values.output[name]" :type="input.type" /> -->
+            <HParam :param="output" :name="name" v-model="node.values.output[name]" :node="node" />
+            <HConnector port-type="output" port-class="param" :node="node" :param="name" :id="`output-${node.id}-${name}`"/>
           </q-item-section>
         </q-item>
       </q-list>
     </q-card-section>
     <!-- Inputs -->
-    <q-card-section v-if="(open || !node.graph.settings.autoCloseNodes) &&_.size(node.type.inputs)"
+    <q-card-section v-if="(node.state.open) &&_.size(node.type.inputs)"
       class="q-pl-none q-pr-xl q-pt-none q-pb-xs" >
       <q-list>
         <q-item v-for="(input, name) in node.type.inputs" :key="name">
@@ -53,15 +61,15 @@
       </q-list>
     </q-card-section>
     <!-- Special types -->
-    <q-card-section class="q-pa-sm" v-if="node.type.type == 'BA:Condition'">
+    <q-card-section class="q-pa-sm" v-if="node.type.id == 'BA:Condition'">
       <!-- Condition ports -->
       <div class="text-right row q-pr-sm">
         <span class="col-12">Si le test est valide:</span>
-        <HConnector port-type="output" port-class="condition" :node="node" :condition="true"/>
+        <HConnector port-type="output" port-class="condition" :node="node" :condition="true" :id="`condition-${node.id}-true`"/>
         <span class="col-12">Sinon:</span>
-        <HConnector port-type="output" port-class="condition" :node="node" :condition="false"/>
+        <HConnector port-type="output" port-class="condition" :node="node" :condition="false" :id="`condition-${node.id}-false`"/>
       </div>
-      <div v-if="(open || !node.graph.settings.autoCloseNodes)">
+      <div v-if="(node.state.open)">
         <div class="text-warning" v-if="sources.length != 1">
           <q-icon name="warning" />
           Il doit y avoir exactement une source pour ce noeud.
@@ -187,7 +195,7 @@ const sources = computed(() => node.value.graph.sources(node.value.id))
 const source = computed(() => sources.value.length == 1 ? node.value.graph.sources(node.value.id)[0] : null)
 
 watch(source, () => {
-  if (node.value.type.type == 'BA:Condition' && source.value) {
+  if (node.value.type.id == 'BA:Condition' && source.value) {
     // On ajoute les options du filtre dans les propriétés du noeuds
     Object.keys(source.value.type.outputs).forEach(k => {
       if (!(k in node.value.options)) {
@@ -197,29 +205,43 @@ watch(source, () => {
   }
 })
 
-const open = ref(false)
-
-const updatePortPositions = () => {
+const getBoundingRect = (id) => {
   var n = document.getElementById(node.value.id)?.getBoundingClientRect()
   if (!n) return
-  var scaling = node.value.graph.view.scaling
 
-  node.value.connectors_state = { input: {}, output: {}}
+  var scaling = node.value.graph.view.scaling
+  var c = document.getElementById(id)?.getBoundingClientRect()
+
+  if (c) return {
+    x: (c.left - n.left + c.width / 2) / scaling,
+    y: (c.top - n.top + c.height / 2) / scaling
+  }
+}
+
+const updatePortPositions = () => {
+
+  node.value.connectors_state = {
+    main_input: {},
+    main_output: {},
+    input: {},
+    output: {}
+  }
+
+  // Main
+  node.value.connectors_state.main_input = getBoundingRect(`input-${node.value.id}`)
+  node.value.connectors_state.main_output = getBoundingRect(`output-${node.value.id}`)
+
+  // Condition
+  node.value.connectors_state.condition_true = getBoundingRect(`condition-${node.value.id}-true`)
+  node.value.connectors_state.condition_false = getBoundingRect(`condition-${node.value.id}-false`)
+
+  // Input
   _.forEach(node.value.type.inputs, (input, name) => {
-    var c = document.getElementById(`input-${node.value.id}-${name}`)?.getBoundingClientRect()
-    if (c)
-    node.value.connectors_state.input[name] = {
-      x: (c.left - n.left + c.width / 2) / scaling,
-      y: (c.top - n.top + c.height / 2) / scaling
-    }
+    node.value.connectors_state.input[name] = getBoundingRect(`input-${node.value.id}-${name}`)
   })
+  // Output
   _.forEach(node.value.type.outputs, (input, name) => {
-    var c = document.getElementById(`output-${node.value.id}-${name}`)?.getBoundingClientRect()
-    if (c)
-    node.value.connectors_state.output[name] = {
-      x: (c.left - n.left + c.width / 2) / scaling,
-      y: (c.top - n.top + c.height / 2) / scaling
-    }
+    node.value.connectors_state.output[name] = getBoundingRect(`output-${node.value.id}-${name}`)
   })
 }
 
@@ -233,6 +255,9 @@ onMounted(() => {
 .h-node {
   position: absolute;
   width: 300px;
+  &:hover {
+    z-index:10;
+  }
 }
 
 </style>

@@ -4,7 +4,7 @@
       <!-- Triggers -->
       <q-btn-dropdown flat color="primary" label="Triggers">
         <q-list>
-          <q-item v-for="t in H.nodeTypes.filter(t => t.trigger)" :key="t.type" clickable
+          <q-item v-for="t in H.nodeTypes.filter(t => t.isTrigger)" :key="t.id" clickable
             @click="graph.addNode({type: t}, parent)">
             <q-item-section><q-item-label>
               <q-badge color="accent">{{t.category}}</q-badge>
@@ -16,7 +16,7 @@
       <!-- Actions -->
       <q-btn-dropdown flat color="primary" label="Actions">
         <q-list>
-          <q-item v-for="t in H.nodeTypes.filter(t => !t.trigger)" :key="t.type" clickable
+          <q-item v-for="t in H.nodeTypes.filter(t => !t.isTrigger)" :key="t.id" clickable
             @click="graph.addNode({type: t}, parent)">
             <q-item-section><q-item-label>
               <q-badge color="accent">{{t.category}}</q-badge>

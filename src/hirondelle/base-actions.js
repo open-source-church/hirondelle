@@ -15,7 +15,7 @@ export const useBaseActions = defineStore('baseActions', () => {
   }
 
   H.registerNodeType({
-    type: `BA:Wait`,
+    id: `BA:Wait`,
     title: "Wait...",
     category: "Base",
     active: true,
@@ -45,10 +45,27 @@ export const useBaseActions = defineStore('baseActions', () => {
     }
   })
 
+  H.registerNodeType({
+    id: `BA:Time Interval`,
+    title: "Time interval",
+    category: "Base",
+    active: true,
+    inputs: {
+      time: { type: "number", default: 5000, description: "Interval en ms"},
+      active: { type: "boolean", default: true},
+    },
+    compute: async (opt, node) => {
+      if (node._interval)
+        clearInterval(node._interval)
+      if (opt.input.active)
+        node._interval = setInterval(node.start, opt.input.time)
+    }
+  })
+
   // Condition
 
   H.registerNodeType({
-    type: `BA:Condition`,
+    id: `BA:Condition`,
     title: "Conditions",
     category: "Base",
     active: true,
@@ -102,8 +119,9 @@ export const useBaseActions = defineStore('baseActions', () => {
 
   // Text builder
   H.registerNodeType({
-    type: `BA:Text`,
+    id: `BA:Text`,
     title: "Text Builder",
+    type: "param",
     category: "Base",
     info: "Connectez des variables, et utilisez les dans la template, par exemple 'Merci [userName]!'",
     active: true,
@@ -115,13 +133,128 @@ export const useBaseActions = defineStore('baseActions', () => {
       text: { type: "textarea" },
     },
     compute (params) {
-      console.log("COMPUTING", params)
       var t = params.input.template
       _.forEach(params.input.vars, (val, param) => t = t.replaceAll(`[${param}]`, val))
       params.output.text = t
     },
-    accepts_output: false,
-    accepts_input: false,
+  })
+
+  // Operations
+  H.registerNodeType({
+    id: `BA:ArithmeticOperation`,
+    title: "Arithmetic operations",
+    type: "param",
+    category: "Base",
+    info: "Connectez des variables, et utilisez les dans la template, par exemple 'Merci [userName]!'",
+    active: true,
+    inputs: {
+      operation: { type: "string", default: "add", options: [
+        {id: "add", text: "Addition"},
+        {id: "sub", text: "Substraction"},
+        {id: "mul", text: "Multiplication"},
+        {id: "div", text: "Division"},
+      ]},
+      val1: { type: "number" },
+      val2: { type: "number" }
+    },
+    outputs: {
+      result: { type: "number" },
+    },
+    compute (params) {
+      console.log("OPERATION", params)
+      if (params.input.operation == "add") {
+        params.output.result = params.input.val1 + params.input.val2
+      }
+      if (params.input.operation == "sub") {
+        params.output.result = params.input.val1 - params.input.val2
+      }
+      if (params.input.operation == "mul") {
+        params.output.result = params.input.val1 * params.input.val2
+      }
+      if (params.input.operation == "div") {
+        params.output.result = params.input.val1 / params.input.val2
+      }
+    },
+  })
+
+  // Split
+  H.registerNodeType({
+    id: `BA:SplitRect`,
+    title: "Split Rect",
+    type: "param",
+    category: "Base",
+    active: true,
+    inputs: {
+      rect: { type: "rect" },
+    },
+    outputs: {
+      x: { type: "number" },
+      y: { type: "number" },
+      width: { type: "number" },
+      height: { type: "number" },
+    },
+    compute (params) {
+      params.output.x = params.input.rect.x
+      params.output.y = params.input.rect.y
+      params.output.width = params.input.rect.width
+      params.output.height = params.input.rect.height
+    },
+  })
+
+  // Create Rect
+  H.registerNodeType({
+    id: `BA:CreateRect`,
+    title: "Create Rect",
+    type: "param",
+    category: "Base",
+    active: true,
+    inputs: {
+      x: { type: "number" },
+      y: { type: "number" },
+      width: { type: "number" },
+      height: { type: "number" },
+    },
+    outputs: {
+      rect: { type: "rect" },
+    },
+    compute (params) {
+      params.output.rect.x = params.input.x
+      params.output.rect.y = params.input.y
+      params.output.rect.width = params.input.width
+      params.output.rect.height = params.input.height
+    },
+  })
+
+  // Vars
+  H.registerNodeType({
+    id: `BA:Var:Number`,
+    title: "Nombre",
+    type: "param",
+    category: "Base",
+    active: true,
+    outputs: {
+      number: { type: "number" },
+    },
+  })
+  H.registerNodeType({
+    id: `BA:Var:String`,
+    title: "Texte",
+    type: "param",
+    category: "Base",
+    active: true,
+    outputs: {
+      text: { type: "string" },
+    },
+  })
+  H.registerNodeType({
+    id: `BA:Var:Boolean`,
+    title: "Boolean",
+    type: "param",
+    category: "Base",
+    active: true,
+    outputs: {
+      boolean: { type: "boolean" },
+    },
   })
 
 

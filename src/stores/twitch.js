@@ -186,7 +186,7 @@ export const useTwitch = defineStore('twitch', () => {
   ]})
 
   H.registerNodeType({
-    type: "Twitch:onReward",
+    id: "Twitch:onReward",
     title: "Une récompense a été récupérée",
     category: "Twitch",
     active: eventsub_started,
@@ -197,12 +197,12 @@ export const useTwitch = defineStore('twitch', () => {
       rewardCost: { type: "number" },
       input: { type: "string" },
     },
-    accepts_input: false,
-    trigger: true
+    type: "trigger"
   })
 
   H.registerNodeType({
-    type: "Twitch:onMessage",
+    id: "Twitch:onMessage",
+    type: "trigger",
     title: "Un message est envoyé dans le chat",
     category: "Twitch",
     active: chat_connected,
@@ -212,8 +212,6 @@ export const useTwitch = defineStore('twitch', () => {
       text: { type: "string" },
       isFirst: { type: "boolean" }
     },
-    accepts_input: false,
-    trigger: true
   })
 
   const messageEvent = (channel, user, text, msg) => {
