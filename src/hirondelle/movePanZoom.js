@@ -48,7 +48,7 @@ export const useMovePanZoom = defineStore('movePanZoom', () => {
         height
       }
       return
-    } else {
+    } else if (selecting) {
       selecting = false
       view.selection = {}
     }
@@ -91,7 +91,6 @@ export const useMovePanZoom = defineStore('movePanZoom', () => {
     view.selection = {}
     // Return if mouse has moved
     var m = isMoving.value
-    console.log(m)
     isMoving.value = false
     return m
   }

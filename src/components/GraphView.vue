@@ -65,7 +65,7 @@ if (state) {
 }
 
 const save = _.debounce(() => {
-  S.set("graph.state", graph.save())
+  // S.set("graph.state", graph.save())
 }, 1000)
 watch(graph, () => {
   save()

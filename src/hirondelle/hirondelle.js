@@ -66,7 +66,10 @@ export const useHirondelle = defineStore('hirondelle', () => {
     id: `group`,
     title: "Group",
     type: "system",
-    active: true
+    active: true,
+    compute(params, node) {
+      console.log("COMPUTING GROUP")
+    }
   })
 
   const defaultValuesForParamType = {
@@ -86,6 +89,7 @@ export const useHirondelle = defineStore('hirondelle', () => {
     connections: [
       // {from: {id: "33abce08-a4a0-4860-8fc2-856395f9d80d"}, to: {id: "8ee944e1-927d-44fd-bac1-12a200498a8d"}}
     ],
+    _connectors: {}, // to keep track of connectors positions
     groups: [],
     view: {
       scaling: 1,
@@ -99,15 +103,35 @@ export const useHirondelle = defineStore('hirondelle', () => {
     },
     newGroup(nodes) {
       var parent = nodes[0].parent
-      var g = this.addNode({ type: "group", title: "New group", nodes: nodes }, parent)
+      // Finding average position
+      var x = nodes.map(n => n.state.x).reduce((a, b) => a + b) / nodes.length
+      var y = nodes.map(n => n.state.y).reduce((a, b) => a + b) / nodes.length
+
+      var group = this.addNode({
+        type: "group",
+        title: "New group",
+        nodes: nodes,
+        state: { x, y, open: true}
+        }, parent)
+
       // Fixing connections
       this.connections.forEach(c => {
         if (c.from.parent != c.to.parent) {
-          if (c.from.parent.parent == c.to.parent) c.from = c.from.parent
-          if (c.from.parent == c.to.parent.parent) c.to = c.to.parent
+          if (c.from.parent.parent == c.to.parent) {
+            const node = c.from.id
+            c.from = c.from.parent
+            console.log("CREATING CONNECTION TO GROUP")
+            this.addConnection({from: node, to: group, type: c.type, input: c.input, output: c.output, condition: c.condition})
+          }
+          if (c.from.parent == c.to.parent.parent) {
+            const node = c.to.id
+            c.to = c.to.parent
+            console.log("CREATING CONNECTION FROM GROUP")
+            this.addConnection({from: group, to: node, type: c.type, input: c.input, output: c.output, condition: c.condition})
+          }
         }
       })
-      return g
+      return group
     },
     findNode(nodeId, parent=null) {
       if (!parent) parent = this
@@ -184,6 +208,8 @@ export const useHirondelle = defineStore('hirondelle', () => {
       if (!parent) parent = this
       node.parent = parent
       parent.nodes.push(node)
+      // On retourne le node
+      return node
     },
     // Update values for node
     updateValues(node) {
@@ -195,7 +221,7 @@ export const useHirondelle = defineStore('hirondelle', () => {
       var connections = this.connections.filter(c => c.from.id == node.id && c.type == "param")
       // Warning: si plusieurs paramètres connectés sur la même valeurs, ça prend le dernier
       connections.forEach(c => {
-        if (c.to.type.inputs[c.input].type == 'object')
+        if (c.to.type.inputs[c.input]?.type == 'object')
         this.updateObjectParam(c.to, c.input)
         else
           c.to.values.input[c.input] = val.output[c.output]
@@ -257,8 +283,9 @@ export const useHirondelle = defineStore('hirondelle', () => {
       this.connections = this.connections.filter(c => c.from.id != node.id && c.to.id != node.id)
     },
     // La list des noeuds connectés depuis
+    // On prend ceux qui ont le même parents, pour pas avoir les noeuds internes
     targets(nodeId) {
-      return this.connections.filter(c => c.from.id == nodeId && c.type == "main").map(c => c.to)
+      return this.connections.filter(c => c.from.id == nodeId && c.type == "main" && c.from.parent == c.to.parent).map(c => c.to)
     },
     // La list des noeuds connectés par conditions
     targetsCondition(nodeId) {

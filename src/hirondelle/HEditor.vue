@@ -17,11 +17,11 @@
     <div class="h-background no-pointer-events" :style="styles"></div>
     <!-- Group connectors -->
     <div class="absolute-left items-center row rotate-270" v-if="parentNode.parent">
-      <q-btn flat dense icon="circle" color="red" />
+      <HConnector port-type="output" port-class="group" :node="parentNode" />
       <span class="absolute q-ml-lg text-grey no-pointer-events	" style="min-width: 200px;" > Group Input</span>
     </div>
     <div class="absolute-right items-center row rotate-270" v-if="parentNode.parent">
-      <q-btn flat dense  icon="circle" color="red" />
+      <HConnector port-type="input" port-class="group" :node="parentNode" />
       <span class="absolute q-ml-lg text-grey no-pointer-events	" style="min-width: 200px;" > Group Output</span>
     </div>
     <!-- Nodes -->
@@ -55,12 +55,13 @@
 
 <script setup>
 
-import { ref, computed, reactive, watch, onMounted, toRef } from 'vue'
+import { ref, computed, reactive, watch, onMounted, toRef, nextTick } from 'vue'
 import { useHirondelle } from "./hirondelle.js"
 import { useMovePanZoom } from "./movePanZoom.js"
 import HNode from "src/hirondelle/HNode.vue"
 import HMenu from "src/hirondelle/HMenu.vue"
 import HConnection from "src/hirondelle/HConnection.vue"
+import HConnector from "src/hirondelle/HConnector.vue"
 import _ from "lodash"
 
 const H = useHirondelle()
@@ -93,7 +94,9 @@ const connections_in_group = computed(() => {
   return props.graph.connections.filter(c =>
     (c.from.parent == (parentNode.value || props.graph) &&
     c.to.parent == (parentNode.value || props.graph)) ||
-    c.type == "temporary"
+    c.type == "temporary" ||
+    c.from == parentNode.value && c.to.parent != parentNode.value.parent ||
+    c.to == parentNode.value && c.from.parent != parentNode.value.parent
     )
 })
 
@@ -151,8 +154,6 @@ watch(() => _graph.value.view.selection, () => {
   var view = _graph.value.view
   var p1 = _graph.value.view.to(selection.topLeft)
   var p2 = _graph.value.view.to(selection.bottomRight)
-  console.log(selection.topLeft)
-  console.log("SELECTION", p1, p2)
   selected.value = parentNode.value.nodes.filter(n =>
     _.some([
       [n.state.x, n.state.y],
@@ -160,10 +161,52 @@ watch(() => _graph.value.view.selection, () => {
       [n.state.x, n.state.y + n._state.height],
       [n.state.x + n._state.width, n.state.y + n._state.height]
     ], p => {
-      console.log(p[0], p[1])
       return p[0] > p1.x && p[0] < p2.x && p[1] > p1.y && p[1] < p2.y
     })
   )
+})
+
+// Updating port positions
+const findAttribute = (n, attr) => {
+  while(n) {
+    try {
+      if(n.getAttribute(attr)) return n.getAttribute(attr)
+    } catch {}
+    n = n.parentNode
+  }
+  return null
+}
+const _view = computed(() => _graph.value.view)
+var last = {}
+watch(_graph.value, async (val) => {
+  var state = _.cloneDeep({
+    view: _graph.value.view,
+    nodeState: parentNode.value.nodes.map(n => n.state)
+  })
+  if (_.isEqual(last, state)) return
+
+  await nextTick()
+  var el = document.querySelectorAll('[data-port-type]')
+  var c = {}
+  el.forEach(e => {
+    var portClass = findAttribute(e, "data-port-class")
+    var nodeId = findAttribute(e, "data-node-id")
+    var portType = findAttribute(e, "data-port-type")
+    var paramName = findAttribute(e, "data-param-name")
+    var condition = findAttribute(e, "data-port-condition")
+
+    e = e.getBoundingClientRect()
+
+    var portId = `port-${nodeId}-${portType}`
+    if (portClass) portId += `-${portClass}`
+    if (paramName) portId += `-${paramName}`
+    if (portClass == "condition") portId += `-${condition ? 'true' : 'false'}`
+
+    var to = _graph.value.view.to({x: e.x + e.width/2, y: e.y + e.height / 2})
+    c[portId] = to
+  })
+  last = state
+  _graph.value._connectors = c
 })
 
 // Transform

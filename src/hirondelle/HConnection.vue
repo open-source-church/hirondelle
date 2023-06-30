@@ -53,37 +53,89 @@ const addPos = (pos1, pos2) => {
   else return null
 }
 
+const getPortId = (node, type, portClass, param=null, condition=null) => {
+  var id = `port-${node.id}-${type}`
+  if (portClass) id += `-${portClass}`
+  if (param) id += `-${param}`
+  if (condition) id += `-${condition}`
+  return id
+}
+
 const d = computed(() => {
   var cPosFrom = props.connection.from._state
   var cPosTo = props.connection.to._state
   var posFrom = props.connection.from.state
   var posTo = props.connection.to.state
   var type = props.connection.type
+  var c = props.connection
 
-  var n1 = posFrom
-  var n2 = posTo
+  var n1
+  var n2
 
   if (type != "temporary") {
-    n1 = addPos(posFrom, { x: 300, y: 25})
-    n2 = addPos(posTo, { x: 0, y: 25})
-  }
+    // n1 = addPos(posFrom, { x: 300, y: 25})
+    // n2 = addPos(posTo, { x: 0, y: 25})
 
-  if (type == "main") {
-    n1 = addPos(posFrom, cPosFrom?.main_output) || n1
-    n2 = addPos(posTo, cPosTo?.main_input) || n2
+    if (c.from.type.id == "group" && c.to.parent != c.from.parent) {
+      var fromId = getPortId(c.from, "output", "group")
+      n1 = c.graph._connectors[fromId] || {x: 0, y: 0}
+    }
+    if (c.to.type.id == "group" && c.to.parent != c.from.parent) {
+      var toId = getPortId(c.to, "input", "group")
+      n2 = c.graph._connectors[toId] || {x: 0, y: 0}
+    }
+    if (!n1) {
+      var idFrom = getPortId(c.from, "output", c.type, c.output, c.condition)
+      n1 = c.graph._connectors[idFrom]
+      if(!n1) {
+        // Connect to main
+        var idFrom = getPortId(c.from, "output", "main")
+        n1 = c.graph._connectors[idFrom]
+      }
+    }
+    if (!n2) {
+      var idTo = getPortId(c.to, "input", c.type == "condition" ? "main" : c.type, c.input)
+      n2 = c.graph._connectors[idTo]
+      if(!n2) {
+        // Connect to main
+        var idTo = getPortId(c.to, "input", "main")
+        n2 = c.graph._connectors[idTo]
+      }
+    }
+  } else {
+    var deltaY = 85 / c.graph.view.scaling // hack, dirty
+    n1 = { x: posFrom.x, y: posFrom.y + deltaY}
+    n2 = { x: posTo.x, y: posTo.y + deltaY}
   }
+  n1 = n1 || {x: posFrom.x + 300, y: posFrom.y + 25}
+  n2 = n2 || {x: posTo.x, y: posTo.y + 25}
 
-  if (type == "param")
-    n1 = addPos(posFrom, cPosFrom?.output[props.connection.output]) || n1
-  if (type == "param")
-    n2 = addPos(posTo, cPosTo?.input[props.connection.input]) || n2
+  // if (type == "main") {
+  //   n1 = addPos(posFrom, cPosFrom?.main_output) || n1
+  //   n2 = addPos(posTo, cPosTo?.main_input) || n2
+  // }
+  // if (type == "param")
+  //   n1 = addPos(posFrom, cPosFrom?.output[props.connection.output]) || n1
+  // if (type == "param")
+  //   n2 = addPos(posTo, cPosTo?.input[props.connection.input]) || n2
 
-  if (type == "condition" && props.connection.condition) {
-    n1 = addPos(posFrom, cPosFrom?.condition_true) || n1
-  }
-  if (type == "condition" && !props.connection.condition) {
-    n1 = addPos(posFrom, cPosFrom?.condition_false) || n1
-  }
+  // if (type == "condition" && props.connection.condition) {
+  //   n1 = addPos(posFrom, cPosFrom?.condition_true) || n1
+  // }
+  // if (type == "condition" && !props.connection.condition) {
+  //   n1 = addPos(posFrom, cPosFrom?.condition_false) || n1
+  // }
+
+  // if (c.from.type.id == "group" && c.to.parent != c.from.parent) {
+  //   var fromId = getPortId(c.from, "output", "group")
+  //   n1 = c.graph._connectors[fromId] || {x: 0, y: 0}
+  // }
+  // if (c.to.type.id == "group" && c.to.parent != c.from.parent) {
+  //   var toId = getPortId(c.to, "input", "group")
+  //   n2 = c.graph._connectors[toId] || {x: 0, y: 0}
+  // }
+
+
 
   if (false)
     return `M ${n1.x} ${n1.y} L ${n2.x} ${n2.y}`;

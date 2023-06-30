@@ -29,7 +29,7 @@
     <HConnector v-if="node.type.accepts_input" port-type="input" port-class="main" :node="node" :id="`input-${node.id}`"/>
     <HConnector v-if="node.type.accepts_output" port-type="output" port-class="main" :node="node" :id="`output-${node.id}`" />
     <!-- Group -->
-    <q-card-section v-if="node.type.id == 'group' && (open)">
+    <q-card-section v-if="node.type.id == 'group' && node.state.open">
       <q-input dense filled v-model="node.title" label="Title"/>
     </q-card-section>
     <!-- Outputs -->
@@ -229,30 +229,30 @@ const getBoundingRect = (id) => {
 const updatePortPositions = (val) => {
 
   node.value._state = {
-    main_input: {},
-    main_output: {},
-    input: {},
-    output: {},
+    // main_input: {},
+    // main_output: {},
+    // input: {},
+    // output: {},
     width: val.width,
     height: val.height
   }
 
-  // Main
-  node.value._state.main_input = getBoundingRect(`input-${node.value.id}`)
-  node.value._state.main_output = getBoundingRect(`output-${node.value.id}`)
+  // // Main
+  // node.value._state.main_input = getBoundingRect(`input-${node.value.id}`)
+  // node.value._state.main_output = getBoundingRect(`output-${node.value.id}`)
 
-  // Condition
-  node.value._state.condition_true = getBoundingRect(`condition-${node.value.id}-true`)
-  node.value._state.condition_false = getBoundingRect(`condition-${node.value.id}-false`)
+  // // Condition
+  // node.value._state.condition_true = getBoundingRect(`condition-${node.value.id}-true`)
+  // node.value._state.condition_false = getBoundingRect(`condition-${node.value.id}-false`)
 
-  // Input
-  _.forEach(node.value.type.inputs, (input, name) => {
-    node.value._state.input[name] = getBoundingRect(`input-${node.value.id}-${name}`)
-  })
-  // Output
-  _.forEach(node.value.type.outputs, (input, name) => {
-    node.value._state.output[name] = getBoundingRect(`output-${node.value.id}-${name}`)
-  })
+  // // Input
+  // _.forEach(node.value.type.inputs, (input, name) => {
+  //   node.value._state.input[name] = getBoundingRect(`input-${node.value.id}-${name}`)
+  // })
+  // // Output
+  // _.forEach(node.value.type.outputs, (input, name) => {
+  //   node.value._state.output[name] = getBoundingRect(`output-${node.value.id}-${name}`)
+  // })
 }
 
 onMounted(() => {

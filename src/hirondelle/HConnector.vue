@@ -2,8 +2,12 @@
   <q-btn flat round dense icon="circle" :class="opt.classes"
       :color="opt.color" :size="opt.size" :style="opt.style"
       :data-port-type="portType" :data-port-class="portClass" :data-param-name="param"
+      :data-port-condition="condition" :data-node-id="node.id"
       @touchstart.stop
-      @mousedown.stop="triggerConnection" />
+      @mousedown.stop="triggerConnection"
+      :id="portId"
+  >
+  </q-btn>
 </template>
 
 <script setup>
@@ -20,6 +24,13 @@ const props = defineProps({
 
 const node = computed(() => props.node)
 
+const portId = computed(() => {
+  var id = `port-${props.node.id}-${props.portType}-${props.portClass}`
+  if (props.param) id += `-${props.param}`
+  if (props.condition) id += `-${props.condition}`
+  return id
+})
+
 const opt = computed(() => {
   var opt = {}
   if (props.portType == "input" && props.portClass == "main") {
@@ -33,6 +44,12 @@ const opt = computed(() => {
     opt.style = "right: -11px; top: 12px;"
     opt.color = "green"
     opt.size = "sm"
+  }
+  if (props.portType == "input" && props.portClass == "group") {
+    opt.color = "green"
+  }
+  else if (props.portType == "output" && props.portClass == "group") {
+    opt.color = "green"
   }
   else if (props.portType == "input" && props.portClass == "param") {
     opt.classes = "absolute-top-left"
