@@ -392,8 +392,20 @@ export const useHirondelle = defineStore('hirondelle', () => {
       }
       if (obj.settings) this.settings = obj.settings
     },
+    flatNodes() {
+      var nodes = []
+      const addNodes = (parent) => {
+        nodes = nodes.concat(parent.nodes)
+        parent.nodes.forEach(n => addNodes(n))
+      }
+      addNodes(this)
+      return nodes
+    },
     async startNodeType(typeId, outputValues) {
-      var nodes = this.nodes.filter(n => n.type.id == typeId)
+      var nodes = this.flatNodes()
+      console.log("NOEUDS:", nodes.length, this.nodes.length)
+      nodes = nodes.filter(n => n.type.id == typeId)
+      // var nodes = this.nodes.filter(n => n.type.id == typeId)
       nodes.forEach(n => {
         Object.assign(n.values.output, outputValues)
       })
@@ -401,7 +413,7 @@ export const useHirondelle = defineStore('hirondelle', () => {
       nodes.forEach(n => n.start())
     },
     updateValuesFoNodeTypes(typeId) {
-      var nodes = this.nodes.filter(n => n.type.id == typeId)
+      var nodes = this.flatNodes().filter(n => n.type.id == typeId)
       nodes.forEach(n => n.updateValues())
     }
   })
