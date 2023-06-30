@@ -200,7 +200,7 @@ watch(_graph.value, async (val) => {
     var portId = `port-${nodeId}-${portType}`
     if (portClass) portId += `-${portClass}`
     if (paramName) portId += `-${paramName}`
-    if (portClass == "condition") portId += `-${condition ? 'true' : 'false'}`
+    if (portClass == "condition") portId += `-${condition}`
 
     var to = _graph.value.view.to({x: e.x + e.width/2, y: e.y + e.height / 2})
     c[portId] = to

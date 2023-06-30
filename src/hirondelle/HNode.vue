@@ -33,13 +33,13 @@
       <q-input dense filled v-model="node.title" label="Title"/>
     </q-card-section>
     <!-- Outputs -->
-    <q-card-section v-if="(node.state.open) && _.size(node.type.outputs)"
+    <q-card-section v-if="(node.state.open) && _.size(outputs)"
       class="q-pr-none q-pl-xl q-py-xs">
       <div class="text-caption">
         Last values:
       </div>
       <q-list>
-        <q-item v-for="(output, name) in node.type.outputs" :key="name">
+        <q-item v-for="(output, name) in outputs" :key="name">
           <q-item-section>
             <!-- <q-select v-if="input.options" :label="name" dense filled clearable v-model="node.values.output[name]" :options="input.options" />
             <q-toggle v-else-if="input.type == 'boolean'" :label="name" dense v-model="node.values.output[name]"/>
@@ -200,6 +200,11 @@ const inputs = computed(() => {
   var inputs = _.cloneDeep(props.node.type.inputs)
   _.assign(inputs, props.node.inputs)
   return inputs
+})
+const outputs = computed(() => {
+  var outputs = _.cloneDeep(props.node.type.outputs)
+  _.assign(outputs, props.node.outputs)
+  return outputs
 })
 
 watch(source, () => {

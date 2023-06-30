@@ -134,7 +134,7 @@ export const useBaseActions = defineStore('baseActions', () => {
       text: { type: "textarea" },
     },
     compute (params) {
-      var t = params.input.template
+      var t = params.input.template || ""
       _.forEach(params.input.vars, (val, param) => t = t.replaceAll(`[${param}]`, val))
       params.output.text = t
     },

@@ -105,8 +105,9 @@ const startConnection = ({type="main", param=null, condition=null, event}) => {
 
   addEventListener("mouseup", (event) => {
     var t = event.target
-    var port_type = findAttribute(t, "data-port-type")
-    var port_class = findAttribute(t, "data-port-class")
+    var portType = findAttribute(t, "data-port-type")
+    var portClass = findAttribute(t, "data-port-class")
+    var paramName = findAttribute(t, "data-param-name")
     var nodeId = findAttribute(t, "data-node-id")
     if (nodeId && nodeId != node.value.id) {
       if (type == "main") { // main connection
@@ -114,14 +115,24 @@ const startConnection = ({type="main", param=null, condition=null, event}) => {
         node.value.graph.addConnection({from: node.value.id, to: nodeId})
       }
       else if (type == "param" ) {
-        var param_name = findAttribute(t, "data-param-name")
         node.value.graph.addConnection({type: type,
           from: node.value.id, output: param,
-          to:nodeId, input: param_name
+          to:nodeId, input: paramName
         })
       }
       else if (type == "condition" ) {
         node.value.graph.addConnection({from: node.value.id, to: nodeId, type: type, condition: condition})
+        // node.value.graph.addParamConnection(node.value.id, param, nodeId, param_name)
+      }
+      else if (type == "group" ) {
+        console.log(type, portType, portClass, paramName)
+        if (portClass == "main")
+          node.value.graph.addConnection({from: node.value.id, to: nodeId})
+        else if (portClass == "param")
+          node.value.graph.addConnection({type: "param",
+            from: node.value.id, output: paramName,
+            to:nodeId, input: paramName
+          })
         // node.value.graph.addParamConnection(node.value.id, param, nodeId, param_name)
       }
     }
