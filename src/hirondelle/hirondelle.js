@@ -279,11 +279,11 @@ export const useHirondelle = defineStore('hirondelle', () => {
           type: n.type.id,
           id: n.id,
           state: n.state,
-          values: n.values,
-          options: n.options,
-          title: n.title
         }
-        if (n.nodes) node.nodes = this.saveNodes(n)
+        if (n.values) node.values = n.values
+        if (!_.isEmpty(n.options)) node.options = n.options
+        if (n.title) node.title = n.title
+        if (!_.isEmpty(n.nodes)) node.nodes = this.saveNodes(n)
         return node
       })
     },
@@ -296,7 +296,7 @@ export const useHirondelle = defineStore('hirondelle', () => {
         c.to = c.to.id
         delete c.graph
       })
-      obj.connections = connections
+      obj.connections = connections.map(c => _.pickBy(c))
       obj.view = { scaling: this.view.scaling, panning: this.view.panning }
       obj.settings = this.settings
       return obj
@@ -305,6 +305,7 @@ export const useHirondelle = defineStore('hirondelle', () => {
       console.log("LOADING", obj)
       if (obj.nodes)
         obj.nodes.forEach(n => this.addNode(_.cloneDeep(n)))
+      console.log(obj.connections, typeof(obj.connections))
       if (obj.connections)
         obj.connections.forEach(c => this.addConnection(c))
       if (obj.view) {

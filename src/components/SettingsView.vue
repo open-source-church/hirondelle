@@ -46,9 +46,9 @@ const export_opt = ref({
 const exportSettings = () => {
   var obj = {}
   console.log(export_opt.value)
-  if (export_opt.value.obs) obj.obs = S.get("obs")
-  if (export_opt.value.graph) obj.graph = S.get("graph")
-  if (export_opt.value.twitch) obj.twitch = S.get("twitch")
+  if (export_opt.value.obs) obj.obs = S.get("obs") || {}
+  if (export_opt.value.graph) obj.graph = S.get("graph") || {}
+  if (export_opt.value.twitch) obj.twitch = S.get("twitch") || {}
 
   obj = _.cloneDeep(obj)
 
