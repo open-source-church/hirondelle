@@ -26,9 +26,33 @@ export const useMovePanZoom = defineStore('movePanZoom', () => {
   var pointersLast = []
   var pointerDistance
   var viewState
+  var selecting = false
+  const isMoving = ref(false)
   const onPointerMove = (event, view) => {
+    if (pointersStart.length) isMoving.value = true
     pointersLast = pointersLast.filter(p => p.pointerId != event.pointerId)
     pointersLast.push(event)
+
+    if (selecting && pointersStart.length == 1) {
+      var left = Math.min(pointersStart[0].pageX, event.pageX)
+      var top = Math.min(pointersStart[0].pageY, event.pageY)
+      var right = Math.max(pointersStart[0].pageX, event.pageX)
+      var bottom = Math.max(pointersStart[0].pageY, event.pageY)
+      var width = Math.abs(pointersStart[0].pageX - event.pageX)
+      var height = Math.abs(pointersStart[0].pageY - event.pageY)
+
+      view.selection = {
+        topLeft: { x: left, y: top },
+        bottomRight: {x: right, y: bottom},
+        width,
+        height
+      }
+      return
+    } else {
+      selecting = false
+      view.selection = {}
+    }
+
     // Mouse or one finger
     if (pointersStart.length == 1) {
       view.panning.x = ~~(viewState.panning.x - (pointersStart[0].pageX - event.pageX) / view.scaling)
@@ -51,15 +75,25 @@ export const useMovePanZoom = defineStore('movePanZoom', () => {
   const distance = (event1, event2) => Math.sqrt((event1.pageX - event2.pageX)**2 + (event1.pageY - event2.pageY)**2 )
 
   const onPointerDown = (event, view) => {
+    if (event.ctrlKey) selecting = true
     pointersStart.push(event)
     pointersLast.push(event)
     viewState = _.cloneDeep(view)
     if (pointersLast.length == 2) pointerDistance = distance(...pointersLast)
   }
 
-  const onPointerUp = event => {
+  const onPointerUp = (event, view) => {
+    // Clear stored positions
     pointersStart = pointersStart.filter(p => p.pointerId != event.pointerId)
     pointersLast = pointersLast.filter(p => p.pointerId != event.pointerId)
+    // Clear selection
+    selecting = false
+    view.selection = {}
+    // Return if mouse has moved
+    var m = isMoving.value
+    console.log(m)
+    isMoving.value = false
+    return m
   }
 
   // Moving objects
@@ -76,6 +110,6 @@ export const useMovePanZoom = defineStore('movePanZoom', () => {
 
   return {
     mouseWheel, onPointerMove, onPointerDown, onPointerUp,
-    move, 
+    move, isMoving
   }
 })

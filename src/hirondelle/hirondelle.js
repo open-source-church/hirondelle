@@ -247,6 +247,9 @@ export const useHirondelle = defineStore('hirondelle', () => {
     removeTemporaryConnection() {
       this.connections = this.connections.filter(c => c.type != "temporary")
     },
+    removeNodes(nodes) {
+      nodes.forEach(n => this.removeNode(n))
+    },
     removeNode(node) {
       node.nodes.forEach(n => this.removeNode(n))
       var parent = node.parent || this

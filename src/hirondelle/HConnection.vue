@@ -54,8 +54,8 @@ const addPos = (pos1, pos2) => {
 }
 
 const d = computed(() => {
-  var cPosFrom = props.connection.from.connectors_state
-  var cPosTo = props.connection.to.connectors_state
+  var cPosFrom = props.connection.from._state
+  var cPosTo = props.connection.to._state
   var posFrom = props.connection.from.state
   var posTo = props.connection.to.state
   var type = props.connection.type

@@ -1,19 +1,21 @@
 <template>
   <div
-    class="h-editor"
-    @wheel.self="e => PZ.mouseWheel(e, _graph.view)"
-    @pointermove.self="e => PZ.onPointerMove(e, _graph.view)"
-    @pointerdown.self="e => PZ.onPointerDown(e, _graph.view)"
-    @pointerup.self="PZ.onPointerUp"
-    @click="selected = []"
+    class="h-editor" tabindex="0"
+    @wheel.self.prevent="e => PZ.mouseWheel(e, _graph.view)"
+    @mousemove="e => PZ.onPointerMove(e, _graph.view)"
+    @mousedown.self="e => PZ.onPointerDown(e, _graph.view)"
+    @mouseup="e => !PZ.onPointerUp(e, _graph.view) && !e.ctrlKey ? selected = [] : ''"
+    @click.right="selected = []"
+    @keyup.self.delete="deleteSelectedNodes"
   >
     <div class="absolute-top-left">
       <q-breadcrumbs>
         <q-breadcrumbs-el v-for="b in breadcrumbs" :key="b.id" :label="b.type?.title || 'Root'" @click="setParent(b)"/>
       </q-breadcrumbs>
     </div>
-    <div class="absolute-left items-center row">
-    </div>
+    <!-- Background -->
+    <div class="h-background no-pointer-events" :style="styles"></div>
+    <!-- Group connectors -->
     <div class="absolute-left items-center row rotate-270" v-if="parentNode.parent">
       <q-btn flat dense icon="circle" color="red" />
       <span class="absolute q-ml-lg text-grey no-pointer-events	" style="min-width: 200px;" > Group Input</span>
@@ -22,21 +24,25 @@
       <q-btn flat dense  icon="circle" color="red" />
       <span class="absolute q-ml-lg text-grey no-pointer-events	" style="min-width: 200px;" > Group Output</span>
     </div>
-    <div class="h-background no-pointer-events" :style="styles"
-    ></div>
     <!-- Nodes -->
-    <div class="h-node-container" :style="transformStyle">
+    <div class="h-node-container h-prevent-select" :style="transformStyle">
       <HNode v-for="(n, i) in parentNode.nodes" :key="'node'+i" :node="n"
         v-touch-pan.prevent.mouse="e => PZ.move(e, selected.includes(n) ? selected : [n], _graph.view)"
         :class="selected.includes(n) ? 'selected' : ''"
         @click.ctrl.stop="selected = _.xor(selected, [n])"
         @click.exact.stop="selected = [n]"
-        @edit="setParent($event)" />
+        @edit="setParent($event)"
+        draggable="false"
+         />
     </div>
     <!-- Connections -->
     <svg class="h-connections-container" :style="transformStyle">
       <HConnection v-for="(c, i) in connections_in_group" :key="'connection'+i" :connection="c" />
     </svg>
+    <!-- Selection -->
+    <div class="h-selection" >
+      <div class="h-selection-area" :style="selectionStyle"></div>
+    </div>
     <!-- Context menu -->
     <q-menu
         touch-position
@@ -68,6 +74,11 @@ const _graph = computed(() => props.graph)
 
 const selected = ref([])
 watch(selected, (val) => emit("selected", val))
+
+const deleteSelectedNodes = () => {
+  _graph.value.removeNodes(selected.value)
+  selected.value = []
+}
 
 const parentNode = ref(props.graph)
 const setParent = (parent) => {
@@ -120,6 +131,41 @@ const breadcrumbs = computed(() => {
   return b.reverse()
 })
 
+// Selection
+
+const selectionStyle = computed(() => {
+  if (_graph.value.view.selection?.topLeft) {
+    var selection = _graph.value.view.selection
+    return {
+    left: selection.topLeft.x + "px",
+    top: selection.topLeft.y + "px",
+    width: selection.width + "px",
+    height: selection.height + "px",
+    }
+  }
+  return {}
+})
+watch(() => _graph.value.view.selection, () => {
+  if (!_graph.value.view.selection?.topLeft) return
+  var selection = _graph.value.view.selection
+  var view = _graph.value.view
+  var p1 = _graph.value.view.to(selection.topLeft)
+  var p2 = _graph.value.view.to(selection.bottomRight)
+  console.log(selection.topLeft)
+  console.log("SELECTION", p1, p2)
+  selected.value = parentNode.value.nodes.filter(n =>
+    _.some([
+      [n.state.x, n.state.y],
+      [n.state.x + n._state.width, n.state.y],
+      [n.state.x, n.state.y + n._state.height],
+      [n.state.x + n._state.width, n.state.y + n._state.height]
+    ], p => {
+      console.log(p[0], p[1])
+      return p[0] > p1.x && p[0] < p2.x && p[1] > p1.y && p[1] < p2.y
+    })
+  )
+})
+
 // Transform
 
 const transformStyle = computed(() => ({
@@ -146,10 +192,18 @@ const scaling = computed(() => _graph.value.view.scaling)
 
 const color = "#222222"
 const lineColor = "#333333"
+const isMoving = PZ.isMoving
 
 </script>
 
 <style lang="scss">
+
+.h-prevent-select {
+  user-select: none;
+  -moz-user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+}
 
 .h-editor {
   width: 100%;
@@ -168,10 +222,11 @@ const lineColor = "#333333"
     background-repeat: repeat;
     width: 100%;
     height: 100%;
+    z-index: -1;
   }
 
   .h-node-container {
-    position: absolute;
+    position: fixed;
     top: 0;
     left: 0;
     z-index: 1;
@@ -182,7 +237,7 @@ const lineColor = "#333333"
   }
 
   .h-connections-container {
-    position: absolute;
+    position: fixed;
     top: 0;
     left: 0;
     overflow: visible;
@@ -190,6 +245,17 @@ const lineColor = "#333333"
 
   .h-node {
     position: fixed;
+  }
+
+  .h-selection {
+    position: fixed;
+    top: 0;
+    left: 0;
+    .h-selection-area {
+      position: fixed;
+      border: 1px solid #00ffdd;
+      background-color: #00ffdd10;
+    }
   }
 }
 

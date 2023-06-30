@@ -1,6 +1,6 @@
 <template>
   <q-page class="col column no-wrap column no-wrap">
-    <q-tabs inline-label class="bg-primary text-black" v-model="tab">
+    <q-tabs inline-label class="bg-primary text-black" v-model="tab" style="z-index: 10">
       <q-tab name="obs" label="OBS" icon="tv">
         <q-badge floating :color="obs.connected ? 'green' : 'red'" />
       </q-tab>

@@ -226,30 +226,32 @@ const getBoundingRect = (id) => {
   }
 }
 
-const updatePortPositions = () => {
+const updatePortPositions = (val) => {
 
-  node.value.connectors_state = {
+  node.value._state = {
     main_input: {},
     main_output: {},
     input: {},
-    output: {}
+    output: {},
+    width: val.width,
+    height: val.height
   }
 
   // Main
-  node.value.connectors_state.main_input = getBoundingRect(`input-${node.value.id}`)
-  node.value.connectors_state.main_output = getBoundingRect(`output-${node.value.id}`)
+  node.value._state.main_input = getBoundingRect(`input-${node.value.id}`)
+  node.value._state.main_output = getBoundingRect(`output-${node.value.id}`)
 
   // Condition
-  node.value.connectors_state.condition_true = getBoundingRect(`condition-${node.value.id}-true`)
-  node.value.connectors_state.condition_false = getBoundingRect(`condition-${node.value.id}-false`)
+  node.value._state.condition_true = getBoundingRect(`condition-${node.value.id}-true`)
+  node.value._state.condition_false = getBoundingRect(`condition-${node.value.id}-false`)
 
   // Input
   _.forEach(node.value.type.inputs, (input, name) => {
-    node.value.connectors_state.input[name] = getBoundingRect(`input-${node.value.id}-${name}`)
+    node.value._state.input[name] = getBoundingRect(`input-${node.value.id}-${name}`)
   })
   // Output
   _.forEach(node.value.type.outputs, (input, name) => {
-    node.value.connectors_state.output[name] = getBoundingRect(`output-${node.value.id}-${name}`)
+    node.value._state.output[name] = getBoundingRect(`output-${node.value.id}-${name}`)
   })
 }
 
