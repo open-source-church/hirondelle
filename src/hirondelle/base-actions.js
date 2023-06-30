@@ -59,7 +59,8 @@ export const useBaseActions = defineStore('baseActions', () => {
         clearInterval(node._interval)
       if (opt.input.active)
         node._interval = setInterval(node.start, opt.input.time)
-    }
+    },
+    accepts_input: false
   })
 
   // Condition
@@ -110,7 +111,7 @@ export const useBaseActions = defineStore('baseActions', () => {
         }
         return false
       })
-      console.log(test)
+      // opt.output.test = test
       // On appelle tous les noeuds connectés selon le résultat
       var targets = node.graph.targetsCondition(node.id)
       targets[test].forEach(n => n.start())
@@ -173,6 +174,42 @@ export const useBaseActions = defineStore('baseActions', () => {
       }
       if (params.input.operation == "div") {
         params.output.result = params.input.val1 / params.input.val2
+      }
+    },
+  })
+
+  // Logic
+  H.registerNodeType({
+    id: `BA:LogicOperations`,
+    title: "Logic",
+    type: "param",
+    category: "Base",
+    active: true,
+    inputs: {
+      operation: { type: "string", default: "and", options: [
+        {id: "and", text: "Et"},
+        {id: "or", text: "Ou"},
+        {id: "eq", text: "Égal"},
+        {id: "dif", text: "Different"}
+      ]},
+      values: { type: "object" },
+    },
+    outputs: {
+      result: { type: "boolean" },
+    },
+    compute (params) {
+      console.log("LOGIC", params)
+      if (params.input.operation == "and") {
+        params.output.result = _.every(params.input.values)
+      }
+      if (params.input.operation == "or") {
+        params.output.result = _.some(params.input.values)
+      }
+      if (params.input.operation == "eq") {
+        params.output.result = _.uniq(Object.values(params.input.values)).length == 1
+      }
+      if (params.input.operation == "dif") {
+        params.output.result = _.uniq(Object.values(params.input.values)).length == Object.values(params.input.values).length
       }
     },
   })

@@ -11,7 +11,9 @@
           : 'bg-grey-8 text-white'}`">
       <q-btn flat dense class="col-auto q-pr-xs" :icon="node.state.open ? 'expand_more' : 'expand_less'" size="sm"
         @click="node.state.open = !node.state.open" />
-      <q-icon v-if="!node.type.active" class="col-auto q-pr-xs" name="warning" size="md" color="negative" />
+      <q-icon v-if="!node.type.active" class="col-auto q-pr-xs" name="warning" size="md" color="negative" >
+        <q-tooltip>'{{ node.type.category }}' n'est pas connecté</q-tooltip>
+      </q-icon>
       <div class="col">
         {{ node.title || node.type.title }}
         <q-badge v-if="node.nodes.length" class="bg-accent">{{ node.nodes.length }}</q-badge>
@@ -49,10 +51,10 @@
       </q-list>
     </q-card-section>
     <!-- Inputs -->
-    <q-card-section v-if="(node.state.open) &&_.size(node.type.inputs)"
+    <q-card-section v-if="(node.state.open) &&_.size(inputs)"
       class="q-pl-none q-pr-xl q-pt-none q-pb-xs" >
       <q-list>
-        <q-item v-for="(input, name) in node.type.inputs" :key="name">
+        <q-item v-for="(input, name) in inputs" :key="name">
           <q-item-section>
             <HParam :param="input" :name="name" v-model="node.values.input[name]" :node="node" />
             <HConnector port-type="input" port-class="param" :node="node" :param="name" :id="`input-${node.id}-${name}`"/>
@@ -193,6 +195,12 @@ const node = computed(() => props.node)
 
 const sources = computed(() => node.value.graph.sources(node.value.id))
 const source = computed(() => sources.value.length == 1 ? node.value.graph.sources(node.value.id)[0] : null)
+
+const inputs = computed(() => {
+  var inputs = _.cloneDeep(props.node.type.inputs)
+  _.assign(inputs, props.node.inputs)
+  return inputs
+})
 
 watch(source, () => {
   if (node.value.type.id == 'BA:Condition' && source.value) {

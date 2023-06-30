@@ -41,8 +41,8 @@ export const useHirondelle = defineStore('hirondelle', () => {
     opt.accepts_output = opt.accepts_output != false
     if (!opt.title) opt.title = opt.id
     // On map les interfaces
-    if (!opt.inputs) opt.inputs = []
-    if (!opt.outputs) opt.outputs = []
+    if (!opt.inputs) opt.inputs = {}
+    if (!opt.outputs) opt.outputs = {}
     // var both = ["inputs", "outputs"]
     // both.forEach(type =>
     //   Object.keys(opt[type]).forEach(k => {
@@ -140,18 +140,25 @@ export const useHirondelle = defineStore('hirondelle', () => {
         running: ref(false),
         nodes: [],
         options: newNode.options || {}, // to store things, used for condition now
+        inputs: ref({}), // Dynamic inputs
+        outputs: ref({}), // Dynamic outpus
         inputOptions: ref({}), // to update input types conditions for specific nodes
         title: newNode.title,
         targets: () => this.targets(id),
       }
       node.setInputOptions = (param, val) => node.inputOptions.value[param] = val
+      // Node specific inputs (param)
+      node.setInputs = (param, input) => {
+        node.inputs.value[param] = input
+        if (input.default && !node.values.value.input[param]) node.values.value.input[param] == input.default
+      }
       node.start = async function () {
         console.log("STARTING", node.type.title, node.type.category)
         console.log("With params:", node.values.value)
         node.running.value = true
 
         // Main action
-        if (node.type.action) await node.type.action(node.values.value, node)
+        if (node.type.action && node.type.active) await node.type.action(node.values.value, node)
         node.running.value = false
         console.log("And done.")
         node.targets().forEach(c => c.start())
@@ -189,9 +196,19 @@ export const useHirondelle = defineStore('hirondelle', () => {
       // Warning: si plusieurs paramètres connectés sur la même valeurs, ça prend le dernier
       connections.forEach(c => {
         if (c.to.type.inputs[c.input].type == 'object')
-          c.to.values.input[c.input][c.output] = val.output[c.output]
+        this.updateObjectParam(c.to, c.input)
         else
           c.to.values.input[c.input] = val.output[c.output]
+      })
+    },
+    updateObjectParam(node, input) {
+      var connections = this.connections.filter(c => c.to.id == node.id && c.type == "param" && c.input == input)
+      var indexes = {}
+      node.values.input[input] = {}
+      connections.forEach(c => {
+        var i = indexes[c.output] || ""
+        c.to.values.input[c.input][c.output+i] = c.from.values.output[c.output]
+        indexes[c.output] = (indexes[c.output] || 1) + 1
       })
     },
     addConnection({from, to, type="main", input=null, output=null, condition=null}) {

@@ -464,14 +464,16 @@ export const useOBS = defineStore('obs', () => {
     active: connected,
     inputs: {
       sceneName: { type: "string", options: scene_names },
-      sceneItemId: { type: "number", optionLabel: "name", optionValue: "id" }
+      // sceneItemId: { type: "number", optionLabel: "name", optionValue: "id" }
     },
     outputs: {
       rect: { type: "rect" },
     },
     async compute (params, node) {
-      console.log("GETTHING", params)
+      console.log("GET THING", params)
+      if (!connected.value) return
       var sceneItems = await getSceneItemRecs(params.input.sceneName)
+      node.setInputs("sceneItemId", { type: "number", options: sceneItems, optionLabel: "name", optionValue: "id" })
       node.setInputOptions("sceneItemId", sceneItems)
       var rect = sceneItems.find(i => i.id == params.input.sceneItemId)?.rect
       if (rect && !_.isEqual(rect, params.output.rect)) params.output.rect = rect
