@@ -1,14 +1,14 @@
 <template>
   <!-- Boolean -->
   <template v-if="param.type == 'boolean'">
-    <q-toggle :label="param.description || name" :model-value="modelValue" @update:model-value="update" />
+    <q-toggle :disable="disable" :label="param.description || name" :model-value="modelValue" @update:model-value="update" />
   </template>
   <!-- Color -->
   <template v-else-if="param.type == 'color'">
     <div class="row">
       <q-btn class="col-auto q-px-md" square flat dense :style="`background-color:${modelValue}`" />
       <q-input class="col" square dense filled :model-value="modelValue"
-      @update:model-value="update"
+      @update:model-value="update" :disable="disable"
       >
       <template v-slot:append>
         <q-icon name="colorize" class="cursor-pointer">
@@ -23,13 +23,13 @@
   <!-- Rect -->
   <template v-else-if="param.type == 'rect'">
     <div class="row q-col-gutter-xs">
-      <q-input class="col-6" dense filled type="number" label="left" :model-value="modelValue.x"
+      <q-input :disable="disable" class="col-6" dense filled type="number" label="left" :model-value="modelValue.x"
         @update:model-value="val => update(_.assign(modelValue, {x: val}))" />
-      <q-input class="col-6" dense filled type="number" label="top" :model-value="modelValue.y"
+      <q-input :disable="disable" class="col-6" dense filled type="number" label="top" :model-value="modelValue.y"
         @update:model-value="val => update(_.assign(modelValue, {y: val}))"  />
-      <q-input class="col-6" dense filled type="number" label="width" :model-value="modelValue.width"
+      <q-input :disable="disable" class="col-6" dense filled type="number" label="width" :model-value="modelValue.width"
         @update:model-value="val => update(_.assign(modelValue, {width: val}))"  />
-      <q-input class="col-6" dense filled type="number" label="height" :model-value="modelValue.height"
+      <q-input :disable="disable" class="col-6" dense filled type="number" label="height" :model-value="modelValue.height"
         @update:model-value="val => update(_.assign(modelValue, {height: val}))"  />
     </div>
   </template>
@@ -47,12 +47,12 @@
   <!-- Textarea -->
   <!-- String, Number -->
   <template v-else>
-    <q-select v-if="param.options || node.inputOptions[name]" options-dense
+    <q-select v-if="param.options || node.inputOptions[name]" options-dense :disable="disable"
       :label="name" dense filled clearable :options="param.options || node.inputOptions[name]"
       :option-label="param.optionLabel || 'text'" :option-value="param.optionValue || 'id'" emit-value map-options
       :model-value="modelValue" @update:model-value="update"/>
     <q-input v-else dense filled :label="name" :type="param.type" :autogrow="param.type=='textarea'"
-      :model-value="modelValue" @update:model-value="update" />
+      :model-value="modelValue" @update:model-value="update" :disable="disable"  />
   </template>
 
 </template>
@@ -66,7 +66,8 @@ const props = defineProps({
   param: { type: Object, required: true },
   name: { type: String },
   modelValue: {},
-  node: { type: Object }
+  node: { type: Object },
+  disable: { type: Boolean }
 })
 const emit = defineEmits(["update:modelValue"])
 

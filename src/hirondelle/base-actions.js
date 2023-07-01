@@ -140,6 +140,22 @@ export const useBaseActions = defineStore('baseActions', () => {
     },
   })
 
+  // Text builder
+  H.registerNodeType({
+    id: `BA:Counter`,
+    title: "Couter",
+    type: "action",
+    category: "Base",
+    info: "Augmente sa valeur de 1 chaque fois qu'il est appelé.",
+    active: true,
+    outputs: {
+      count: { type: "number" },
+    },
+    action (params, node) {
+      node.values.value.output.count += 1
+    },
+  })
+
   // Operations
   H.registerNodeType({
     id: `BA:ArithmeticOperation`,
@@ -292,6 +308,11 @@ export const useBaseActions = defineStore('baseActions', () => {
     outputs: {
       boolean: { type: "boolean" },
     },
+    functions: {
+      setTrue: (node) => node.values.value.output.boolean = true,
+      setFalse: (node) => node.values.value.output.boolean = false,
+      toggle: (node) => node.values.value.output.boolean = !node.values.value.output.boolean,
+    }
   })
 
 

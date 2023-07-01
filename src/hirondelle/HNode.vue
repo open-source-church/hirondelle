@@ -35,16 +35,13 @@
     <!-- Outputs -->
     <q-card-section v-if="(node.state.open) && _.size(outputs)"
       class="q-pr-none q-pl-xl q-py-xs">
-      <div class="text-caption">
-        Last values:
-      </div>
       <q-list>
         <q-item v-for="(output, name) in outputs" :key="name">
           <q-item-section>
             <!-- <q-select v-if="input.options" :label="name" dense filled clearable v-model="node.values.output[name]" :options="input.options" />
             <q-toggle v-else-if="input.type == 'boolean'" :label="name" dense v-model="node.values.output[name]"/>
             <q-input v-else dense filled :label="name" v-model="node.values.output[name]" :type="input.type" /> -->
-            <HParam :param="output" :name="name" v-model="node.values.output[name]" :node="node" />
+            <HParam :disable="true" :param="output" :name="name" v-model="node.values.output[name]" :node="node" />
             <HConnector port-type="output" port-class="param" :node="node" :param="name" :id="`output-${node.id}-${name}`"/>
           </q-item-section>
         </q-item>
