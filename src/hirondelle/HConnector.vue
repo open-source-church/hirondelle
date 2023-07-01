@@ -3,14 +3,16 @@
       :color="opt.color" :size="opt.size" :style="opt.style"
       :data-port-type="portType" :data-port-class="portClass" :data-param-name="paramName"
       :data-port-condition="condition" :data-node-id="node.id" :data-param-type="param.type"
-      :data-function-name="functionName"
+      :data-function-name="functionName" :data-port-open="opt.multiple || !sources.length"
       @touchstart.stop
       @mousedown.stop="triggerConnection"
       :id="portId"
   >
     <q-tooltip v-if="param.type" :class="`bg-${H.paramTypes[param.type]?.color}-2 text-dark`">
       <span>{{ param.type }}</span>
-      <span v-if="param.array"> (Multiple)</span>
+      <span v-if="opt.multiple"> (multiple)</span>
+      <span v-else> (unique)</span>
+      <!-- <span>Connections: {{ sources.length }}</span> -->
       <!-- <span> [{{portId}}]</span> -->
     </q-tooltip>
   </q-btn>
@@ -44,6 +46,15 @@ const portId = computed(() => {
 })
 
 const param = computed(() => props.node[props.portType+"s"]?.[props.paramName] || {})
+
+// La list des connections vers ce connector
+const sources = computed(() => {
+  return props.node.graph.connections.filter(c =>
+  c[props.portType == "input" ? "to" : "from"].id == props.node.id &&
+  c[props.portType] == props.paramName &&
+  c.type == props.portClass &&
+  c.functionName == props.functionName)
+})
 
 const opt = computed(() => {
   var opt = {}
@@ -138,15 +149,17 @@ const startConnection = ({type="main", paramFromName=null, condition=null, event
     var toParamType = findAttribute(event.target, "data-param-type")
     var portClass = findAttribute(event.target, "data-port-class")
     var nodeId = findAttribute(event.target, "data-node-id")
+    var portOpen = findAttribute(event.target, "data-port-open")
 
-    var valid = isValid(portType, portClass, toParamType, nodeId)
+    var valid = isValid(portType, portClass, toParamType, nodeId, portOpen)
     if (valid == undefined) delete temporaryConnection.value.valid
     else temporaryConnection.value.valid = valid
   }
 
-  const isValid = (portType, portClass, toParamType, nodeId) => {
+  const isValid = (portType, portClass, toParamType, nodeId, portOpen) => {
     if (portType && portType != "input") return false
     else if (nodeId && nodeId == node.value.id) return false
+    else if (portClass && portOpen == "false") return false
     else if (type != "condition" && portClass && portClass != type) return false
     else if (type == "condition" && portClass && portClass != "main") return false
     else if (type == "main" && portClass && portClass == type) return true
@@ -165,8 +178,9 @@ const startConnection = ({type="main", paramFromName=null, condition=null, event
     var toParamType = findAttribute(t, "data-param-type")
     var nodeId = findAttribute(t, "data-node-id")
     var functionName = findAttribute(t, "data-function-name")
+    var portOpen = findAttribute(t, "data-port-open")
 
-    if (isValid(portType, portClass, toParamType, nodeId)) {
+    if (isValid(portType, portClass, toParamType, nodeId, portOpen)) {
       // Main
       if (type == "main") { // main connection
 

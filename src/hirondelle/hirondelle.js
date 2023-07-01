@@ -219,7 +219,7 @@ export const useHirondelle = defineStore('hirondelle', () => {
             await node.type.action(node.values.value, node)
         }
         // Subroutine / function
-        else {
+        else if (node.type.functions && functionName in node.type.functions) {
           await node.type.functions[functionName](node)
         }
 
