@@ -1,6 +1,6 @@
 <template>
   <path :class="`Hconnection ${connection.type != 'temporary' ? 'cursor-pointer' : ''}`" :d="d"
-   :stroke="color" fill="none" width="2" stroke-width="3"
+   :stroke="color" fill="none" width="3" :stroke-width="strokeWidth"
    :stroke-dasharray="connection.type == 'temporary' ? '10' : ''"
    @click="remove"/>
 </template>
@@ -19,10 +19,20 @@ const remove = () => {
 }
 
 const color = computed(() => {
+  if (props.connection.valid == true) return "green"
+  if (props.connection.valid == false) return "red"
   if (props.connection.type == 'main') return "green"
   if (props.connection.type == 'condition' && props.connection.condition) return "green"
   if (props.connection.type == 'condition' && !props.connection.condition) return "red"
   if (props.connection.type == 'temporary' ) return "grey"
+  else return "grey"
+})
+
+const strokeWidth = computed(() => {
+  if (props.connection.type == 'main') return 7
+  if (props.connection.type == 'condition') return 7
+  if (props.connection.type == 'temporary') return 7
+  if (props.connection.type == 'param') return 4
   else return "grey"
 })
 
@@ -57,7 +67,7 @@ const getPortId = (node, type, portClass, param=null, condition=null) => {
   var id = `port-${node.id}-${type}`
   if (portClass) id += `-${portClass}`
   if (param) id += `-${param}`
-  if (condition) id += `-${condition}`
+  if (!_.isNil(condition)) id += `-${condition}`
   return id
 }
 
@@ -102,10 +112,10 @@ const d = computed(() => {
         n2 = c.graph._connectors[idTo]
       }
     }
-  } else {
-    var deltaY = 85 / c.graph.view.scaling // hack, dirty
-    n1 = { x: posFrom.x, y: posFrom.y + deltaY}
-    n2 = { x: posTo.x, y: posTo.y + deltaY}
+  }
+  else {
+    n1 = posFrom
+    n2 = posTo
   }
   n1 = n1 || {x: posFrom.x + 300, y: posFrom.y + 25}
   n2 = n2 || {x: posTo.x, y: posTo.y + 25}

@@ -1,6 +1,17 @@
 <template>
+  <!-- Object -->
+  <template v-if="param.array">
+    <div class="">
+      <div class="col-12 caption">{{ name }}</div>
+      <q-chip v-for="(val, param) in _.forEach(modelValue)" :key="val"
+        square class="bg-grey text-dark">
+        {{ param }}
+        <q-tooltip>{{ val }}</q-tooltip>
+      </q-chip>
+    </div>
+  </template>
   <!-- Boolean -->
-  <template v-if="param.type == 'boolean'">
+  <template v-else-if="param.type == 'boolean'">
     <q-toggle :disable="disable" :label="param.description || name" :model-value="modelValue" @update:model-value="update" />
   </template>
   <!-- Color -->
@@ -34,7 +45,7 @@
     </div>
   </template>
   <!-- Object -->
-  <template v-else-if="param.type == 'object'">
+  <template v-else-if="param.type == '*'">
     <div class="">
       <div class="col-12 caption">{{ name }}</div>
       <q-chip v-for="(val, param) in _.forEach(modelValue)" :key="val"
@@ -51,7 +62,7 @@
       :label="name" dense filled clearable :options="param.options || node.inputOptions[name]"
       :option-label="param.optionLabel || 'text'" :option-value="param.optionValue || 'id'" emit-value map-options
       :model-value="modelValue" @update:model-value="update"/>
-    <q-input v-else dense filled :label="name" :type="param.type" :autogrow="param.type=='textarea'"
+    <q-input v-else dense filled :label="name" :type="param.type" :textarea="param.textarea" :autogrow="param.textarea"
       :model-value="modelValue" @update:model-value="update" :disable="disable"  />
   </template>
 

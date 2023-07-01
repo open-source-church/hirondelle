@@ -41,8 +41,8 @@
             <!-- <q-select v-if="input.options" :label="name" dense filled clearable v-model="node.values.output[name]" :options="input.options" />
             <q-toggle v-else-if="input.type == 'boolean'" :label="name" dense v-model="node.values.output[name]"/>
             <q-input v-else dense filled :label="name" v-model="node.values.output[name]" :type="input.type" /> -->
-            <HParam :disable="true" :param="output" :name="name" v-model="node.values.output[name]" :node="node" />
-            <HConnector port-type="output" port-class="param" :node="node" :param="name" :id="`output-${node.id}-${name}`"/>
+            <HParam :disable="false" :param="output" :name="name" v-model="node.values.output[name]" :node="node" />
+            <HConnector port-type="output" port-class="param" :node="node" :param-name="name" :id="`output-${node.id}-${name}`"/>
           </q-item-section>
         </q-item>
       </q-list>
@@ -54,7 +54,7 @@
         <q-item v-for="(input, name) in inputs" :key="name">
           <q-item-section>
             <HParam :param="input" :name="name" v-model="node.values.input[name]" :node="node" />
-            <HConnector port-type="input" port-class="param" :node="node" :param="name" :id="`input-${node.id}-${name}`"/>
+            <HConnector port-type="input" port-class="param" :node="node" :param-name="name" :id="`input-${node.id}-${name}`"/>
           </q-item-section>
         </q-item>
       </q-list>
@@ -194,14 +194,15 @@ const sources = computed(() => node.value.graph.sources(node.value.id))
 const source = computed(() => sources.value.length == 1 ? node.value.graph.sources(node.value.id)[0] : null)
 
 const inputs = computed(() => {
-  var inputs = _.cloneDeep(props.node.type.inputs)
-  _.assign(inputs, props.node.inputs)
-  return inputs
+  // var inputs = _.cloneDeep(props.node.type.inputs)
+  // _.assign(inputs, props.node.inputs)
+  // console.log("INPUTS", props.node.type.inputs, props.node.inputs)
+  return props.node.inputs
 })
 const outputs = computed(() => {
-  var outputs = _.cloneDeep(props.node.type.outputs)
-  _.assign(outputs, props.node.outputs)
-  return outputs
+  // var outputs = _.cloneDeep(props.node.type.outputs)
+  // _.assign(outputs, props.node.outputs)
+  return props.node.outputs
 })
 
 watch(source, () => {

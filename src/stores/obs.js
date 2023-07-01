@@ -419,7 +419,7 @@ export const useOBS = defineStore('obs', () => {
     category: "OBSSource",
     active: peer_connected,
     inputs: {
-      message: { type: "textarea", default: "Coucou." },
+      message: { type: "string", textarea: true, default: "Coucou." },
       duration: { type: "number", default: 5000 },
       random: { type: "boolean", default: false, description: "Random transitions"},
       transition_in: { type: "string", default: "circle:hesitate", options: transitions },

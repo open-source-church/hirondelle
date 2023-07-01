@@ -94,13 +94,13 @@ export const useHirondelle = defineStore('hirondelle', () => {
     }
   })
 
-  const defaultValuesForParamType = {
-    string: "",
-    textarea: "",
-    number: 0,
-    object: {},
-    rect: {x: 0, y: 0, width: 0, height: 0},
-    boolean: false
+  const paramTypes = {
+    string: { default: "", color: "yellow" },
+    number: { default: 0, color: "blue" },
+    object: { default: {}, color: "grey" },
+    rect: { default: {x: 0, y: 0, width: 0, height: 0}, color: "brown" },
+    boolean: { default: false, color: "purple" },
+
   }
 
   /*
@@ -177,8 +177,8 @@ export const useHirondelle = defineStore('hirondelle', () => {
       }
       if(!newNode.type) console.error("Pas trouvé de type pour", newNode)
       var values = newNode.values || {
-        input: _.mapValues(newNode.type.inputs, p => p.default || defaultValuesForParamType[p.type]),
-        output: _.mapValues(newNode.type.outputs, p => p.default || defaultValuesForParamType[p.type]) }
+        input: _.mapValues(newNode.type.inputs, p => p.default || paramTypes[p.type].default),
+        output: _.mapValues(newNode.type.outputs, p => p.default || paramTypes[p.type].default) }
       var id = newNode.id || uid()
       var node = {
         type: newNode.type,
@@ -189,8 +189,8 @@ export const useHirondelle = defineStore('hirondelle', () => {
         running: ref(false),
         nodes: [],
         options: newNode.options || {}, // to store things, used for condition now
-        inputs: ref({}), // Dynamic inputs
-        outputs: ref({}), // Dynamic outpus
+        inputs: ref(_.cloneDeep(newNode.type.inputs) || {}), // Dynamic inputs
+        outputs: ref(_.cloneDeep(newNode.type.outputs) || {}), // Dynamic outpus
         inputOptions: ref({}), // to update input types conditions for specific nodes
         title: newNode.title,
         targets: () => this.targets(id),
@@ -240,19 +240,23 @@ export const useHirondelle = defineStore('hirondelle', () => {
         else
           newNode.nodes.forEach(n => this.addNode(n, node))
       }
-      watch(node.values, (val) => {
-        this.updateValues(node)
-      }, { deep: true, immediate: true })
+      watch(() => node.values.value.input, (val) => {
+        this.onInputValuesChange(node)
+      }, { deep: true })
+      watch(() => node.values.value.output, (val) => {
+        this.propagateOutputValues(node)
+      }, { deep: true })
 
+      // On assigne au parent
       if (!parent) parent = this
       node.parent = parent
       parent.nodes.push(node)
       // On retourne le node
       return node
     },
-    // Update values for node
-    updateValues(node) {
-      console.log("UPDATING VALUES", node.type.title)
+    // When values.input changes
+    onInputValuesChange(node) {
+      console.log("UPDATING VALUES", node.type.title, node.values.value, node.values)
       var val = node.values.value || node.values // FIXME: pourquoi des fois c'est une ref et des fois pas?
       // On compute s'il y a des choses à faire
       // FIXME: les choses se chargent pas dans le bon ordre
@@ -261,12 +265,17 @@ export const useHirondelle = defineStore('hirondelle', () => {
       } catch (err) {
         console.error(err)
       }
+      this.propagateOutputValues(node)
+    },
+    propagateOutputValues(node) {
+      console.log("PROPAGATING VALUES", node.type.title)
+      var val = node.values.value || node.values // FIXME: pourquoi des fois c'est une ref et des fois pas?
       // On update les params connections
       var connections = this.connections.filter(c => c.from.id == node.id && c.type == "param")
       // Warning: si plusieurs paramètres connectés sur la même valeurs, ça prend le dernier
       connections.forEach(c => {
-        if (c.to.type.inputs[c.input]?.type == 'object')
-          this.updateObjectParam(c.to, c.input)
+        if (c.to.type.inputs[c.input]?.array)
+          this.updateArrayInputParam(c.to, c.input)
         else if (c.from.type.id == "group" && c.from.parent != c.to.parent)
           c.to.values.input[c.input] = val.input[c.input]
         else if (c.to.type.id == "group" && c.from.parent != c.to.parent)
@@ -275,10 +284,12 @@ export const useHirondelle = defineStore('hirondelle', () => {
           c.to.values.input[c.input] = val.output[c.output]
       })
     },
-    updateObjectParam(node, input) {
-      var connections = this.connections.filter(c => c.to.id == node.id && c.type == "param" && c.input == input)
+    updateArrayInputParam(node, inputName) {
+      // Si pas array, on ignore
+      if (!node.inputs[inputName].array) return
+      var connections = this.connections.filter(c => c.to.id == node.id && c.type == "param" && c.input == inputName)
       var indexes = {}
-      node.values.input[input] = {}
+      node.values.input[inputName] = {}
       connections.forEach(c => {
         var i = indexes[c.output] || ""
         c.to.values.input[c.input][c.output+i] = c.from.values.output[c.output]
@@ -311,12 +322,17 @@ export const useHirondelle = defineStore('hirondelle', () => {
       this.connections.push(connection)
       // Quand on crée une connections de paramètres, on update direct les values
       if (connection.type == "param") {
-        this.updateValues(from)
+        this.propagateOutputValues(from)
       }
       return connection
     },
     removeConnection(connection) {
+      var from = connection.from
+      var to = connection.to
+      var input = connection.input
       this.connections = this.connections.filter(c => c != connection)
+      this.onInputValuesChange(to)
+      if (input) this.updateArrayInputParam(to, input)
     },
     removeTemporaryConnection() {
       this.connections = this.connections.filter(c => c.type != "temporary")
@@ -374,7 +390,7 @@ export const useHirondelle = defineStore('hirondelle', () => {
         c.to = c.to.id
         delete c.graph
       })
-      obj.connections = connections.map(c => _.pickBy(c))
+      obj.connections = connections.map(c => _.pickBy(c, v => !_.isNil(v)))
       obj.view = { scaling: this.view.scaling, panning: this.view.panning }
       obj.settings = this.settings
       return obj
@@ -386,6 +402,7 @@ export const useHirondelle = defineStore('hirondelle', () => {
       console.log(obj.connections, typeof(obj.connections))
       if (obj.connections)
         obj.connections.forEach(c => this.addConnection(c))
+      console.log(obj.connections)
       if (obj.view) {
         this.view.scaling = obj.view.scaling
         this.view.panning = obj.view.panning
@@ -420,6 +437,6 @@ export const useHirondelle = defineStore('hirondelle', () => {
 
   return {
     registerNodeType, nodeTypes,
-    graph
+    graph, paramTypes
   }
 })

@@ -127,13 +127,14 @@ export const useBaseActions = defineStore('baseActions', () => {
     info: "Connectez des variables, et utilisez les dans la template, par exemple 'Merci [userName]!'",
     active: true,
     inputs: {
-      template: { type: "textarea" },
-      vars: { type: "object" }
+      template: { type: "string", textarea: true },
+      vars: { type: "*", array: true }
     },
     outputs: {
-      text: { type: "textarea" },
+      text: { type: "string", textarea: true },
     },
     compute (params) {
+      console.log("Computing Text Builder")
       var t = params.input.template || ""
       _.forEach(params.input.vars, (val, param) => t = t.replaceAll(`[${param}]`, val))
       params.output.text = t
@@ -208,7 +209,7 @@ export const useBaseActions = defineStore('baseActions', () => {
         {id: "eq", text: "Égal"},
         {id: "dif", text: "Different"}
       ]},
-      values: { type: "object" },
+      values: { type: "boolean", array: true },
     },
     outputs: {
       result: { type: "boolean" },
