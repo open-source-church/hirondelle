@@ -161,6 +161,7 @@ const startConnection = ({type="main", paramFromName=null, event}) => {
     if (portType && portType != "input") return false
     else if (nodeId && nodeId == node.value.id) return false
     else if (portClass && portOpen == "false") return false
+    else if (portClass && (type == "group" || portClass == "group")) return true
     else if (portClass && portClass != type) return false
     else if (type == "main" && portClass && portClass == type) return true
     else if (type == "param" && toParamType) return (paramType == toParamType) || toParamType == "*"
@@ -182,26 +183,36 @@ const startConnection = ({type="main", paramFromName=null, event}) => {
     if (isValid(portType, portClass, toParamType, nodeId, portOpen)) {
       // Main
       if (type == "main") { // main connection
-
         console.log("CONNECTION", node.value.id, nodeId, slot, props.signal)
         node.value.graph.addConnection({from: node.value.id, to: nodeId, slot, signal: props.signal})
       }
-      else if (type == "param" ) {
-        node.value.graph.addConnection({type: type,
-          from: node.value.id, output: paramFromName,
-          to:nodeId, input: paramToName
-        })
-      }
-      else if (type == "group" ) {
+      else if (type == "group") {
         console.log(type, portType, portClass, paramToName)
         if (portClass == "main")
-          node.value.graph.addConnection({from: node.value.id, to: nodeId})
+          node.value.graph.addConnection({from: node.value.id, to: nodeId, slot})
         else if (portClass == "param")
-          node.value.graph.addConnection({type: "param",
-            from: node.value.id, output: paramToName,
+          node.value.graph.addConnection({
+            type: "clone",
+            from: node.value.id,
+            to:nodeId, input: paramToName
+        })
+        // node.value.graph.addParamConnection(node.value.id, param, nodeId, param_name)
+      }
+      else if (type == "param" ) {
+        if (portClass == "group") {
+          node.value.graph.addConnection({
+            type: "clone",
+            from: node.value.id, output: paramFromName,
+            to:nodeId
+          })
+        }
+        else {
+          node.value.graph.addConnection({
+            type: type,
+            from: node.value.id, output: paramFromName,
             to:nodeId, input: paramToName
           })
-        // node.value.graph.addParamConnection(node.value.id, param, nodeId, param_name)
+        }
       }
     }
     removeEventListener("mousemove", updateConnection)

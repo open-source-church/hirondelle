@@ -2,7 +2,8 @@
   <path :class="`Hconnection ${connection.type != 'temporary' ? 'cursor-pointer' : ''}`" :d="d"
    :stroke="color" fill="none" width="3" :stroke-width="strokeWidth"
    :stroke-dasharray="connection.type == 'temporary' ? '10' : ''"
-   @click="remove"/>
+   @click="remove"
+   />
 </template>
 
 <script setup>
@@ -62,13 +63,20 @@ const d = computed(() => {
     // n1 = addPos(posFrom, { x: 300, y: 25})
     // n2 = addPos(posTo, { x: 0, y: 25})
 
-    if (c.from.type.id == "group" && c.to.parent != c.from.parent) {
+    // Groups
+    if (c.from.type.id == "group" && c.to.parent == c.from) {
       var fromId = getPortId(c.from, "output", "group")
       n1 = c.graph._connectors[fromId] || {x: 0, y: 0}
+      var type = c.type == "clone" ? "param" : c.type
+      var idTo = getPortId(c.to, "input", type, c.input, c.slot)
+      n2 = c.graph._connectors[idTo]
     }
-    if (c.to.type.id == "group" && c.to.parent != c.from.parent) {
+    if (c.to.type.id == "group" && c.from.parent == c.to) {
       var toId = getPortId(c.to, "input", "group")
       n2 = c.graph._connectors[toId] || {x: 0, y: 0}
+      var type = c.type == "clone" ? "param" : c.type
+      var idFrom = getPortId(c.from, "output", type, c.output, c.slot)
+      n1 = c.graph._connectors[idFrom]
     }
     if (!n1) {
       var idFrom = getPortId(c.from, "output", c.type, c.output, null, c.signal)

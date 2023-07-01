@@ -8,24 +8,25 @@
     @click.right="selected = []"
     @keyup.self.delete="deleteSelectedNodes"
   >
-    <div class="absolute-top-left">
+    <div class="absolute-top-left" style="z-index: 10">
       <q-breadcrumbs>
-        <q-breadcrumbs-el v-for="b in breadcrumbs" :key="b.id" :label="b.type?.title || 'Root'" @click="setParent(b)"/>
+        <q-breadcrumbs-el v-for="b in breadcrumbs" :key="b.id" :label="b.id || b.type?.title || 'Root'" @click="setParent(b)"/>
       </q-breadcrumbs>
+      {{parentNode.nodes.length}} / {{ connections_in_group.length }}
     </div>
     <!-- Background -->
-    <div class="h-background no-pointer-events" :style="styles"></div>
+    <div class="h-background no-pointer-events h-prevent-select" :style="styles"></div>
     <!-- Group connectors -->
-    <div class="absolute-left items-center row rotate-270" v-if="parentNode.parent">
+    <div class="absolute-left items-center row rotate-270 h-prevent-select" v-if="parentNode.parent">
+      <span class="absolute q-ml-xl text-grey no-pointer-events	" style="min-width: 200px;" > Group Input</span>
       <HConnector port-type="output" port-class="group" :node="parentNode" />
-      <span class="absolute q-ml-lg text-grey no-pointer-events	" style="min-width: 200px;" > Group Input</span>
     </div>
     <div class="absolute-right items-center row rotate-270" v-if="parentNode.parent">
+      <span class="absolute q-ml-xl text-grey no-pointer-events	" style="min-width: 200px;" > Group Output</span>
       <HConnector port-type="input" port-class="group" :node="parentNode" />
-      <span class="absolute q-ml-lg text-grey no-pointer-events	" style="min-width: 200px;" > Group Output</span>
     </div>
     <!-- Nodes -->
-    <div class="h-node-container h-prevent-select" :style="transformStyle">
+    <div class="h-node-container h-prevent-select" :style="transformStyle" >
       <HNode v-for="(n, i) in parentNode.nodes" :key="'node'+i" :node="n"
         v-touch-pan.prevent.mouse="e => PZ.move(e, selected.includes(n) ? selected : [n], _graph.view)"
         :class="selected.includes(n) ? 'selected' : ''"
@@ -36,11 +37,11 @@
          />
     </div>
     <!-- Connections -->
-    <svg class="h-connections-container" :style="transformStyle">
+    <svg class="h-connections-container h-prevent-select" :style="transformStyle">
       <HConnection v-for="(c, i) in connections_in_group" :key="'connection'+i" :connection="c" />
     </svg>
     <!-- Selection -->
-    <div class="h-selection" >
+    <div class="h-selection h-prevent-select" >
       <div class="h-selection-area" :style="selectionStyle"></div>
     </div>
     <!-- Context menu -->
@@ -92,11 +93,14 @@ const setParent = (parent) => {
 // })
 const connections_in_group = computed(() => {
   return props.graph.connections.filter(c =>
+    // Même parent
     (c.from.parent == (parentNode.value || props.graph) &&
     c.to.parent == (parentNode.value || props.graph)) ||
+    // Temporaires
     c.type == "temporary" ||
-    c.from == parentNode.value && c.to.parent != parentNode.value.parent ||
-    c.to == parentNode.value && c.from.parent != parentNode.value.parent
+
+    c.from == parentNode.value && c.to.parent == c.from ||
+    c.to == parentNode.value && c.from.parent == c.to
     )
 })
 
