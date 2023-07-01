@@ -32,20 +32,16 @@
     <q-card-section v-if="node.type.id == 'group' && node.state.open">
       <q-input dense filled v-model="node.title" label="Title"/>
     </q-card-section>
-    <!-- Functions -->
-    <q-card-section v-if="(node.state.open) && _.size(node.type.functions)"
+    <!-- Slots -->
+    <q-card-section v-if="(node.state.open) && _.size(node.type.slots)"
       class="q-pl-none q-pr-xl q-pb-xs">
       <q-list>
-        <q-item dense v-for="(f, key) in node.type.functions" :key="key" class="">
+        <q-item dense v-for="(f, key) in node.type.slots" :key="key" class="">
           <q-item-section>
-            <!-- <q-select v-if="input.options" :label="name" dense filled clearable v-model="node.values.output[name]" :options="input.options" />
-            <q-toggle v-else-if="input.type == 'boolean'" :label="name" dense v-model="node.values.output[name]"/>
-            <q-input v-else dense filled :label="name" v-model="node.values.output[name]" :type="input.type" /> -->
             <q-item-label>
               {{ key }} <span class="text-grey">()</span>
-              <!-- <q-btn flat dense icon="play_arrow" text-color="positive" /> -->
             </q-item-label>
-            <HConnector port-type="input" port-class="main" :function-name="key" :node="node"
+            <HConnector port-type="input" port-class="main" :slot-name="key" :node="node"
               @click="() => node.start(key)"
             />
           </q-item-section>

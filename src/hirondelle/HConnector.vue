@@ -3,7 +3,7 @@
       :color="opt.color" :size="opt.size" :style="opt.style"
       :data-port-type="portType" :data-port-class="portClass" :data-param-name="paramName"
       :data-port-condition="condition" :data-node-id="node.id" :data-param-type="param.type"
-      :data-function-name="functionName" :data-port-open="opt.multiple || !sources.length"
+      :data-slot="slotName" :data-port-open="opt.multiple || !sources.length"
       @touchstart.stop
       @mousedown.stop="triggerConnection"
       :id="portId"
@@ -32,7 +32,7 @@ const props = defineProps({
   node: { type: Object, required: true },
   paramName: { type: String },
   condition: { type: Boolean },
-  functionName: { type: String }
+  slotName: { type: String }
 })
 
 const node = computed(() => props.node)
@@ -41,7 +41,7 @@ const portId = computed(() => {
   var id = `port-${props.node.id}-${props.portType}-${props.portClass}`
   if (props.paramName) id += `-${props.paramName}`
   if (props.portClass == "condition") id += `-${props.condition}`
-  if (props.functionName) id += `-${props.functionName}`
+  if (props.slotName) id += `-${props.slotName}`
   return id
 })
 
@@ -53,13 +53,13 @@ const sources = computed(() => {
   c[props.portType == "input" ? "to" : "from"].id == props.node.id &&
   c[props.portType] == props.paramName &&
   c.type == props.portClass &&
-  c.functionName == props.functionName)
+  c.slot == props.slotName)
 })
 
 const opt = computed(() => {
   var opt = {}
-  // Functions
-  if (props.portClass == "main" && props.functionName) {
+  // Slots
+  if (props.portClass == "main" && props.slotName) {
     opt.color = "green"
     opt.size = "sm"
     opt.multiple = true
@@ -177,15 +177,15 @@ const startConnection = ({type="main", paramFromName=null, condition=null, event
     var paramToName = findAttribute(t, "data-param-name")
     var toParamType = findAttribute(t, "data-param-type")
     var nodeId = findAttribute(t, "data-node-id")
-    var functionName = findAttribute(t, "data-function-name")
+    var slot = findAttribute(t, "data-slot")
     var portOpen = findAttribute(t, "data-port-open")
 
     if (isValid(portType, portClass, toParamType, nodeId, portOpen)) {
       // Main
       if (type == "main") { // main connection
 
-        console.log("CONNECTION", node.value.id, nodeId, functionName)
-        node.value.graph.addConnection({from: node.value.id, to: nodeId, functionName: functionName})
+        console.log("CONNECTION", node.value.id, nodeId, slot)
+        node.value.graph.addConnection({from: node.value.id, to: nodeId, slot: slot})
       }
       else if (type == "param" ) {
         node.value.graph.addConnection({type: type,

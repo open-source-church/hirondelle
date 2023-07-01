@@ -313,7 +313,7 @@ export const useBaseActions = defineStore('baseActions', () => {
     outputs: {
       boolean: { type: "boolean" },
     },
-    functions: {
+    slots: {
       setTrue: (node) => node.values.value.output.boolean = true,
       setFalse: (node) => node.values.value.output.boolean = false,
       toggle: (node) => node.values.value.output.boolean = !node.values.value.output.boolean,
@@ -333,7 +333,7 @@ export const useBaseActions = defineStore('baseActions', () => {
     outputs: {
       number: { type: "number" },
     },
-    functions: {
+    slots: {
       reset: (node) => node.compute(),
     },
     compute(values, node) {

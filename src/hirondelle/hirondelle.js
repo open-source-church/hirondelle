@@ -193,9 +193,9 @@ export const useHirondelle = defineStore('hirondelle', () => {
         outputs: ref(_.cloneDeep(newNode.type.outputs) || {}), // Dynamic outpus
         inputOptions: ref({}), // to update input types conditions for specific nodes
         title: newNode.title,
-        targets: () => this.targets(id),
+        targets: (signal = null) => this.targets(id, signal),
       }
-      node.startTargets = () => node.targets().forEach(t => t.node.start(t.functionName))
+      node.startTargets = (signal = null) => node.targets(signal).forEach(t => t.node.start(t.slot))
       node.compute = () => this.compute(node)
       node.setInputOptions = (param, val) => node.inputOptions.value[param] = val
       // Node specific inputs (param)
@@ -208,19 +208,19 @@ export const useHirondelle = defineStore('hirondelle', () => {
         node.outputs.value[param] = output
         if (output.default && !node.values.value.output[param]) node.values.value.output[param] == output.default
       }
-      node.start = async function (functionName = "main") {
-        console.log("STARTING", functionName, "in", node.type.title, node.type.category)
+      node.start = async function (slot = "main") {
+        console.log("STARTING", slot, "in", node.type.title, node.type.category)
         console.log("With params:", node.values.value)
         node.running.value = true
 
         // Main action
-        if (functionName == "main") {
+        if (slot == "main") {
           if (node.type.action && node.type.active)
             await node.type.action(node.values.value, node)
         }
         // Subroutine / function
-        else if (node.type.functions && functionName in node.type.functions) {
-          await node.type.functions[functionName](node)
+        else if (node.type.slots && slot in node.type.slots) {
+          await node.type.slots[slot](node)
         }
 
         node.running.value = false
@@ -310,7 +310,7 @@ export const useHirondelle = defineStore('hirondelle', () => {
         indexes[c.output] = (indexes[c.output] || 1) + 1
       })
     },
-    addConnection({from, to, type="main", input=null, output=null, condition=null, functionName=null}) {
+    addConnection({from, to, type="main", input=null, output=null, condition=null, slot=null}) {
       if (typeof(from) == "string") {
         from = this.findNode(from)
       }
@@ -326,13 +326,13 @@ export const useHirondelle = defineStore('hirondelle', () => {
         // Memes paramètres
         (c => c.from.id == from.id && c.to.id == to.id && c.type == type &&
               c.input == input && c.output == output && c.condition == condition &&
-              c.functionName == functionName )
+              c.slot == slot )
         // Connection temporaire (il ne peut y en avoir qu'une)
         || (c.type == "temporary" && type == "temporary"))) {
         console.log("Cette connection existe déjà")
         return
       }
-      var connection = { from, to, input, output, graph: this, type, functionName }
+      var connection = { from, to, input, output, graph: this, type, slot }
       if (type == "condition") connection.condition = condition
       this.connections.push(connection)
       // Quand on crée une connections de paramètres, on update direct les values
@@ -363,12 +363,13 @@ export const useHirondelle = defineStore('hirondelle', () => {
     },
     // La list des noeuds connectés depuis
     // On prend ceux qui ont le même parents, pour pas avoir les noeuds internes
-    targets(nodeId) {
+    targets(nodeId, signal = null) {
       return this.connections.filter(
         c => c.from.id == nodeId &&
         c.type == "main" &&
-        c.from.parent.id == c.to.parent.id
-      ).map(c => ({node: c.to, functionName: c.functionName}))
+        c.from.parent.id == c.to.parent.id &&
+        c.signal == signal
+      ).map(c => ({node: c.to, slot: c.slot}))
     },
     // La list des noeuds connectés par conditions
     targetsCondition(nodeId) {
