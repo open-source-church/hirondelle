@@ -45,7 +45,7 @@
     </div>
   </template>
   <!-- Object -->
-  <template v-else-if="param.type == '*'">
+  <template v-else-if="param.type == 'object'">
     <div class="">
       <div class="col-12 caption">{{ name }}</div>
       <q-chip v-for="(val, param) in _.forEach(modelValue)" :key="val"
@@ -55,8 +55,17 @@
       </q-chip>
     </div>
   </template>
-  <!-- Textarea -->
-  <!-- String, Number -->
+  <!-- Object -->
+  <template v-else-if="param.type == 'number'">
+    <div v-if="param.slider" class="row">
+      <div class="col-12">{{ name }}</div>
+      <q-slider class="col-12" :min="param.slider.min" :max="param.slider.max" :color="param.slider.color"
+        :model-value="modelValue" @update:model-value="update" />
+    </div>
+    <q-input v-else dense filled :label="name" :type="param.type" :textarea="param.textarea" :autogrow="param.textarea"
+      :model-value="modelValue" @update:model-value="update" :disable="disable"  />
+  </template>
+  <!-- String -->
   <template v-else>
     <q-select v-if="param.options || node.inputOptions[name]" options-dense :disable="disable"
       :label="name" dense filled clearable :options="param.options || node.inputOptions[name]"

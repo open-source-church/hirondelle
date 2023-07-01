@@ -100,7 +100,8 @@ export const useHirondelle = defineStore('hirondelle', () => {
     object: { default: {}, color: "grey" },
     rect: { default: {x: 0, y: 0, width: 0, height: 0}, color: "brown" },
     boolean: { default: false, color: "purple" },
-
+    color: { default: "#d700d7ff", color: "deep-orange"},
+    "*": { default: null}
   }
 
   /*
@@ -169,13 +170,16 @@ export const useHirondelle = defineStore('hirondelle', () => {
       }
     },
     addNode(newNode, parent=null) {
-      // nodeType, pos, id, values, options
+      var type = newNode.type
       if (typeof(newNode.type) == "string") newNode.type = nodeTypes.value.find(t => t.id == newNode.type)
       if (this.nodes.map(n => n.id).includes(newNode.id)) {
         console.error("Un node existe déjà avec cet id:", newNode.id)
         return
       }
-      if(!newNode.type) console.error("Pas trouvé de type pour", newNode)
+      if(!newNode.type) {
+        console.error("Pas trouvé de type pour", type)
+        return
+      }
       var values = newNode.values || {
         input: _.mapValues(newNode.type.inputs, p => p.default || paramTypes[p.type].default),
         output: _.mapValues(newNode.type.outputs, p => p.default || paramTypes[p.type].default) }
@@ -324,7 +328,7 @@ export const useHirondelle = defineStore('hirondelle', () => {
       if(this.connections.find(
         // Memes paramètres
         (c => c.from.id == from.id && c.to.id == to.id && c.type == type &&
-              c.input == input && c.output == output && 
+              c.input == input && c.output == output &&
               c.slot == slot && c.signal == signal)
         // Connection temporaire (il ne peut y en avoir qu'une)
         || (c.type == "temporary" && type == "temporary"))) {

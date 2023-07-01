@@ -1,12 +1,13 @@
 import { defineStore } from 'pinia'
 import { ref, computed, watch, toRef } from 'vue'
 import _ from 'lodash'
-import { useQuasar, copyToClipboard, uid } from 'quasar'
+import { useQuasar, copyToClipboard, uid, colors } from 'quasar'
 import { useHirondelle } from './hirondelle'
 
 export const useBaseActions = defineStore('baseActions', () => {
 
   const H = useHirondelle()
+  const $q = useQuasar()
 
   // WAIT
 
@@ -263,7 +264,7 @@ export const useBaseActions = defineStore('baseActions', () => {
 
   // Split
   H.registerNodeType({
-    id: `BA:SplitRect`,
+    id: `BA:Rect:Split`,
     title: "Split Rect",
     type: "param",
     category: "Base",
@@ -287,7 +288,7 @@ export const useBaseActions = defineStore('baseActions', () => {
 
   // Create Rect
   H.registerNodeType({
-    id: `BA:CreateRect`,
+    id: `BA:Rect:Create`,
     title: "Create Rect",
     type: "param",
     category: "Base",
@@ -367,6 +368,101 @@ export const useBaseActions = defineStore('baseActions', () => {
         values.input.min, values.input.max, values.input.floating
       )
       node.title = node.type.title + ": " + values.output.number
+    }
+  })
+  H.registerNodeType({
+    id: `BA:ValueChanged`,
+    title: "Value changed",
+    type: "param",
+    category: "Base",
+    active: true,
+    inputs: {
+      watch: { type: "*" },
+    },
+    signals: {
+      changed: null,
+    },
+    compute(values, node) {
+      console.log("COMPUTING WATCH")
+      if (values.input.watch != node._lastwatch) node.emit("changed")
+      node._lastwatch = values.input.watch
+    }
+  })
+  H.registerNodeType({
+    id: `BA:Color:Split`,
+    title: "Color split",
+    type: "param",
+    category: "Base",
+    active: true,
+    inputs: {
+      color: { type: "color" },
+    },
+    outputs: {
+      red: { type: "number" },
+      green: { type: "number" },
+      blue: { type: "number" },
+      hue: { type: "number" },
+      saturation: { type: "number" },
+      value: { type: "number" },
+      alpha: { type: "number" },
+    },
+    compute(values, node) {
+      var rgb = colors.hexToRgb(values.input.color)
+      var hsv = colors.rgbToHsv(rgb)
+      values.output = {
+        red: rgb.r, green: rgb.g, blue: rgb.b,
+        hue: hsv.h, saturation: hsv.s, value: hsv.v,
+        alpha: rgb.a || 100
+      }
+    }
+  })
+  H.registerNodeType({
+    id: `BA:Color:RGBA`,
+    title: "Color mix RGBA",
+    type: "param",
+    category: "Base",
+    active: true,
+    inputs: {
+      red: { type: "number", default: 215, slider: { min: 0, max: 255, color: "red" } },
+      green: { type: "number", default: 0, slider: { min: 0, max: 255, color: "green" } },
+      blue: { type: "number", default: 215, slider: { min: 0, max: 255, color: "blue" } },
+      alpha: { type: "number", default: 100, slider: { min: 0, max: 100, color: "white" } },
+    },
+    outputs: {
+      color: { type: "color" },
+    },
+    compute(values, node) {
+      values.output.color = colors.rgbToHex({
+        r: values.input.red,
+        g: values.input.green,
+        b: values.input.blue,
+        a: values.input.alpha,
+      })
+    }
+  })
+  H.registerNodeType({
+    id: `BA:Color:HSV`,
+    title: "Color mix HSV",
+    type: "param",
+    category: "Base",
+    active: true,
+    inputs: {
+      hue: { type: "number", default: 300, slider: { min: 0, max: 360 } },
+      saturation: { type: "number", default: 100, slider: { min: 0, max: 100 } },
+      value: { type: "number", default: 84, slider: { min: 0, max: 100 } },
+      alpha: { type: "number", default: 100, slider: { min: 0, max: 100 } },
+    },
+    outputs: {
+      color: { type: "color" },
+    },
+    compute(values, node) {
+      var rgb = colors.hsvToRgb({
+        h: values.input.hue,
+        s: values.input.saturation,
+        v: values.input.value,
+        a: values.input.alpha,
+      })
+      values.output.color = colors.rgbToHex(rgb)
     }
   })
 
