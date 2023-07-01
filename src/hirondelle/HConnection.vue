@@ -63,12 +63,13 @@ const addPos = (pos1, pos2) => {
   else return null
 }
 
-const getPortId = (node, type, portClass, param=null, condition=null, slot=null) => {
+const getPortId = (node, type, portClass, param=null, condition=null, slot=null, signal=null) => {
   var id = `port-${node.id}-${type}`
   if (portClass) id += `-${portClass == "condition" && type == "input" ? "main" : portClass}`
   if (param) id += `-${param}`
   if (portClass == "condition" && type == "output") id += `-${condition}`
   if (slot) id += `-${slot}`
+  if (signal) id += `-${signal}`
   return id
 }
 
@@ -96,7 +97,7 @@ const d = computed(() => {
       n2 = c.graph._connectors[toId] || {x: 0, y: 0}
     }
     if (!n1) {
-      var idFrom = getPortId(c.from, "output", c.type, c.output, c.condition)
+      var idFrom = getPortId(c.from, "output", c.type, c.output, c.condition, null, c.signal)
       n1 = c.graph._connectors[idFrom]
       if(!n1) {
         // Connect to main

@@ -195,7 +195,7 @@ export const useHirondelle = defineStore('hirondelle', () => {
         title: newNode.title,
         targets: (signal = null) => this.targets(id, signal),
       }
-      node.startTargets = (signal = null) => node.targets(signal).forEach(t => t.node.start(t.slot))
+      node.emit = (signal = null) => node.targets(signal).forEach(t => t.node.start(t.slot))
       node.compute = () => this.compute(node)
       node.setInputOptions = (param, val) => node.inputOptions.value[param] = val
       // Node specific inputs (param)
@@ -229,11 +229,11 @@ export const useHirondelle = defineStore('hirondelle', () => {
         // Call connected nodes
         // Pas pour les groupes, parce qu'on appelle là suite que si des noeuds internes le demandent
         if(node.type.id != "group") {
-          node.startTargets()
+          node.emit()
         }
         // Si connecté à un group, on appelle le groupe
         var group = node.graph.connections.filter(c => c.type == "main" && c.from.id == node.id && c.from.parent.id == c.to.id)
-        group.forEach(g => g.to.startTargets())
+        group.forEach(g => g.to.emit())
       }
       node.remove = () => this.removeNode(node)
 
@@ -310,7 +310,7 @@ export const useHirondelle = defineStore('hirondelle', () => {
         indexes[c.output] = (indexes[c.output] || 1) + 1
       })
     },
-    addConnection({from, to, type="main", input=null, output=null, condition=null, slot=null}) {
+    addConnection({from, to, type="main", input=null, output=null, condition=null, slot=null, signal=null}) {
       if (typeof(from) == "string") {
         from = this.findNode(from)
       }
@@ -326,13 +326,13 @@ export const useHirondelle = defineStore('hirondelle', () => {
         // Memes paramètres
         (c => c.from.id == from.id && c.to.id == to.id && c.type == type &&
               c.input == input && c.output == output && c.condition == condition &&
-              c.slot == slot )
+              c.slot == slot && c.signal == signal)
         // Connection temporaire (il ne peut y en avoir qu'une)
         || (c.type == "temporary" && type == "temporary"))) {
         console.log("Cette connection existe déjà")
         return
       }
-      var connection = { from, to, input, output, graph: this, type, slot }
+      var connection = { from, to, input, output, graph: this, type, slot, signal }
       if (type == "condition") connection.condition = condition
       this.connections.push(connection)
       // Quand on crée une connections de paramètres, on update direct les values

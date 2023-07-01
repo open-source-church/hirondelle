@@ -26,7 +26,14 @@ export const useBaseActions = defineStore('baseActions', () => {
       elapsedTime: { type: "number" },
       running: { type: "boolean" }
     },
-    action: async (opt) => {
+    slots: {
+      start: (node) => node.start()
+    },
+    signals: {
+      started: null,
+      finished: null,
+    },
+    action: async (opt, node) => {
       console.log("AND WE WAIT", opt.input.time, "ms")
       var t = 0
       var delta = 100
@@ -36,13 +43,17 @@ export const useBaseActions = defineStore('baseActions', () => {
         opt.output.elapsedTime = t
       }, delta)
       opt.output.running = true
+      node.emit("started")
       await delay(opt.input.time)
+      node.emit("finished")
       opt.output.running = false
       clearInterval(interval)
       opt.output.elapsedTime = opt.input.time
       console.log("AND WE ARE DONE WAITING", opt.input.time, "ms")
       return
-    }
+    },
+    accepts_input: false,
+    accepts_output: false
   })
 
   H.registerNodeType({
@@ -54,13 +65,25 @@ export const useBaseActions = defineStore('baseActions', () => {
       time: { type: "number", default: 5000, description: "Interval en ms"},
       active: { type: "boolean", default: true},
     },
+    outputs: {
+      active: { type: "boolean", default: true},
+    },
+    slots: {
+      start: (node) => node.values.value.input.active = true,
+      pause: (node) => node.values.value.input.active = false
+    },
+    signals: {
+      ping: null
+    },
     compute: async (opt, node) => {
       if (node._interval)
         clearInterval(node._interval)
       if (opt.input.active)
-        node._interval = setInterval(node.start, opt.input.time)
+        node._interval = setInterval(() => node.emit("ping"), opt.input.time)
+      opt.output.active = opt.input.active
     },
-    accepts_input: false
+    accepts_input: false,
+    accepts_output: false
   })
 
   // Condition
@@ -340,6 +363,7 @@ export const useBaseActions = defineStore('baseActions', () => {
       values.output.number = _.random(
         values.input.min, values.input.max, values.input.floating
       )
+      node.title = node.type.title + ": " + values.output.number
     }
   })
 

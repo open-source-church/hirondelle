@@ -3,7 +3,7 @@
       :color="opt.color" :size="opt.size" :style="opt.style"
       :data-port-type="portType" :data-port-class="portClass" :data-param-name="paramName"
       :data-port-condition="condition" :data-node-id="node.id" :data-param-type="param.type"
-      :data-slot="slotName" :data-port-open="opt.multiple || !sources.length"
+      :data-slot="slotName" :data-signal="signal" :data-port-open="opt.multiple || !sources.length"
       @touchstart.stop
       @mousedown.stop="triggerConnection"
       :id="portId"
@@ -32,7 +32,8 @@ const props = defineProps({
   node: { type: Object, required: true },
   paramName: { type: String },
   condition: { type: Boolean },
-  slotName: { type: String }
+  slotName: { type: String },
+  signal: { type: String }
 })
 
 const node = computed(() => props.node)
@@ -42,6 +43,7 @@ const portId = computed(() => {
   if (props.paramName) id += `-${props.paramName}`
   if (props.portClass == "condition") id += `-${props.condition}`
   if (props.slotName) id += `-${props.slotName}`
+  if (props.signal) id += `-${props.signal}`
   return id
 })
 
@@ -66,6 +68,16 @@ const opt = computed(() => {
     if (props.portType == "input") {
       opt.classes = "absolute-top-left"
       opt.style = "left:-12px; top: 5px;"
+    }
+  }
+  // Signals
+  else if (props.portClass == "main" && props.signal) {
+    opt.color = "green"
+    opt.size = "sm"
+    opt.multiple = true
+    if (props.portType == "output") {
+      opt.classes = "absolute-top-right"
+      opt.style = "right:-12px; top: 5px;"
     }
   }
   // Main
@@ -184,8 +196,8 @@ const startConnection = ({type="main", paramFromName=null, condition=null, event
       // Main
       if (type == "main") { // main connection
 
-        console.log("CONNECTION", node.value.id, nodeId, slot)
-        node.value.graph.addConnection({from: node.value.id, to: nodeId, slot: slot})
+        console.log("CONNECTION", node.value.id, nodeId, slot, props.signal)
+        node.value.graph.addConnection({from: node.value.id, to: nodeId, slot, signal: props.signal})
       }
       else if (type == "param" ) {
         node.value.graph.addConnection({type: type,

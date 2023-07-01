@@ -32,28 +32,39 @@
     <q-card-section v-if="node.type.id == 'group' && node.state.open">
       <q-input dense filled v-model="node.title" label="Title"/>
     </q-card-section>
-    <!-- Slots -->
+    <!-- Slots / Signals -->
     <q-card-section v-if="(node.state.open) && _.size(node.type.slots)"
-      class="q-pl-none q-pr-xl q-pb-xs">
-      <q-list>
+      class="q-pl-none q-pr-none q-pb-xs row">
+      <q-list class="col-6">
         <q-item dense v-for="(f, key) in node.type.slots" :key="key" class="">
           <q-item-section>
             <q-item-label>
               {{ key }} <span class="text-grey">()</span>
             </q-item-label>
             <HConnector port-type="input" port-class="main" :slot-name="key" :node="node"
-              @click="() => node.start(key)"
-            />
+            @click="() => node.start(key)" />
+          </q-item-section>
+        </q-item>
+      </q-list>
+      <q-list class="col-6">
+        <q-item dense v-for="(f, key) in node.type.signals" :key="key" class="text-right">
+          <q-item-section>
+            <q-item-label>
+              {{ key }} <span class="text-grey">()</span>
+            </q-item-label>
+            <HConnector port-type="output" port-class="main" :signal="key" :node="node"
+            @click="() => node.emit(key)" />
           </q-item-section>
         </q-item>
       </q-list>
     </q-card-section>
     <!-- Outputs -->
     <q-card-section v-if="(node.state.open) && _.size(outputs)"
-      class="q-pr-none q-pl-xl q-py-xs">
+      class="q-pr-none q-pl-xl q-py-xs justify-end">
       <q-list>
         <q-item dense v-for="(output, name) in outputs" :key="name">
-          <q-item-section>
+          <q-item-section />
+          <q-item-section >
             <!-- <q-select v-if="input.options" :label="name" dense filled clearable v-model="node.values.output[name]" :options="input.options" />
             <q-toggle v-else-if="input.type == 'boolean'" :label="name" dense v-model="node.values.output[name]"/>
             <q-input v-else dense filled :label="name" v-model="node.values.output[name]" :type="input.type" /> -->
