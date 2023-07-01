@@ -96,7 +96,10 @@ export const useBaseActions = defineStore('baseActions', () => {
     inputs: {},
     outputs: {},
     accepts_output: false,
-    options: {  },
+    signals: {
+      valid: null,
+      invalid: null
+    },
     action(opt, node) {
       var source = node.graph.sources(node.id)
       if (source.length != 1) {
@@ -106,7 +109,7 @@ export const useBaseActions = defineStore('baseActions', () => {
       var source = source[0]
       var valid = true
       var test = _.every(source.values.output, (p, k) => {
-        var filter = node.options[k]
+        var filter = node.state.filter[k]
         if (!filter) return true
         var filterType = filter.filterType
         if (!filterType) return true
@@ -136,8 +139,8 @@ export const useBaseActions = defineStore('baseActions', () => {
       })
       // opt.output.test = test
       // On appelle tous les noeuds connectés selon le résultat
-      var targets = node.graph.targetsCondition(node.id)
-      targets[test].forEach(n => n.start())
+      if (test) node.emit("valid")
+      else node.emit("invalid")
     }
   })
 

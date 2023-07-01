@@ -2,7 +2,7 @@
   <q-btn flat dense :icon="opt.multiple ? 'circle' : 'square'" :class="opt.classes"
       :color="opt.color" :size="opt.size" :style="opt.style"
       :data-port-type="portType" :data-port-class="portClass" :data-param-name="paramName"
-      :data-port-condition="condition" :data-node-id="node.id" :data-param-type="param.type"
+      :data-node-id="node.id" :data-param-type="param.type"
       :data-slot="slotName" :data-signal="signal" :data-port-open="opt.multiple || !sources.length"
       @touchstart.stop
       @mousedown.stop="triggerConnection"
@@ -31,7 +31,6 @@ const props = defineProps({
   portClass: { type: String, required: true },
   node: { type: Object, required: true },
   paramName: { type: String },
-  condition: { type: Boolean },
   slotName: { type: String },
   signal: { type: String }
 })
@@ -41,7 +40,6 @@ const node = computed(() => props.node)
 const portId = computed(() => {
   var id = `port-${props.node.id}-${props.portType}-${props.portClass}`
   if (props.paramName) id += `-${props.paramName}`
-  if (props.portClass == "condition") id += `-${props.condition}`
   if (props.slotName) id += `-${props.slotName}`
   if (props.signal) id += `-${props.signal}`
   return id
@@ -114,14 +112,6 @@ const opt = computed(() => {
       opt.multiple = true
     }
   }
-  // Conditions
-  else if (props.portType == "output" && props.portClass == "condition") {
-    opt.classes = "absolute"
-    opt.style = props.condition ? "right:-12px; top: 6px" : "right:-12px; top: 28px"
-    opt.color = props.condition ? "green" : "red"
-    opt.size = "sm"
-    opt.multiple = true
-  }
   return opt
 })
 
@@ -129,7 +119,6 @@ const triggerConnection = e => {
   if (props.portType == "output")
     startConnection({
       type:props.portClass,
-      condition:props.condition,
       paramFromName: props.paramName,
       event: e})
 }
@@ -143,7 +132,7 @@ const findAttribute = (n, attr) => {
   }
 }
 
-const startConnection = ({type="main", paramFromName=null, condition=null, event}) => {
+const startConnection = ({type="main", paramFromName=null, event}) => {
   var startPos = { x: event.pageX, y: event.pageY}
   var paramType = param.value.type
 
@@ -172,10 +161,8 @@ const startConnection = ({type="main", paramFromName=null, condition=null, event
     if (portType && portType != "input") return false
     else if (nodeId && nodeId == node.value.id) return false
     else if (portClass && portOpen == "false") return false
-    else if (type != "condition" && portClass && portClass != type) return false
-    else if (type == "condition" && portClass && portClass != "main") return false
+    else if (portClass && portClass != type) return false
     else if (type == "main" && portClass && portClass == type) return true
-    else if (type == "condition" && portClass && portClass == "main") return true
     else if (type == "param" && toParamType) return (paramType == toParamType) || toParamType == "*"
     else return undefined
   }
@@ -204,10 +191,6 @@ const startConnection = ({type="main", paramFromName=null, condition=null, event
           from: node.value.id, output: paramFromName,
           to:nodeId, input: paramToName
         })
-      }
-      else if (type == "condition" ) {
-        node.value.graph.addConnection({from: node.value.id, to: nodeId, type: type, condition: condition})
-        // node.value.graph.addParamConnection(node.value.id, param, nodeId, param_name)
       }
       else if (type == "group" ) {
         console.log(type, portType, portClass, paramToName)

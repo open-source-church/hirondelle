@@ -145,13 +145,13 @@ export const useHirondelle = defineStore('hirondelle', () => {
             const node = c.from.id
             c.from = c.from.parent
             console.log("CREATING CONNECTION TO GROUP")
-            this.addConnection({from: node, to: group, type: c.type, input: c.input, output: c.output, condition: c.condition})
+            this.addConnection({from: node, to: group, type: c.type, input: c.input, output: c.output})
           }
           if (c.from.parent == c.to.parent.parent) {
             const node = c.to.id
             c.to = c.to.parent
             console.log("CREATING CONNECTION FROM GROUP")
-            this.addConnection({from: group, to: node, type: c.type, input: c.output, output: c.output, condition: c.condition})
+            this.addConnection({from: group, to: node, type: c.type, input: c.output, output: c.output})
           }
         }
       })
@@ -188,10 +188,9 @@ export const useHirondelle = defineStore('hirondelle', () => {
         values: toRef(values),
         running: ref(false),
         nodes: [],
-        options: newNode.options || {}, // to store things, used for condition now
         inputs: ref(_.cloneDeep(newNode.type.inputs) || {}), // Dynamic inputs
         outputs: ref(_.cloneDeep(newNode.type.outputs) || {}), // Dynamic outpus
-        inputOptions: ref({}), // to update input types conditions for specific nodes
+        inputOptions: ref({}), // to update input types conditions for specific nodes //FIXME: plus nécessaire je pense
         title: newNode.title,
         targets: (signal = null) => this.targets(id, signal),
       }
@@ -310,7 +309,7 @@ export const useHirondelle = defineStore('hirondelle', () => {
         indexes[c.output] = (indexes[c.output] || 1) + 1
       })
     },
-    addConnection({from, to, type="main", input=null, output=null, condition=null, slot=null, signal=null}) {
+    addConnection({from, to, type="main", input=null, output=null, slot=null, signal=null}) {
       if (typeof(from) == "string") {
         from = this.findNode(from)
       }
@@ -325,7 +324,7 @@ export const useHirondelle = defineStore('hirondelle', () => {
       if(this.connections.find(
         // Memes paramètres
         (c => c.from.id == from.id && c.to.id == to.id && c.type == type &&
-              c.input == input && c.output == output && c.condition == condition &&
+              c.input == input && c.output == output && 
               c.slot == slot && c.signal == signal)
         // Connection temporaire (il ne peut y en avoir qu'une)
         || (c.type == "temporary" && type == "temporary"))) {
@@ -333,7 +332,6 @@ export const useHirondelle = defineStore('hirondelle', () => {
         return
       }
       var connection = { from, to, input, output, graph: this, type, slot, signal }
-      if (type == "condition") connection.condition = condition
       this.connections.push(connection)
       // Quand on crée une connections de paramètres, on update direct les values
       if (connection.type == "param") {
@@ -371,13 +369,6 @@ export const useHirondelle = defineStore('hirondelle', () => {
         c.signal == signal
       ).map(c => ({node: c.to, slot: c.slot}))
     },
-    // La list des noeuds connectés par conditions
-    targetsCondition(nodeId) {
-      return {
-        true: this.connections.filter(c => c.from.id == nodeId && c.type == "condition" && c.condition && c.from.parent.id == c.to.parent.id).map(c => c.to),
-        false: this.connections.filter(c => c.from.id == nodeId && c.type == "condition" && !c.condition && c.from.parent.id == c.to.parent.id).map(c => c.to),
-      }
-    },
     // La list des noeuds connectés vers
     sources(targetNodeId) {
       return this.connections.filter(c => c.to.id == targetNodeId && c.type == "main").map(c => c.from)
@@ -395,7 +386,6 @@ export const useHirondelle = defineStore('hirondelle', () => {
           state: n.state,
         }
         if (n.values) node.values = n.values
-        if (!_.isEmpty(n.options)) node.options = n.options
         if (n.title) node.title = n.title
         if (!_.isEmpty(n.nodes)) node.nodes = this.saveNodes(n)
         return node

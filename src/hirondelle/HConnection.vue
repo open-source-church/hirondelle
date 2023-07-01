@@ -22,40 +22,16 @@ const color = computed(() => {
   if (props.connection.valid == true) return "green"
   if (props.connection.valid == false) return "red"
   if (props.connection.type == 'main') return "green"
-  if (props.connection.type == 'condition' && props.connection.condition) return "green"
-  if (props.connection.type == 'condition' && !props.connection.condition) return "red"
   if (props.connection.type == 'temporary' ) return "grey"
   else return "grey"
 })
 
 const strokeWidth = computed(() => {
   if (props.connection.type == 'main') return 7
-  if (props.connection.type == 'condition') return 7
   if (props.connection.type == 'temporary') return 7
   if (props.connection.type == 'param') return 4
   else return "grey"
 })
-
-
-const deltaY2 = computed(() => {
-  if (props.connection.type == 'temporary') return 0
-  else return 25
-})
-const deltaX = computed(() => {
-  if (props.connection.type == 'temporary') return 0
-  else return 300
-})
-const deltaY = computed(() => {
-  if (props.connection.type == 'main') return 25
-  // if (props.connection.type == 'condition' && props.connection.condition) return 65
-  // if (props.connection.type == 'condition' && !props.connection.condition) return 87
-  else return 25
-})
-const delta = computed(() => {
-  if (props.connection.type == "temporary") return { x: 0, y: 0}
-  else return { x: 0}
-})
-
 
 const addPos = (pos1, pos2) => {
   if (pos1 && pos1.x != null && pos2 && pos2.x != null)
@@ -63,11 +39,9 @@ const addPos = (pos1, pos2) => {
   else return null
 }
 
-const getPortId = (node, type, portClass, param=null, condition=null, slot=null, signal=null) => {
-  var id = `port-${node.id}-${type}`
-  if (portClass) id += `-${portClass == "condition" && type == "input" ? "main" : portClass}`
+const getPortId = (node, type, portClass, param=null, slot=null, signal=null) => {
+  var id = `port-${node.id}-${type}-${portClass}`
   if (param) id += `-${param}`
-  if (portClass == "condition" && type == "output") id += `-${condition}`
   if (slot) id += `-${slot}`
   if (signal) id += `-${signal}`
   return id
@@ -97,7 +71,7 @@ const d = computed(() => {
       n2 = c.graph._connectors[toId] || {x: 0, y: 0}
     }
     if (!n1) {
-      var idFrom = getPortId(c.from, "output", c.type, c.output, c.condition, null, c.signal)
+      var idFrom = getPortId(c.from, "output", c.type, c.output, null, c.signal)
       n1 = c.graph._connectors[idFrom]
       if(!n1) {
         // Connect to main
@@ -106,7 +80,7 @@ const d = computed(() => {
       }
     }
     if (!n2) {
-      var idTo = getPortId(c.to, "input", c.type, c.input, null, c.slot)
+      var idTo = getPortId(c.to, "input", c.type, c.input, c.slot)
       n2 = c.graph._connectors[idTo]
       if(!n2) {
         // Connect to main
@@ -121,33 +95,6 @@ const d = computed(() => {
   }
   n1 = n1 || {x: posFrom.x + 300, y: posFrom.y + 25}
   n2 = n2 || {x: posTo.x, y: posTo.y + 25}
-
-  // if (type == "main") {
-  //   n1 = addPos(posFrom, cPosFrom?.main_output) || n1
-  //   n2 = addPos(posTo, cPosTo?.main_input) || n2
-  // }
-  // if (type == "param")
-  //   n1 = addPos(posFrom, cPosFrom?.output[props.connection.output]) || n1
-  // if (type == "param")
-  //   n2 = addPos(posTo, cPosTo?.input[props.connection.input]) || n2
-
-  // if (type == "condition" && props.connection.condition) {
-  //   n1 = addPos(posFrom, cPosFrom?.condition_true) || n1
-  // }
-  // if (type == "condition" && !props.connection.condition) {
-  //   n1 = addPos(posFrom, cPosFrom?.condition_false) || n1
-  // }
-
-  // if (c.from.type.id == "group" && c.to.parent != c.from.parent) {
-  //   var fromId = getPortId(c.from, "output", "group")
-  //   n1 = c.graph._connectors[fromId] || {x: 0, y: 0}
-  // }
-  // if (c.to.type.id == "group" && c.to.parent != c.from.parent) {
-  //   var toId = getPortId(c.to, "input", "group")
-  //   n2 = c.graph._connectors[toId] || {x: 0, y: 0}
-  // }
-
-
 
   if (false)
     return `M ${n1.x} ${n1.y} L ${n2.x} ${n2.y}`;
