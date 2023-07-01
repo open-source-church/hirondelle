@@ -195,7 +195,8 @@ export const useHirondelle = defineStore('hirondelle', () => {
         title: newNode.title,
         targets: () => this.targets(id),
       }
-      node.startTargets = () => node.targets().forEach(n => n.start())
+      node.startTargets = () => node.targets().forEach(t => t.node.start(t.functionName))
+      node.compute = () => this.compute(node)
       node.setInputOptions = (param, val) => node.inputOptions.value[param] = val
       // Node specific inputs (param)
       node.setInputs = (param, input) => {
@@ -207,13 +208,21 @@ export const useHirondelle = defineStore('hirondelle', () => {
         node.outputs.value[param] = output
         if (output.default && !node.values.value.output[param]) node.values.value.output[param] == output.default
       }
-      node.start = async function () {
-        console.log("STARTING", node.type.title, node.type.category)
+      node.start = async function (functionName = "main") {
+        console.log("STARTING", functionName, "in", node.type.title, node.type.category)
         console.log("With params:", node.values.value)
         node.running.value = true
 
         // Main action
-        if (node.type.action && node.type.active) await node.type.action(node.values.value, node)
+        if (functionName == "main") {
+          if (node.type.action && node.type.active)
+            await node.type.action(node.values.value, node)
+        }
+        // Subroutine / function
+        else {
+          await node.type.functions[functionName](node)
+        }
+
         node.running.value = false
         console.log("And done.", node.type.title)
 
@@ -254,17 +263,22 @@ export const useHirondelle = defineStore('hirondelle', () => {
       // On retourne le node
       return node
     },
-    // When values.input changes
-    onInputValuesChange(node) {
-      console.log("UPDATING VALUES", node.type.title, node.values.value, node.values)
+    compute(node) {
       var val = node.values.value || node.values // FIXME: pourquoi des fois c'est une ref et des fois pas?
-      // On compute s'il y a des choses à faire
       // FIXME: les choses se chargent pas dans le bon ordre
       try {
         if (node.type.compute) node.type.compute(val, node)
       } catch (err) {
         console.error(err)
       }
+    },
+    // When values.input changes
+    onInputValuesChange(node) {
+      console.log("UPDATING VALUES", node.type.title, node.values.value, node.values)
+      var val = node.values.value || node.values // FIXME: pourquoi des fois c'est une ref et des fois pas?
+      // On compute s'il y a des choses à faire
+      this.compute(node)
+      // On propage les résultats
       this.propagateOutputValues(node)
     },
     propagateOutputValues(node) {
@@ -296,7 +310,7 @@ export const useHirondelle = defineStore('hirondelle', () => {
         indexes[c.output] = (indexes[c.output] || 1) + 1
       })
     },
-    addConnection({from, to, type="main", input=null, output=null, condition=null}) {
+    addConnection({from, to, type="main", input=null, output=null, condition=null, functionName=null}) {
       if (typeof(from) == "string") {
         from = this.findNode(from)
       }
@@ -310,14 +324,15 @@ export const useHirondelle = defineStore('hirondelle', () => {
       // On vérifie si la connection existe déjà
       if(this.connections.find(
         // Memes paramètres
-        (c => c.from.id == from.id && c.to.id == to.id
-        && c.type == type && c.input == input && c.output == output && c.condition == condition)
+        (c => c.from.id == from.id && c.to.id == to.id && c.type == type &&
+              c.input == input && c.output == output && c.condition == condition &&
+              c.functionName == functionName )
         // Connection temporaire (il ne peut y en avoir qu'une)
-        || (c.type == "connection" && type == "connection"))) {
+        || (c.type == "temporary" && type == "temporary"))) {
         console.log("Cette connection existe déjà")
         return
       }
-      var connection = { from, to, input, output, graph: this, type:type }
+      var connection = { from, to, input, output, graph: this, type, functionName }
       if (type == "condition") connection.condition = condition
       this.connections.push(connection)
       // Quand on crée une connections de paramètres, on update direct les values
@@ -349,7 +364,11 @@ export const useHirondelle = defineStore('hirondelle', () => {
     // La list des noeuds connectés depuis
     // On prend ceux qui ont le même parents, pour pas avoir les noeuds internes
     targets(nodeId) {
-      return this.connections.filter(c => c.from.id == nodeId && c.type == "main" && c.from.parent.id == c.to.parent.id).map(c => c.to)
+      return this.connections.filter(
+        c => c.from.id == nodeId &&
+        c.type == "main" &&
+        c.from.parent.id == c.to.parent.id
+      ).map(c => ({node: c.to, functionName: c.functionName}))
     },
     // La list des noeuds connectés par conditions
     targetsCondition(nodeId) {

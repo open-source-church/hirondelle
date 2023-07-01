@@ -135,7 +135,6 @@ const breadcrumbs = computed(() => {
 })
 
 // Selection
-
 const selectionStyle = computed(() => {
   if (_graph.value.view.selection?.topLeft) {
     var selection = _graph.value.view.selection
@@ -167,15 +166,6 @@ watch(() => _graph.value.view.selection, () => {
 })
 
 // Updating port positions
-const findAttribute = (n, attr) => {
-  while(n) {
-    try {
-      if(n.getAttribute(attr)) return n.getAttribute(attr)
-    } catch {}
-    n = n.parentNode
-  }
-  return null
-}
 const _view = computed(() => _graph.value.view)
 var last = {}
 watch(_graph.value, async (val) => {
@@ -189,19 +179,8 @@ watch(_graph.value, async (val) => {
   var el = document.querySelectorAll('[data-port-type]')
   var c = {}
   el.forEach(e => {
-    var portClass = findAttribute(e, "data-port-class")
-    var nodeId = findAttribute(e, "data-node-id")
-    var portType = findAttribute(e, "data-port-type")
-    var paramName = findAttribute(e, "data-param-name")
-    var condition = findAttribute(e, "data-port-condition")
-
+    var portId = e.getAttribute("id")
     e = e.getBoundingClientRect()
-
-    var portId = `port-${nodeId}-${portType}`
-    if (portClass) portId += `-${portClass}`
-    if (paramName) portId += `-${paramName}`
-    if (portClass == "condition") portId += `-${condition}`
-
     var to = _graph.value.view.to({x: e.x + e.width/2, y: e.y + e.height / 2})
     c[portId] = to
   })

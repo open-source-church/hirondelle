@@ -206,6 +206,7 @@ export const useBaseActions = defineStore('baseActions', () => {
       operation: { type: "string", default: "and", options: [
         {id: "and", text: "Et"},
         {id: "or", text: "Ou"},
+        {id: "not", text: "Not"},
         {id: "eq", text: "Égal"},
         {id: "dif", text: "Different"}
       ]},
@@ -221,6 +222,9 @@ export const useBaseActions = defineStore('baseActions', () => {
       }
       if (params.input.operation == "or") {
         params.output.result = _.some(params.input.values)
+      }
+      if (params.input.operation == "not") {
+        params.output.result = !params.input.values[Object.keys(params.input.values)[0]]
       }
       if (params.input.operation == "eq") {
         params.output.result = _.uniq(Object.values(params.input.values)).length == 1
@@ -313,6 +317,29 @@ export const useBaseActions = defineStore('baseActions', () => {
       setTrue: (node) => node.values.value.output.boolean = true,
       setFalse: (node) => node.values.value.output.boolean = false,
       toggle: (node) => node.values.value.output.boolean = !node.values.value.output.boolean,
+    },
+  })
+  H.registerNodeType({
+    id: `BA:RandomNumber`,
+    title: "Random Number",
+    type: "param",
+    category: "Base",
+    active: true,
+    inputs: {
+      min: { type: "number", default: 0 },
+      max: { type: "number", default: 100},
+      floating: { type: "boolean", default: false, description: "Retourne un nombre à virgule"}
+    },
+    outputs: {
+      number: { type: "number" },
+    },
+    functions: {
+      reset: (node) => node.compute(),
+    },
+    compute(values, node) {
+      values.output.number = _.random(
+        values.input.min, values.input.max, values.input.floating
+      )
     }
   })
 

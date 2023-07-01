@@ -26,23 +26,43 @@
       <q-btn flat dense icon="delete" class="col-auto text-negative" @click="node.remove"/>
     </q-card-section>
     <!-- Ports -->
-    <HConnector v-if="node.type.accepts_input" port-type="input" port-class="main" :node="node" :id="`input-${node.id}`"/>
-    <HConnector v-if="node.type.accepts_output" port-type="output" port-class="main" :node="node" :id="`output-${node.id}`" />
+    <HConnector v-if="node.type.accepts_input" port-type="input" port-class="main" :node="node" />
+    <HConnector v-if="node.type.accepts_output" port-type="output" port-class="main" :node="node" />
     <!-- Group -->
     <q-card-section v-if="node.type.id == 'group' && node.state.open">
       <q-input dense filled v-model="node.title" label="Title"/>
+    </q-card-section>
+    <!-- Functions -->
+    <q-card-section v-if="(node.state.open) && _.size(node.type.functions)"
+      class="q-pl-none q-pr-xl q-pb-xs">
+      <q-list>
+        <q-item dense v-for="(f, key) in node.type.functions" :key="key" class="">
+          <q-item-section>
+            <!-- <q-select v-if="input.options" :label="name" dense filled clearable v-model="node.values.output[name]" :options="input.options" />
+            <q-toggle v-else-if="input.type == 'boolean'" :label="name" dense v-model="node.values.output[name]"/>
+            <q-input v-else dense filled :label="name" v-model="node.values.output[name]" :type="input.type" /> -->
+            <q-item-label>
+              {{ key }} <span class="text-grey">()</span>
+              <!-- <q-btn flat dense icon="play_arrow" text-color="positive" /> -->
+            </q-item-label>
+            <HConnector port-type="input" port-class="main" :function-name="key" :node="node"
+              @click="() => node.start(key)"
+            />
+          </q-item-section>
+        </q-item>
+      </q-list>
     </q-card-section>
     <!-- Outputs -->
     <q-card-section v-if="(node.state.open) && _.size(outputs)"
       class="q-pr-none q-pl-xl q-py-xs">
       <q-list>
-        <q-item v-for="(output, name) in outputs" :key="name">
+        <q-item dense v-for="(output, name) in outputs" :key="name">
           <q-item-section>
             <!-- <q-select v-if="input.options" :label="name" dense filled clearable v-model="node.values.output[name]" :options="input.options" />
             <q-toggle v-else-if="input.type == 'boolean'" :label="name" dense v-model="node.values.output[name]"/>
             <q-input v-else dense filled :label="name" v-model="node.values.output[name]" :type="input.type" /> -->
             <HParam :disable="false" :param="output" :name="name" v-model="node.values.output[name]" :node="node" />
-            <HConnector port-type="output" port-class="param" :node="node" :param-name="name" :id="`output-${node.id}-${name}`"/>
+            <HConnector port-type="output" port-class="param" :node="node" :param-name="name" />
           </q-item-section>
         </q-item>
       </q-list>
@@ -51,10 +71,10 @@
     <q-card-section v-if="(node.state.open) &&_.size(inputs)"
       class="q-pl-none q-pr-xl q-pt-none q-pb-xs" >
       <q-list>
-        <q-item v-for="(input, name) in inputs" :key="name">
+        <q-item dense v-for="(input, name) in inputs" :key="name">
           <q-item-section>
             <HParam :param="input" :name="name" v-model="node.values.input[name]" :node="node" />
-            <HConnector port-type="input" port-class="param" :node="node" :param-name="name" :id="`input-${node.id}-${name}`"/>
+            <HConnector port-type="input" port-class="param" :node="node" :param-name="name" />
           </q-item-section>
         </q-item>
       </q-list>
@@ -64,9 +84,9 @@
       <!-- Condition ports -->
       <div class="text-right row q-pr-sm">
         <span class="col-12">Si le test est valide:</span>
-        <HConnector port-type="output" port-class="condition" :node="node" :condition="true" :id="`condition-${node.id}-true`"/>
+        <HConnector port-type="output" port-class="condition" :node="node" :condition="true" />
         <span class="col-12">Sinon:</span>
-        <HConnector port-type="output" port-class="condition" :node="node" :condition="false" :id="`condition-${node.id}-false`"/>
+        <HConnector port-type="output" port-class="condition" :node="node" :condition="false" />
       </div>
       <div v-if="(node.state.open)">
         <div class="text-warning" v-if="sources.length != 1">

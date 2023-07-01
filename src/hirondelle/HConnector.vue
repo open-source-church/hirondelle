@@ -3,13 +3,15 @@
       :color="opt.color" :size="opt.size" :style="opt.style"
       :data-port-type="portType" :data-port-class="portClass" :data-param-name="paramName"
       :data-port-condition="condition" :data-node-id="node.id" :data-param-type="param.type"
+      :data-function-name="functionName"
       @touchstart.stop
       @mousedown.stop="triggerConnection"
       :id="portId"
   >
     <q-tooltip v-if="param.type" :class="`bg-${H.paramTypes[param.type]?.color}-2 text-dark`">
-      {{ param.type }}
+      <span>{{ param.type }}</span>
       <span v-if="param.array"> (Multiple)</span>
+      <!-- <span> [{{portId}}]</span> -->
     </q-tooltip>
   </q-btn>
 </template>
@@ -17,7 +19,8 @@
 <script setup>
 
 import { ref, computed, reactive, watch, onMounted } from 'vue'
-import { useHirondelle } from './hirondelle';
+import { useHirondelle } from './hirondelle'
+import _ from "lodash"
 
 const H = useHirondelle()
 
@@ -27,6 +30,7 @@ const props = defineProps({
   node: { type: Object, required: true },
   paramName: { type: String },
   condition: { type: Boolean },
+  functionName: { type: String }
 })
 
 const node = computed(() => props.node)
@@ -34,7 +38,8 @@ const node = computed(() => props.node)
 const portId = computed(() => {
   var id = `port-${props.node.id}-${props.portType}-${props.portClass}`
   if (props.paramName) id += `-${props.paramName}`
-  if (props.condition) id += `-${props.condition}`
+  if (props.portClass == "condition") id += `-${props.condition}`
+  if (props.functionName) id += `-${props.functionName}`
   return id
 })
 
@@ -42,42 +47,51 @@ const param = computed(() => props.node[props.portType+"s"]?.[props.paramName] |
 
 const opt = computed(() => {
   var opt = {}
-  if (props.portType == "input" && props.portClass == "main") {
-    opt.classes = "absolute-top-left"
-    opt.style = "left: -12px; top: 10px;"
+  // Functions
+  if (props.portClass == "main" && props.functionName) {
     opt.color = "green"
     opt.size = "sm"
     opt.multiple = true
+    if (props.portType == "input") {
+      opt.classes = "absolute-top-left"
+      opt.style = "left:-12px; top: 5px;"
+    }
   }
-  else if (props.portType == "output" && props.portClass == "main") {
-    opt.classes = "absolute-top-right"
-    opt.style = "right: -11px; top: 12px;"
+  // Main
+  else if (props.portClass == "main") {
     opt.color = "green"
     opt.size = "sm"
     opt.multiple = true
+    if (props.portType == "input") {
+      opt.classes = "absolute-top-left"
+      opt.style = "left: -12px; top: 10px;"
+    }
+    else if (props.portType == "output" && props.portClass == "main") {
+      opt.classes = "absolute-top-right"
+      opt.style = "right: -11px; top: 12px;"
+    }
   }
-  if (props.portType == "input" && props.portClass == "group") {
+  // Group
+  else if (props.portClass == "group") {
     opt.color = "green"
     opt.multiple = true
   }
-  else if (props.portType == "output" && props.portClass == "group") {
-    opt.color = "green"
-    opt.multiple = true
-  }
-  else if (props.portType == "input" && props.portClass == "param") {
-    opt.classes = "absolute-top-left"
-    opt.style = "left:-9px; top: 20px;"
+  // Param
+  else if (props.portClass == "param") {
     opt.color = H.paramTypes[param.value.type]?.color
     opt.size = "xs"
-    opt.multiple = param.value.array
+    if (props.portType == "input") {
+      opt.classes = "absolute-top-left"
+      opt.style = "left:-9px; top: 14px;"
+      opt.multiple = param.value.array
+    }
+    else if (props.portType == "output") {
+      opt.classes = "absolute-top-right"
+      opt.style = "right:-10px; top: 12px"
+      opt.multiple = true
+    }
   }
-  else if (props.portType == "output" && props.portClass == "param") {
-    opt.classes = "absolute-top-right"
-    opt.style = "right:-10px; top: 20px"
-    opt.color = H.paramTypes[param.value.type]?.color
-    opt.size = "xs"
-    opt.multiple = true
-  }
+  // Conditions
   else if (props.portType == "output" && props.portClass == "condition") {
     opt.classes = "absolute"
     opt.style = props.condition ? "right:-12px; top: 6px" : "right:-12px; top: 28px"
@@ -150,12 +164,14 @@ const startConnection = ({type="main", paramFromName=null, condition=null, event
     var paramToName = findAttribute(t, "data-param-name")
     var toParamType = findAttribute(t, "data-param-type")
     var nodeId = findAttribute(t, "data-node-id")
+    var functionName = findAttribute(t, "data-function-name")
 
     if (isValid(portType, portClass, toParamType, nodeId)) {
       // Main
       if (type == "main") { // main connection
-        console.log("CONNECTION", node.value.id, nodeId)
-        node.value.graph.addConnection({from: node.value.id, to: nodeId})
+
+        console.log("CONNECTION", node.value.id, nodeId, functionName)
+        node.value.graph.addConnection({from: node.value.id, to: nodeId, functionName: functionName})
       }
       else if (type == "param" ) {
         node.value.graph.addConnection({type: type,
