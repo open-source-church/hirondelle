@@ -28,7 +28,10 @@ export const useMovePanZoom = defineStore('movePanZoom', () => {
   var viewState
   var selecting = false
   const isMoving = ref(false)
-  const onPointerMove = (event, view) => {
+  const _onPointerMove = (event, view) => {
+    // Store mouse positions
+    H._mousePos = {x: event.pageX, y: event.pageY}
+
     if (pointersStart.length) isMoving.value = true
     pointersLast = pointersLast.filter(p => p.pointerId != event.pointerId)
     pointersLast.push(event)
@@ -67,6 +70,7 @@ export const useMovePanZoom = defineStore('movePanZoom', () => {
       setScaling(view, midPoint(...pointersLast), viewState.scaling * distance(...pointersLast) / pointerDistance)
     }
   }
+  const onPointerMove = _.throttle(_onPointerMove, 50)
 
   const midPoint = (event1, event2) => ({
     x: (event1.pageX + event2.pageX) / 2,
@@ -98,7 +102,7 @@ export const useMovePanZoom = defineStore('movePanZoom', () => {
   // Moving objects
   var startingPos
   var movingObject
-  const move = (event, objs) => {
+  const _move = (event, objs) => {
     if (!objs.length) return
     if (event.isFirst) startingPos = objs.map(obj => _.cloneDeep(obj.state))
     objs.forEach((obj, i) => {
@@ -106,6 +110,7 @@ export const useMovePanZoom = defineStore('movePanZoom', () => {
       obj.state.y = ~~(startingPos[i].y + event.offset.y / obj.graph.view.scaling)
     })
   }
+  const move = _.throttle(_move, 50)
 
   return {
     mouseWheel, onPointerMove, onPointerDown, onPointerUp,

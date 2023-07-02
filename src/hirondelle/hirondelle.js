@@ -114,6 +114,10 @@ export const useHirondelle = defineStore('hirondelle', () => {
     "*": { default: null}
   }
 
+  // Utils
+  const _graphSize = ref()
+  const _mousePos = ref()
+
   /*
     Un graph contient des nodes, et des connections
   */
@@ -127,8 +131,13 @@ export const useHirondelle = defineStore('hirondelle', () => {
     view: {
       scaling: 1,
       panning: { x: 0, y: 0},
+      // Retourne la position dans le système de coordonée du graph
       to(pos){
         return { x: (pos.x / this.scaling) - this.panning.x, y: (pos.y / this.scaling) - this.panning.y }
+      },
+      // Retourne la position du graph dans l'affichage
+      from(pos){
+        return { x: (pos.x + this.panning.x) * this.scaling, y: (pos.y + this.panning.y) * this.scaling }
       }
     },
     settings: {
@@ -194,9 +203,19 @@ export const useHirondelle = defineStore('hirondelle', () => {
         input: _.mapValues(newNode.type.inputs, p => p.default || paramTypes[p.type].default),
         output: _.mapValues(newNode.type.outputs, p => p.default || paramTypes[p.type].default) }
       var id = newNode.id || uid()
+      var state = newNode.state
+      // On centre le node sur l'écran si possible
+      if (!state && _graphSize.value) {
+        var center = this.view.to({ x: _graphSize.value.width / 2, y: _graphSize.value.height / 2})
+        state = {
+          open: true,
+          x: center.x - 150,
+          y: center.y - 100
+         }
+      }
       var node = {
         type: newNode.type,
-        state: newNode.state || { x: 0, y: 0, open: true},
+        state: state || { x: 0, y: 0, open: true},
         graph: this,
         id: id,
         values: toRef(values),
@@ -479,6 +498,7 @@ export const useHirondelle = defineStore('hirondelle', () => {
 
   return {
     registerNodeType, nodeTypes,
-    graph, paramTypes
+    graph, paramTypes,
+    _graphSize: _graphSize, _mousePos
   }
 })

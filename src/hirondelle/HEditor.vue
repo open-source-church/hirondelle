@@ -7,12 +7,13 @@
     @mouseup="e => !PZ.onPointerUp(e, _graph.view) && !e.ctrlKey ? selected = [] : ''"
     @click.right="selected = []"
     @keyup.self.delete="deleteSelectedNodes"
+    @keyup.self.ctrl.c.exact="CB.copy(selected)"
+    @keyup.self.ctrl.v.exact="() => selected = CB.paste()"
   >
     <div class="absolute-top-left" style="z-index: 10">
       <q-breadcrumbs>
         <q-breadcrumbs-el v-for="b in breadcrumbs" :key="b.id" :label="b.id || b.type?.title || 'Root'" @click="setParent(b)"/>
       </q-breadcrumbs>
-      {{parentNode.nodes.length}} / {{ connections_in_group.length }}
     </div>
     <!-- Background -->
     <div class="h-background no-pointer-events h-prevent-select" :style="styles"></div>
@@ -51,6 +52,7 @@
       >
       <HMenu :items="contextMenu" />
     </q-menu>
+    <q-resize-observer @resize="getGraphSize" />
   </div>
 </template>
 
@@ -64,9 +66,11 @@ import HMenu from "src/hirondelle/HMenu.vue"
 import HConnection from "src/hirondelle/HConnection.vue"
 import HConnector from "src/hirondelle/HConnector.vue"
 import _ from "lodash"
+import { useClipboard } from './utils/clipboard'
 
 const H = useHirondelle()
 const PZ = useMovePanZoom()
+const CB = useClipboard()
 
 const props = defineProps({
   graph: { type: Object, required: false },
@@ -103,6 +107,11 @@ const connections_in_group = computed(() => {
     c.to == parentNode.value && c.from.parent == c.to
     )
 })
+
+// Graph width
+const getGraphSize = size => {
+  H._graphSize = size
+}
 
 // Context menu
 const nodeTypesCategories = computed(() => _.uniq(H.nodeTypes.map(t => t.category)).filter(c => c))

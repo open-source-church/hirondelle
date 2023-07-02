@@ -27,12 +27,12 @@
       </q-btn-dropdown>
       <q-toggle v-model="graph.settings.autoCloseNodes" label="Auto-Close Nodes" />
       <q-space />
-      <q-btn :disable="!selected.length" flat icon="content_copy" color="primary" label="Copy" @click="CB.copy(selected)"/>
-      <q-btn :disable="CB.empty" flat icon="content_paste" color="primary" label="Paste" @click="CB.paste()"/>
+      <q-btn :disable="!selected.length" flat icon="content_copy" color="primary" label="Copy" @click="CB.copy(selected)"  />
+      <q-btn :disable="CB.empty" flat icon="content_paste" color="primary" label="Paste" @click="CB.paste()" />
       <q-space />
       <q-btn v-if="selected.length > 1" flat icon="group_work" color="primary" label="Create Group" @click="graph.newGroup(selected)"/>
     </div>
-    <div class="col fit" style="min-width: 100px; min-height:100px;">
+    <div class="col fit" style="min-width: 100px; min-height:100px;" >
       <HEditor :graph="graph" @selected="selected=$event" @parentChanged="parent=$event" />
     </div>
   </div>
@@ -72,7 +72,7 @@ if (state) {
 const save = _.debounce(() => {
   console.log("Saving graph")
   S.set("graph.state", graph.save())
-}, 2000, { leading: true })
+}, 2000, {  })
 watch(graph, () => {
   save()
 }, { deep: true })
