@@ -17,9 +17,10 @@ export const useMovePanZoom = defineStore('movePanZoom', () => {
   }
 
   const mouseWheel = (event, view) => {
-    const p = { x: event.offsetX, y: event.offsetY }
-    if(event.deltaY < 0) setScaling(view, p, view.scaling * 1.3)
-    else setScaling(view, p, view.scaling / 1.3)
+    var speed = 1.5
+    const p = { x: event.pageX, y: event.pageY }
+    if(event.deltaY < 0) setScaling(view, p, view.scaling * speed)
+    else setScaling(view, p, view.scaling / speed)
   }
 
   var pointersStart = []
