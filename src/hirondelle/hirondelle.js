@@ -155,12 +155,14 @@ export const useHirondelle = defineStore('hirondelle', () => {
           if (c.from.parent.parent == c.to.parent) {
             const node = c.from.id
             c.from = c.from.parent
-            this.addConnection({from: node, to: group, type: c.type, input: c.input, output: c.output})
+            var type = c.type == "param" ? "clone" : c.type
+            this.addConnection({from: node, to: group, type, input: c.input, output: c.output})
           }
           if (c.from.parent == c.to.parent.parent) {
             const node = c.to.id
             c.to = c.to.parent
-            this.addConnection({from: group, to: node, type: c.type, input: c.output, output: c.output})
+            var type = c.type == "param" ? "clone" : c.type
+            this.addConnection({from: group, to: node, type, input: c.output, output: c.output})
           }
         }
       })
@@ -206,6 +208,7 @@ export const useHirondelle = defineStore('hirondelle', () => {
         title: newNode.title,
         targets: (signal = null) => this.targets(id, signal),
       }
+      node.save = () => this.saveNode(node)
       node.emit = (signal = null) => node.targets(signal).forEach(t => t.node.start(t.slot))
       node.compute = () => this.compute(node)
       node.setInputOptions = (param, val) => node.inputOptions.value[param] = val
@@ -345,6 +348,7 @@ export const useHirondelle = defineStore('hirondelle', () => {
         return
       }
       var connection = { from, to, input, output, graph: this, type, slot, signal }
+      connection.save = () => this.saveConnection(connection)
       this.connections.push(connection)
       // Quand on crée une connections de paramètres, on update direct les values
       if (connection.type == "param") {
@@ -401,29 +405,30 @@ export const useHirondelle = defineStore('hirondelle', () => {
     //   var conns = this.connections.filter(c => c.to.id == targetNodeId && c.type == "param" && c.input == inputName)
     //   return _.chain(conns).keyBy("output").mapValues(c => c.from.values.output[c.output]).value()
     // },
-    saveNodes(parent) {
-      return parent.nodes.map(n => {
-        var node = {
-          type: n.type.id,
-          id: n.id,
-          state: n.state,
-        }
-        if (n.values) node.values = n.values
-        if (n.title) node.title = n.title
-        if (!_.isEmpty(n.nodes)) node.nodes = this.saveNodes(n)
-        return node
-      })
+    saveNode(parent) {
+      var node = {
+        type: parent.type.id,
+        id: parent.id,
+        state: parent.state,
+      }
+      if (parent.values) node.values = _.cloneDeep(parent.values.value)
+      if (parent.title) node.title = parent.title
+      if (!_.isEmpty(parent.nodes)) node.nodes = parent.nodes.map(n => n.save())
+      return node
+    },
+    saveConnection(connection) {
+      var conn = _.cloneDeep(connection)
+      conn.from = conn.from.id
+      conn.to = conn.to.id
+      delete conn.graph
+      delete conn.save
+      conn = _.pickBy(conn, v => !_.isNil(v))
+      return conn
     },
     save() {
       var obj = {}
-      obj.nodes = this.saveNodes(this)
-      var connections = _.cloneDeep(this.connections).filter(c => c.type != "temporary")
-      connections.forEach(c => {
-        c.from = c.from.id
-        c.to = c.to.id
-        delete c.graph
-      })
-      obj.connections = connections.map(c => _.pickBy(c, v => !_.isNil(v)))
+      obj.nodes = this.nodes.map(n => n.save())
+      obj.connections = this.connections.filter(c => c.type != "temporary").map(c => c.save())
       obj.view = { scaling: this.view.scaling, panning: this.view.panning }
       obj.settings = this.settings
       return obj
@@ -444,13 +449,15 @@ export const useHirondelle = defineStore('hirondelle', () => {
       // Compute all nodes
       this.flatNodes().forEach(n => n.compute())
     },
-    flatNodes() {
+    flatNodes(root=this) {
       var nodes = []
       const addNodes = (parent) => {
-        nodes = nodes.concat(parent.nodes)
-        parent.nodes.forEach(n => addNodes(n))
+        if (parent.nodes) {
+          nodes = nodes.concat(parent.nodes)
+          parent.nodes.forEach(n => addNodes(n))
+        }
       }
-      addNodes(this)
+      addNodes(root)
       return nodes
     },
     async startNodeType(typeId, outputValues) {

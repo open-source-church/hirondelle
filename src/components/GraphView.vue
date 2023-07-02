@@ -27,7 +27,10 @@
       </q-btn-dropdown>
       <q-toggle v-model="graph.settings.autoCloseNodes" label="Auto-Close Nodes" />
       <q-space />
-      <q-btn v-if="selected.length > 1" dense flat color="primary" label="Create Group" @click="graph.newGroup(selected)"/>
+      <q-btn :disable="!selected.length" flat icon="content_copy" color="primary" label="Copy" @click="CB.copy(selected)"/>
+      <q-btn :disable="CB.empty" flat icon="content_paste" color="primary" label="Paste" @click="CB.paste()"/>
+      <q-space />
+      <q-btn v-if="selected.length > 1" flat icon="group_work" color="primary" label="Create Group" @click="graph.newGroup(selected)"/>
     </div>
     <div class="col fit" style="min-width: 100px; min-height:100px;">
       <HEditor :graph="graph" @selected="selected=$event" @parentChanged="parent=$event" />
@@ -45,11 +48,13 @@ import { useSettings } from 'stores/settings'
 import HEditor from "src/hirondelle/HEditor.vue"
 import { useHirondelle } from "src/hirondelle/hirondelle.js"
 import { useBaseActions } from "src/hirondelle/base-actions.js"
+import { useClipboard } from "src/hirondelle/utils/clipboard.js"
 
 const $q = useQuasar()
 const S = useSettings()
 
 const H = useHirondelle()
+const CB = useClipboard()
 useBaseActions()
 
 const graph = H.graph
