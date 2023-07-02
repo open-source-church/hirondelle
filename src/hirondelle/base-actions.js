@@ -28,7 +28,8 @@ export const useBaseActions = defineStore('baseActions', () => {
       running: { type: "boolean" }
     },
     slots: {
-      start: (node) => node.start()
+      start: (node) => node.start(),
+      stop: (node) => clearInterval(node._interval),
     },
     signals: {
       started: null,
@@ -38,7 +39,7 @@ export const useBaseActions = defineStore('baseActions', () => {
       console.log("AND WE WAIT", opt.input.time, "ms")
       var t = 0
       var delta = 100
-      var interval = setInterval(() => {
+      node._interval = setInterval(() => {
         t += delta
         console.log("... we waited", t, "ms")
         opt.output.elapsedTime = t
@@ -48,7 +49,7 @@ export const useBaseActions = defineStore('baseActions', () => {
       await delay(opt.input.time)
       node.emit("finished")
       opt.output.running = false
-      clearInterval(interval)
+      clearInterval(node._interval)
       opt.output.elapsedTime = opt.input.time
       console.log("AND WE ARE DONE WAITING", opt.input.time, "ms")
       return
@@ -128,8 +129,8 @@ export const useBaseActions = defineStore('baseActions', () => {
         var filterType = filter.filterType
         if (!filterType) return ignore
         if (node._paramSourcesType[k].type == "string") {
-          var p2 = p
-          var ftext = filter.filterText
+          var p2 = p || ""
+          var ftext = filter.filterText || ""
           if (!filter.matchCase) {
             p2 = p2.toLowerCase()
             ftext = ftext.toLowerCase()
@@ -190,12 +191,17 @@ export const useBaseActions = defineStore('baseActions', () => {
     category: "Base",
     info: "Augmente sa valeur de 1 chaque fois qu'il est appelé.",
     active: true,
+    slots: {
+      count: node => node.start(),
+      reset: node => node.values.value.output.count = 0,
+    },
     outputs: {
       count: { type: "number" },
     },
     action (params, node) {
       node.values.value.output.count += 1
     },
+    accepts_input: false,
   })
 
   // Operations
@@ -211,7 +217,8 @@ export const useBaseActions = defineStore('baseActions', () => {
         {id: "add", label: "Addition"},
         {id: "sub", label: "Substraction"},
         {id: "mul", label: "Multiplication"},
-        {id: "div", label: "Division"},
+        {id: "div", label: "Division"},,
+        {id: "modulo", label: "Modulo"},
       ]},
       val1: { type: "number" },
       val2: { type: "number" }
@@ -232,6 +239,9 @@ export const useBaseActions = defineStore('baseActions', () => {
       }
       if (params.input.operation == "div") {
         params.output.result = params.input.val1 / params.input.val2
+      }
+      if (params.input.operation == "modulo") {
+        params.output.result = params.input.val1 % params.input.val2
       }
     },
   })
@@ -341,9 +351,15 @@ export const useBaseActions = defineStore('baseActions', () => {
     type: "param",
     category: "Base",
     active: true,
+    inputs: {
+      text: { type: "string" },
+    },
     outputs: {
       text: { type: "string" },
     },
+    compute(values) {
+      values.output.text = values.input.text
+    }
   })
   H.registerNodeType({
     id: `BA:Var:Boolean`,

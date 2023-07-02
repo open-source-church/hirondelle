@@ -63,7 +63,7 @@
       class="q-pr-none q-pl-xl q-py-xs justify-end">
       <q-list>
         <q-item dense v-for="(output, name) in outputs" :key="name">
-          <q-item-section />
+          <!-- <q-item-section /> -->
           <q-item-section >
             <!-- <q-select v-if="input.options" :label="name" dense filled clearable v-model="node.values.output[name]" :options="input.options" />
             <q-toggle v-else-if="input.type == 'boolean'" :label="name" dense v-model="node.values.output[name]"/>
@@ -121,7 +121,7 @@
               </q-menu>
             </q-chip>
             <template v-if="p.options && node.state.filter[k].filterType == '='">
-              <q-select class="col" dense filled clearable
+              <q-select class="col" dense filled clearable options-dense
                 :options="p.options" v-model="node.state.filter[k].filterText" />
             </template>
             <template v-else>

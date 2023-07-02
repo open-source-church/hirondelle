@@ -216,7 +216,6 @@ export const useTwitch = defineStore('twitch', () => {
       rewardCost: event.rewardCost,
       input: event.input
     }
-    reward_action.start(opt)
     H.graph.startNodeType("Twitch:onReward", opt)
     /*
     broadcasterDisplayName

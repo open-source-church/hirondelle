@@ -221,11 +221,18 @@ export const useHirondelle = defineStore('hirondelle', () => {
         values: toRef(values),
         running: ref(false),
         nodes: [],
-        inputs: ref(_.cloneDeep(newNode.type.inputs) || {}), // Dynamic inputs
-        outputs: ref(_.cloneDeep(newNode.type.outputs) || {}), // Dynamic outpus
+        // inputs: ref(newNode.type.inputs || {}), // Dynamic inputs
+        // outputs: ref(newNode.type.outputs || {}), // Dynamic outpus
+        inputs: ref({}), // Dynamic inputs
+        outputs: ref({}), // Dynamic outpus
         title: newNode.title,
         targets: (signal = null) => this.targets(id, signal),
       }
+      if(newNode.type.inputs)
+        node.inputs = ref(_.mapValues(newNode.type.inputs, p => p))
+      if(newNode.type.outputs)
+        node.outputs = ref(_.mapValues(newNode.type.outputs, p => p))
+
       node.save = () => this.saveNode(node)
       node.emit = (signal = null) => node.targets(signal).forEach(t => t.node.start(t.slot))
       node.compute = () => this.compute(node)
@@ -249,6 +256,15 @@ export const useHirondelle = defineStore('hirondelle', () => {
         if (slot == "main") {
           if (node.type.action && node.type.active)
             await node.type.action(node.values.value, node)
+            
+            // Call connected nodes
+            // Pas pour les groupes, parce qu'on appelle là suite que si des noeuds internes le demandent
+            if(node.type.id != "group") {
+              node.emit()
+            }
+            // Si connecté à un group, on appelle le groupe
+            var group = node.graph.connections.filter(c => c.type == "main" && c.from.id == node.id && c.from.parent.id == c.to.id)
+            group.forEach(g => g.to.emit())
         }
         // Subroutine / function
         else if (node.type.slots && slot in node.type.slots) {
@@ -258,14 +274,6 @@ export const useHirondelle = defineStore('hirondelle', () => {
         node.running.value = false
         console.log("And done.", node.type.title)
 
-        // Call connected nodes
-        // Pas pour les groupes, parce qu'on appelle là suite que si des noeuds internes le demandent
-        if(node.type.id != "group") {
-          node.emit()
-        }
-        // Si connecté à un group, on appelle le groupe
-        var group = node.graph.connections.filter(c => c.type == "main" && c.from.id == node.id && c.from.parent.id == c.to.id)
-        group.forEach(g => g.to.emit())
       }
       node.remove = () => this.removeNode(node)
 
@@ -324,7 +332,8 @@ export const useHirondelle = defineStore('hirondelle', () => {
       // this.propagateOutputValues(node)
     },
     propagateOutputValues(node) {
-      // if (this._loading) return
+      console.log(node.type.id)
+      if (this._loading && node.type.id == "group") return
       console.log("PROPAGATING VALUES", node.type.title)
       var val = node.values.value || node.values // FIXME: pourquoi des fois c'est une ref et des fois pas?
       // On update les params connections
