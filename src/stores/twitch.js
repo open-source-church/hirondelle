@@ -8,7 +8,6 @@ import { ApiClient } from '@twurple/api'
 import { EventSubWsListener } from '@twurple/eventsub-ws'
 import { ChatClient } from '@twurple/chat'
 import { useSettings } from './settings'
-import { useActions } from './actions'
 import { useHirondelle } from 'src/hirondelle/hirondelle.js'
 
 // import { useRouter } from 'vue-router'
@@ -21,7 +20,6 @@ export const useTwitch = defineStore('twitch', () => {
 
   const $q = useQuasar()
   const S = useSettings()
-  const A = useActions()
   const H = useHirondelle()
   // const router = useRouter()
 
@@ -173,17 +171,6 @@ export const useTwitch = defineStore('twitch', () => {
   }
 
   const rewards_title = computed(() => rewards.value.map(r => r.title))
-  // Reward event
-  var reward_action = A.register_action({
-    name:"Reward", source:"Twitch", description:"Une récompense a été récupérée",
-    active: eventsub_started,
-    params: [
-    { name: "userName", description: "Le nom de l'utilisateurice" },
-    { name: "rewardId", description: "L'id de la reward" },
-    { name: "rewardTitle", description: "Le titre de la récompense", options: rewards_title },
-    { name: "rewardCost", description: "Le coût de la récompense" },
-    { name: "input", description: "L'input de la récompense" },
-  ]})
 
   H.registerNodeType({
     id: "Twitch:onReward",

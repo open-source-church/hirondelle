@@ -25,7 +25,6 @@
 import { ref, computed, reactive, watch, onMounted } from 'vue'
 import { useQuasar, copyToClipboard } from 'quasar'
 import _ from 'lodash'
-import { useActions } from 'stores/actions'
 import { useSettings } from 'stores/settings'
 // Node
 import HEditor from "src/hirondelle/HEditor.vue"
@@ -33,7 +32,6 @@ import { useHirondelle } from "src/hirondelle/hirondelle.js"
 import { useBaseActions } from "src/hirondelle/base-actions.js"
 
 const $q = useQuasar()
-const A = useActions()
 const S = useSettings()
 const H = useHirondelle()
 

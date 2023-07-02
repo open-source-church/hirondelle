@@ -3,14 +3,12 @@ import OBSWebSocket from 'obs-websocket-js'
 import { ref, computed, watch, toRef, onMounted } from 'vue'
 import _ from 'lodash'
 import { useSettings } from './settings'
-import { useActions } from './actions'
 import { useHirondelle } from 'src/hirondelle/hirondelle.js'
 import { usePeer } from './peer'
 
 export const useOBS = defineStore('obs', () => {
 
   const S = useSettings()
-  const A = useActions()
   const H = useHirondelle()
   const peer = usePeer()
 
@@ -287,13 +285,7 @@ export const useOBS = defineStore('obs', () => {
     }
   ]
 
-  events_lists_to_watch.forEach(e => {
-    var action = A.register_action({
-      name: e.name, source: "OBS", description: e.description, params: e.params, active: connected})
-    obs_ws.on(e.obsname, (p) => action.start(p))
-  })
-
-  // Hirondelle
+  // Events
   events_lists_to_watch.forEach(e => {
     H.registerNodeType({
       id: `OBS:${e.obsname}`,
@@ -306,30 +298,7 @@ export const useOBS = defineStore('obs', () => {
     obs_ws.on(e.obsname, (p) => H.graph.startNodeType(`OBS:${e.obsname}`, p))
   })
 
-  /*
-    Actions
-  */
-  A.register_action({
-    name: "Set scene", source: "OBS",
-    description: "Change la scène en cours sur OBS",
-    params: [ { name: "sceneName", description: "Nom de la scene" }],
-    active: connected,
-    callback: (opt) => {
-      console.log("OBS CHANGE SCENE", opt)
-      obs_ws.call("SetCurrentProgramScene", { sceneName: opt.sceneName })
-    }
-  })
-
-  A.register_action({
-    name: "Set preview scene", source: "OBS",
-    description: "Change la scène apperçu sur OBS",
-    params: [ { name: "sceneName", description: "Nom de la scene" }],
-    active: connected,
-    callback: (opt) => obs_ws.call("SetCurrentPreviewScene", { sceneName: opt.sceneName })
-  })
-
-  // Hirondelle
-
+  // Actions
   H.registerNodeType({
     id: "OBS:SetCurrentProgramScene",
     type: "action",

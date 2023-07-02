@@ -7,7 +7,6 @@
       <q-tab name="twitch" label="Twitch" icon="stream" >
         <q-badge floating :color="twitch.chat_connected ? 'green' : 'red'" />
       </q-tab>
-      <q-tab name="actions" label="Actions" icon="arrow_right"/>
       <q-tab name="graph" label="Node editor" icon="account_tree" />
       <q-tab name="settings" label="Options" icon="settings" />
     </q-tabs>
@@ -18,9 +17,6 @@
       </q-tab-panel>
       <q-tab-panel name="twitch">
         <twitch-view />
-      </q-tab-panel>
-      <q-tab-panel name="actions">
-        <actions-view />
       </q-tab-panel>
       <q-tab-panel class="q-pa-none" name="graph">
         <graph-view />
