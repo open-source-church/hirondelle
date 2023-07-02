@@ -443,7 +443,6 @@ export const useOBS = defineStore('obs', () => {
       if (!connected.value) return
       var sceneItems = await getSceneItemRecs(params.input.sceneName)
       node.setInputs("sceneItemId", { type: "number", options: sceneItems, optionLabel: "name", optionValue: "id" })
-      // node.setInputOptions("sceneItemId", sceneItems)
       var rect = sceneItems.find(i => i.id == params.input.sceneItemId)?.rect
       if (rect && !_.isEqual(rect, params.output.rect)) params.output.rect = rect
     },

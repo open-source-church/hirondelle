@@ -223,14 +223,12 @@ export const useHirondelle = defineStore('hirondelle', () => {
         nodes: [],
         inputs: ref(_.cloneDeep(newNode.type.inputs) || {}), // Dynamic inputs
         outputs: ref(_.cloneDeep(newNode.type.outputs) || {}), // Dynamic outpus
-        inputOptions: ref({}), // to update input types conditions for specific nodes //FIXME: plus nécessaire je pense
         title: newNode.title,
         targets: (signal = null) => this.targets(id, signal),
       }
       node.save = () => this.saveNode(node)
       node.emit = (signal = null) => node.targets(signal).forEach(t => t.node.start(t.slot))
       node.compute = () => this.compute(node)
-      node.setInputOptions = (param, val) => node.inputOptions.value[param] = val
       // Node specific inputs (param)
       node.setInputs = (param, input) => {
         node.inputs.value[param] = input
@@ -306,6 +304,15 @@ export const useHirondelle = defineStore('hirondelle', () => {
       } catch (err) {
         console.error(err)
       }
+      // On ne garde que les valeurs qui sont dans les inputs/outputs
+      var inputs = node.inputs.value || node.inputs // again...
+      _.forEach(val.input, (v, k) => {
+        if(!inputs[k]) delete val.input[k]
+      })
+      var outputs = node.outputs.value || node.outputs // again...
+      _.forEach(val.output, (v, k) => {
+        if(!outputs[k]) delete val.output[k]
+      })
     },
     // When values.input changes
     onInputValuesChange(node) {
@@ -317,7 +324,7 @@ export const useHirondelle = defineStore('hirondelle', () => {
       // this.propagateOutputValues(node)
     },
     propagateOutputValues(node) {
-      if (this._loading) return
+      // if (this._loading) return
       console.log("PROPAGATING VALUES", node.type.title)
       var val = node.values.value || node.values // FIXME: pourquoi des fois c'est une ref et des fois pas?
       // On update les params connections
@@ -326,8 +333,10 @@ export const useHirondelle = defineStore('hirondelle', () => {
       connections.forEach(c => {
         if (c.to.type.inputs[c.input]?.array)
           this.updateArrayInputParam(c.to, c.input)
-        else if (c.type == "param")
+        else if (c.type == "param") {
+          // On update la valeur
           c.to.values.input[c.input] = val.output[c.output]
+        }
         else
           c.to.compute()
       })
@@ -336,11 +345,16 @@ export const useHirondelle = defineStore('hirondelle', () => {
       // Si pas array, on ignore
       if (!node.inputs[inputName].array) return
       var connections = this.connections.filter(c => c.to.id == node.id && c.type == "param" && c.input == inputName)
+      // Tentative de faire un truc qui donne des valeurs différentes à des variables qui ont le même nom
+      // Mais ensuite c'est compliqué pour récupérer les types sources de chaque variable, puisque le nom a changé
+      // Alors on garde ça quelque part en stock. C'est pas très propre.
       var indexes = {}
       node.values.input[inputName] = {}
+      node._paramSourcesType = {} // Pour garder track des types
       connections.forEach(c => {
         var i = indexes[c.output] || ""
         c.to.values.input[c.input][c.output+i] = c.from.values.output[c.output]
+        node._paramSourcesType[c.output+i] = c.from.outputs[c.output]
         indexes[c.output] = (indexes[c.output] || 1) + 1
       })
     },
@@ -420,10 +434,14 @@ export const useHirondelle = defineStore('hirondelle', () => {
       return this.connections.filter(c => c.to.id == targetNodeId && c.type == "main").map(c => c.from)
     },
     // La liste des paramètres connectés vers le param
-    // paramSources(targetNodeId, inputName) {
-    //   var conns = this.connections.filter(c => c.to.id == targetNodeId && c.type == "param" && c.input == inputName)
-    //   return _.chain(conns).keyBy("output").mapValues(c => c.from.values.output[c.output]).value()
-    // },
+    paramSources(targetNodeId) {
+      var conns = this.connections.filter(c => c.to.id == targetNodeId && c.type == "param")
+      return _.chain(conns)
+      .map(c => ({input: c.input, output: c.output, type: c.from.outputs[c.output]}))
+      .groupBy("input")
+      .mapValues(c => _.chain(c).keyBy("output").mapValues("type").value())
+      .value()
+    },
     saveNode(parent) {
       var node = {
         type: parent.type.id,

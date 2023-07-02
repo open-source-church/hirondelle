@@ -94,27 +94,40 @@ export const useBaseActions = defineStore('baseActions', () => {
     title: "Conditions",
     category: "Base",
     active: true,
-    inputs: {},
-    outputs: {},
+    inputs: {
+      logic: { type: "string", default: "and", options: [
+        { id: "and", label: "AND" },
+        { id: "or", label: "OR" }
+      ]},
+      vars: { type: "*", array: true}
+    },
+    outputs: {
+      result: { type: "boolean" }
+    },
     accepts_output: false,
+    accepts_input: false,
+    slots: {
+      test: node => node.start()
+    },
     signals: {
       valid: null,
       invalid: null
     },
-    action(opt, node) {
-      var source = node.graph.sources(node.id)
-      if (source.length != 1) {
-        throw new Error("Il doit y avoir exactement une source pour les conditions.")
-        return
+    compute(values, node) {
+      if (values.input.logic == "and") {
+        var f = _.every
+        var ignore = true
       }
-      var source = source[0]
-      var valid = true
-      var test = _.every(source.values.output, (p, k) => {
+      else {
+        var f = _.some
+        var ignore = false
+      }
+      var test = f(values.input.vars, (p, k) => {
         var filter = node.state.filter[k]
-        if (!filter) return true
+        if (!filter) return ignore
         var filterType = filter.filterType
-        if (!filterType) return true
-        if (source.type.outputs[k].type == "string") {
+        if (!filterType) return ignore
+        if (node._paramSourcesType[k].type == "string") {
           var p2 = p
           var ftext = filter.filterText
           if (!filter.matchCase) {
@@ -126,21 +139,22 @@ export const useBaseActions = defineStore('baseActions', () => {
           if(filterType == "Est contenu dans") return ftext.includes(p2)
           if(filterType == "regex") return p2.match(new RegExp(ftext)) != null
         }
-        else if (source.type.outputs[k].type == "number") {
+        else if (node._paramSourcesType[k].type == "number") {
           p = parseFloat(p)
           if(filterType == "=") return p == filter.equals
           if(filterType == ">") return p > filter.greaterThan
           if(filterType == "<") return p < filter.lesserThan
           if(filterType == "< x <") return filter.greaterThan < p && p < filter.lesserThan
         }
-        else if (source.type.outputs[k].type == "boolean") {
+        else if (node._paramSourcesType[k].type == "boolean") {
           if(filterType == "=") return p == filter.equals
         }
-        return false
+        return !ignore
       })
-      // opt.output.test = test
-      // On appelle tous les noeuds connectés selon le résultat
-      if (test) node.emit("valid")
+      values.output.result = test
+    },
+    action(values, node) {
+      if (values.output.result) node.emit("valid")
       else node.emit("invalid")
     }
   })
@@ -194,10 +208,10 @@ export const useBaseActions = defineStore('baseActions', () => {
     active: true,
     inputs: {
       operation: { type: "string", default: "add", options: [
-        {id: "add", text: "Addition"},
-        {id: "sub", text: "Substraction"},
-        {id: "mul", text: "Multiplication"},
-        {id: "div", text: "Division"},
+        {id: "add", label: "Addition"},
+        {id: "sub", label: "Substraction"},
+        {id: "mul", label: "Multiplication"},
+        {id: "div", label: "Division"},
       ]},
       val1: { type: "number" },
       val2: { type: "number" }
@@ -231,11 +245,11 @@ export const useBaseActions = defineStore('baseActions', () => {
     active: true,
     inputs: {
       operation: { type: "string", default: "and", options: [
-        {id: "and", text: "Et"},
-        {id: "or", text: "Ou"},
-        {id: "not", text: "Not"},
-        {id: "eq", text: "Égal"},
-        {id: "dif", text: "Different"}
+        {id: "and", label: "Et"},
+        {id: "or", label: "Ou"},
+        {id: "not", label: "Not"},
+        {id: "eq", label: "Égal"},
+        {id: "dif", label: "Different"}
       ]},
       values: { type: "boolean", array: true },
     },
@@ -344,7 +358,7 @@ export const useBaseActions = defineStore('baseActions', () => {
       setTrue: (node) => node.values.value.output.boolean = true,
       setFalse: (node) => node.values.value.output.boolean = false,
       toggle: (node) => node.values.value.output.boolean = !node.values.value.output.boolean,
-    },
+    }
   })
   H.registerNodeType({
     id: `BA:RandomNumber`,

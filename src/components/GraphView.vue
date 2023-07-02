@@ -72,7 +72,7 @@ if (state) {
 const save = _.debounce(() => {
   console.log("Saving graph")
   S.set("graph.state", graph.save())
-}, 2000, {  })
+}, 2000, { leading: true })
 watch(graph, () => {
   save()
 }, { deep: true })
