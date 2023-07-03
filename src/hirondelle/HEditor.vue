@@ -9,12 +9,12 @@
     @keyup.self.delete="deleteSelectedNodes"
     @keyup.self.ctrl.c.exact="CB.copy(selected)"
     @keyup.self.ctrl.v.exact="() => selected = CB.paste(parentNode)"
+    @keyup.self.shift.a.exact="newNodeDialog"
   >
     <div class="absolute-top-left" style="z-index: 10">
       <q-breadcrumbs>
         <q-breadcrumbs-el v-for="b in breadcrumbs" :key="b.id" :label="b.id || b.type?.title || 'Root'" @click="setParent(b)"/>
       </q-breadcrumbs>
-      {{ H.graphViewport }}
     </div>
     <!-- Background -->
     <div class="h-background no-pointer-events h-prevent-select" :style="styles"></div>
@@ -35,7 +35,7 @@
         @click.ctrl.stop="selected = _.xor(selected, [n])"
         @click.exact.stop="selected = [n]"
         @edit="setParent($event)"
-        draggable="false"
+        draggable="false" v-memo="[selected.includes(n)]"
          />
     </div>
     <!-- Connections -->
@@ -66,12 +66,15 @@ import HNode from "src/hirondelle/HNode.vue"
 import HMenu from "src/hirondelle/HMenu.vue"
 import HConnection from "src/hirondelle/HConnection.vue"
 import HConnector from "src/hirondelle/HConnector.vue"
+import HNodeTypes from "src/hirondelle/HNodeTypes.vue"
 import _ from "lodash"
 import { useClipboard } from './utils/clipboard'
+import { useQuasar } from 'quasar'
 
 const H = useHirondelle()
 const PZ = useMovePanZoom()
 const CB = useClipboard()
+const $q = useQuasar()
 
 const props = defineProps({
   graph: { type: Object, required: false },
@@ -92,10 +95,7 @@ const setParent = (parent) => {
   parentNode.value = parent
   emit("parentChanged", parent)
 }
-// const nodes_in_group = computed(() => {
-//   if (parentNode.value) return parentNode.value.nodes
-//   else return _graph.value.nodes
-// })
+
 const connections_in_group = computed(() => {
   return props.graph.connections.filter(c =>
     // Même parent
@@ -108,6 +108,21 @@ const connections_in_group = computed(() => {
     c.to == parentNode.value && c.from.parent == c.to
     )
 })
+
+// New node dialog
+const newNodeDialog = () => {
+  var state = { x: H._mousePos.x, y: H._mousePos.y }
+  state.x -= 150
+  state.y -= 20
+  console.log(state)
+  state = H.graph.view.to(state)
+  state.open = true
+
+  $q.dialog({ component: HNodeTypes }).onOk((t) => {
+    console.log("TYPE", t)
+    _graph.value.addNode({ type: t.type, state }, parentNode.value)
+  })
+}
 
 // Graph width
 const getGraphSize = size => {

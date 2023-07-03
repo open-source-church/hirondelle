@@ -18,7 +18,8 @@ export const useBaseActions = defineStore('baseActions', () => {
   H.registerNodeType({
     id: `BA:Wait`,
     title: "Wait...",
-    category: "Base",
+    category: "Time",
+    description: "Wait some time",
     active: true,
     inputs: {
       time: { type: "number", default: 3000}
@@ -65,7 +66,7 @@ export const useBaseActions = defineStore('baseActions', () => {
   H.registerNodeType({
     id: `BA:Time Interval`,
     title: "Time interval",
-    category: "Base",
+    category: "Time",
     active: true,
     inputs: {
       time: { type: "number", default: 5000, description: "Interval en ms"},
@@ -97,7 +98,7 @@ export const useBaseActions = defineStore('baseActions', () => {
   H.registerNodeType({
     id: `BA:Condition`,
     title: "Conditions",
-    category: "Base",
+    category: "Logic",
     active: true,
     inputs: {
       logic: { type: "string", default: "and", options: [
@@ -169,7 +170,7 @@ export const useBaseActions = defineStore('baseActions', () => {
     id: `BA:Text`,
     title: "Text Builder",
     type: "param",
-    category: "Base",
+    category: "Operations",
     info: "Connectez des variables, et utilisez les dans la template, par exemple 'Merci [userName]!'",
     active: true,
     inputs: {
@@ -192,7 +193,7 @@ export const useBaseActions = defineStore('baseActions', () => {
     id: `BA:Counter`,
     title: "Couter",
     type: "action",
-    category: "Base",
+    category: "Utilities",
     info: "Augmente sa valeur de 1 chaque fois qu'il est appelé.",
     active: true,
     slots: {
@@ -213,7 +214,7 @@ export const useBaseActions = defineStore('baseActions', () => {
     id: `BA:ArithmeticOperation`,
     title: "Arithmetic operations",
     type: "param",
-    category: "Base",
+    category: "Operations",
     info: "Connectez des variables, et utilisez les dans la template, par exemple 'Merci [userName]!'",
     active: true,
     inputs: {
@@ -253,9 +254,9 @@ export const useBaseActions = defineStore('baseActions', () => {
   // Logic
   H.registerNodeType({
     id: `BA:LogicOperations`,
-    title: "Logic",
+    title: "Boolean Logic",
     type: "param",
-    category: "Base",
+    category: "Logic",
     active: true,
     inputs: {
       operation: { type: "string", default: "and", options: [
@@ -295,7 +296,7 @@ export const useBaseActions = defineStore('baseActions', () => {
     id: `BA:Rect:Split`,
     title: "Split Rect",
     type: "param",
-    category: "Base",
+    category: "Variables",
     active: true,
     inputs: {
       rect: { type: "rect" },
@@ -319,7 +320,7 @@ export const useBaseActions = defineStore('baseActions', () => {
     id: `BA:Rect:Create`,
     title: "Create Rect",
     type: "param",
-    category: "Base",
+    category: "Variables",
     active: true,
     inputs: {
       x: { type: "number" },
@@ -343,7 +344,7 @@ export const useBaseActions = defineStore('baseActions', () => {
     id: `BA:Var:Number`,
     title: "Nombre",
     type: "param",
-    category: "Base",
+    category: "Variables",
     active: true,
     outputs: {
       number: { type: "number" },
@@ -353,7 +354,7 @@ export const useBaseActions = defineStore('baseActions', () => {
     id: `BA:Var:String`,
     title: "Texte",
     type: "param",
-    category: "Base",
+    category: "Variables",
     active: true,
     inputs: {
       text: { type: "string" },
@@ -369,7 +370,7 @@ export const useBaseActions = defineStore('baseActions', () => {
     id: `BA:Var:Boolean`,
     title: "Boolean",
     type: "param",
-    category: "Base",
+    category: "Variables",
     active: true,
     outputs: {
       boolean: { type: "boolean" },
@@ -381,10 +382,10 @@ export const useBaseActions = defineStore('baseActions', () => {
     }
   })
   H.registerNodeType({
-    id: `BA:RandomNumber`,
+    id: `BA:Var:RandomNumber`,
     title: "Random Number",
     type: "param",
-    category: "Base",
+    category: "Variables",
     active: true,
     inputs: {
       min: { type: "number", default: 0 },
@@ -426,7 +427,7 @@ export const useBaseActions = defineStore('baseActions', () => {
     id: `BA:Color:Split`,
     title: "Color split",
     type: "param",
-    category: "Base",
+    category: "Variables",
     active: true,
     inputs: {
       color: { type: "color" },
@@ -454,7 +455,7 @@ export const useBaseActions = defineStore('baseActions', () => {
     id: `BA:Color:RGBA`,
     title: "Color mix RGBA",
     type: "param",
-    category: "Base",
+    category: "Variables",
     active: true,
     inputs: {
       red: { type: "number", default: 215, slider: { min: 0, max: 255, color: "red" } },
@@ -478,7 +479,7 @@ export const useBaseActions = defineStore('baseActions', () => {
     id: `BA:Color:HSV`,
     title: "Color mix HSV",
     type: "param",
-    category: "Base",
+    category: "Variables",
     active: true,
     inputs: {
       hue: { type: "number", default: 300, slider: { min: 0, max: 360 } },

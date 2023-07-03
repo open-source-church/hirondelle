@@ -78,6 +78,7 @@ export const useHirondelle = defineStore('hirondelle', () => {
         //  On crée un input
         if (input) node.setInputs(c.input, input)
         // On met à jour la valeur du node lié
+        console.log(values.input[c.input], c.to.values.input[c.input])
         if (values.input[c.input]) c.to.values.input[c.input] = values.input[c.input]
       })
       // On supprime les inputs qui ne sont plus là
@@ -104,6 +105,26 @@ export const useHirondelle = defineStore('hirondelle', () => {
     }
   })
 
+  const nodeTypesOptions = computed(() => {
+    var options = []
+
+    var cats = _.uniq(nodeTypes.value.map(t => t.category)).filter(c => c)
+    cats.forEach(cat => {
+      options.push({ header: true, label: cat })
+
+      nodeTypes.value
+      .filter(t => t.category == cat)
+      .forEach(t => options.push({
+        label: t.title,
+        description: t.description,
+        category: t.category,
+        type: t
+      }))
+    })
+
+    return options
+  })
+
   const paramTypes = {
     string: { default: "", color: "yellow" },
     number: { default: 0, color: "blue" },
@@ -123,9 +144,7 @@ export const useHirondelle = defineStore('hirondelle', () => {
   */
   const graph = ref({
     nodes: [],
-    connections: [
-      // {from: {id: "33abce08-a4a0-4860-8fc2-856395f9d80d"}, to: {id: "8ee944e1-927d-44fd-bac1-12a200498a8d"}}
-    ],
+    connections: [],
     _connectors: {}, // to keep track of connectors positions
     groups: [],
     view: {
@@ -273,13 +292,12 @@ export const useHirondelle = defineStore('hirondelle', () => {
 
         node.running.value = false
         console.log("And done.", node.type.title)
-
       }
       node.remove = () => this.removeNode(node)
 
       // On ajoute les éventuels enfants
       if (newNode.nodes?.length) {
-        // Est-ce que le node a déjà été crée
+        // Est-ce que le node a déjà été crée ?
         if (newNode.nodes[0].start)
           newNode.nodes.forEach(n => {
             n.parent.nodes = n.parent.nodes.filter(nn => nn != n)
@@ -289,9 +307,9 @@ export const useHirondelle = defineStore('hirondelle', () => {
         else
           newNode.nodes.forEach(n => this.addNode(n, node))
       }
-      // watch(() => node.values.value.input, (val) => {
-      //   this.onInputValuesChange(node)
-      // }, { deep: true, immediate: true })
+      watch(() => node.values.value.input, (val) => {
+        this.onInputValuesChange(node)
+      }, { deep: true, immediate: true })
       watch(() => node.values.value.output, (val) => {
         this.propagateOutputValues(node)
       }, { deep: true, immediate: true })
@@ -539,6 +557,6 @@ export const useHirondelle = defineStore('hirondelle', () => {
   return {
     registerNodeType, nodeTypes,
     graph, paramTypes,
-    _graphSize, _mousePos, graphViewport
+    _graphSize, _mousePos, graphViewport, nodeTypesOptions
   }
 })

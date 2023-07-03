@@ -2,28 +2,21 @@
   <div class="column fit fixed">
     <div class="col-auto row bg-dark" style="z-index:10;">
       <!-- Triggers -->
-      <q-btn-dropdown flat color="primary" label="Triggers">
+      <q-btn-dropdown flat color="primary" label="Add node">
         <q-list>
-          <q-item v-for="t in H.nodeTypes.filter(t => t.isTrigger)" :key="t.id" clickable
-            @click="graph.addNode({type: t}, parent)">
-            <q-item-section><q-item-label>
-              <q-badge color="accent">{{t.category}}</q-badge>
-              {{ t.title }}
-            </q-item-label></q-item-section>
+          <q-item v-for="(item, i) in H.nodeTypesOptions" :key="`addNode-${i}`" :disable="item.header"
+            @click="graph.addNode({ type: item.type }, parent)" clickable >
+            <q-item-section avatar v-if="!item.header">
+              <q-badge v-if="item.type.isTrigger" square class="bg-accent text-white">trigger</q-badge>
+              <q-badge v-if="item.type.isAction" square class="bg-primary text-dark">action</q-badge>
+              <q-badge v-if="item.type.isParam" square class="bg-grey-8 text-white">param</q-badge>
+            </q-item-section>
+            <q-item-section>
+              <q-item-label>{{ item.label }}</q-item-label>
+              <q-item-label caption>{{ item.description }}</q-item-label>
+            </q-item-section>
           </q-item>
-        </q-list>
-      </q-btn-dropdown>
-      <!-- Actions -->
-      <q-btn-dropdown flat color="primary" label="Actions">
-        <q-list>
-          <q-item v-for="t in H.nodeTypes.filter(t => !t.isTrigger)" :key="t.id" clickable
-            @click="graph.addNode({type: t}, parent)">
-            <q-item-section><q-item-label>
-              <q-badge color="accent">{{t.category}}</q-badge>
-              {{ t.title }}
-            </q-item-label></q-item-section>
-          </q-item>
-        </q-list>
+      </q-list>
       </q-btn-dropdown>
       <q-toggle v-model="graph.settings.autoCloseNodes" label="Auto-Close Nodes" />
       <q-space />

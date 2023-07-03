@@ -9,7 +9,7 @@
     </div>
   </template>
   <template v-else >
-  <div class="h-node" :data-node-id="node.id" v-show="visible"
+  <div class="h-node" :data-node-id="node.id" v-show="visible" 
     :style="`left:${node.state?.x}px; top: ${node.state?.y}px;`"
     @mouseenter="node.graph.settings.autoCloseNodes ? node.state.open = true : ''"
     @mouseleave="node.graph.settings.autoCloseNodes ? node.state.open = false : ''" :id="node.id">
