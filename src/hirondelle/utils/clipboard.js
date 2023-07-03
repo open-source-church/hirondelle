@@ -17,8 +17,8 @@ export const useClipboard = defineStore('clipboard', () => {
       nodes: nodes.map(n => n.save()),
       connections: [],
       view: {
-        panning: _.cloneDeep(H.graph.view.panning),
-        scaling: H.graph.view.scaling
+        panning: _.cloneDeep(H.view.panning),
+        scaling: H.view.scaling
       }
     }
     if (nodes.length) {
@@ -41,14 +41,14 @@ export const useClipboard = defineStore('clipboard', () => {
     var x = cb.nodes.map(n => n.state.x).reduce((a, b) => a + b) / cb.nodes.length
     var y = cb.nodes.map(n => n.state.y).reduce((a, b) => a + b) / cb.nodes.length
     // On cherche un centre
-    if (H._mousePos && H._mousePos.y > 100)
+    if (H.view.mouse && H.view.mouse.y > 100)
       // La position de la souris (sauf si elle est en haut, probablement sur le bouton coller)
-      var center = H.graph.view.to(H._mousePos)
-    else if (H._graphSize)
+      var center = H.view.to(H.view.mouse)
+    else if (H.view.dimensions.width)
       // Le centre de l'écran
-      var center = H.graph.view.to({
-        x: H._graphSize.width / 2,
-        y: H._graphSize.height / 2
+      var center = H.view.to({
+        x: H.view.dimensions.width / 2,
+        y: H.view.dimensions.height / 2
       })
     else
       var center = {x: 0, y: 0}

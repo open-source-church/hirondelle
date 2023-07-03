@@ -1,10 +1,10 @@
 <template>
   <div
     class="h-editor" tabindex="0"
-    @wheel.self.prevent="e => PZ.mouseWheel(e, _graph.view)"
-    @mousemove="e => PZ.onPointerMove(e, _graph.view)"
-    @mousedown.self="e => PZ.onPointerDown(e, _graph.view)"
-    @mouseup="e => !PZ.onPointerUp(e, _graph.view) && !e.ctrlKey ? selected = [] : ''"
+    @wheel.self.prevent="e => PZ.mouseWheel(e, H.view)"
+    @mousemove="e => PZ.onPointerMove(e, H.view)"
+    @mousedown.self="e => PZ.onPointerDown(e, H.view)"
+    @mouseup="e => !PZ.onPointerUp(e, H.view) && !e.ctrlKey ? selected = [] : ''"
     @click.right="selected = []"
     @keyup.self.delete="deleteSelectedNodes"
     @keyup.self.ctrl.c.exact="CB.copy(selected)"
@@ -29,13 +29,13 @@
     </div>
     <!-- Nodes -->
     <div class="h-node-container h-prevent-select" :style="transformStyle" >
-      <HNode v-for="(n, i) in parentNode.nodes" :key="'node'+i" :node="n"
-        v-touch-pan.prevent.mouse="e => PZ.move(e, selected.includes(n) ? selected : [n], _graph.view)"
+      <HNode v-for="n in parentNode.nodes" :key="n.id" :node="n"
+        v-touch-pan.prevent.mouse="e => PZ.move(e, selected.includes(n) ? selected : [n], H.view)"
         :class="selected.includes(n) ? 'selected' : ''"
         @click.ctrl.stop="selected = _.xor(selected, [n])"
         @click.exact.stop="selected = [n]"
         @edit="setParent($event)"
-        draggable="false" v-memo="[selected.includes(n)]"
+        draggable="false" v-memo="[parentNode, selected.includes(n)]"
          />
     </div>
     <!-- Connections -->
@@ -111,11 +111,11 @@ const connections_in_group = computed(() => {
 
 // New node dialog
 const newNodeDialog = () => {
-  var state = { x: H._mousePos.x, y: H._mousePos.y }
+  var state = { x: H.view.mouse.x, y: H.view.mouse.y }
   state.x -= 150
   state.y -= 20
   console.log(state)
-  state = H.graph.view.to(state)
+  state = H.view.to(state)
   state.open = true
 
   $q.dialog({ component: HNodeTypes }).onOk((t) => {
@@ -126,7 +126,7 @@ const newNodeDialog = () => {
 
 // Graph width
 const getGraphSize = size => {
-  H._graphSize = size
+  H.view.dimensions = size
 }
 
 // Context menu
@@ -165,8 +165,8 @@ const breadcrumbs = computed(() => {
 
 // Selection
 const selectionStyle = computed(() => {
-  if (_graph.value.view.selection?.topLeft) {
-    var selection = _graph.value.view.selection
+  if (H.view.selection?.topLeft) {
+    var selection = H.view.selection
     return {
     left: selection.topLeft.x + "px",
     top: selection.topLeft.y + "px",
@@ -176,12 +176,12 @@ const selectionStyle = computed(() => {
   }
   return {}
 })
-watch(() => _graph.value.view.selection, () => {
-  if (!_graph.value.view.selection?.topLeft) return
-  var selection = _graph.value.view.selection
-  var view = _graph.value.view
-  var p1 = _graph.value.view.to(selection.topLeft)
-  var p2 = _graph.value.view.to(selection.bottomRight)
+watch(() => H.view.selection, () => {
+  if (!H.view.selection?.topLeft) return
+  var selection = H.view.selection
+  var view = H.view
+  var p1 = H.view.to(selection.topLeft)
+  var p2 = H.view.to(selection.bottomRight)
   selected.value = parentNode.value.nodes.filter(n =>
     _.some([
       [n.state.x, n.state.y],
@@ -195,12 +195,12 @@ watch(() => _graph.value.view.selection, () => {
 })
 
 // Updating port positions
-const _view = computed(() => _graph.value.view)
+const _view = computed(() => H.view)
 var last = {}
 watch(_graph.value, async (val) => {
   if (PZ.isMoving) return
   var state = {
-    view: { x: _graph.value.view.panning.x, y: _graph.value.view.panning.y, scaling: _graph.value.view.scaling },
+    view: { x: H.view.panning.x, y: H.view.panning.y, scaling: H.view.scaling },
     nodeState: parentNode.value.nodes.map(n => ({x: n.state.x, y: n.state.y, open: n.state.open}))
   }
   if (_.isEqual(last, state)) return
@@ -212,7 +212,7 @@ watch(_graph.value, async (val) => {
     var portId = e.getAttribute("id")
     e = e.getBoundingClientRect()
     if (e.width && e.height) {
-      var to = _graph.value.view.to({x: e.x + e.width/2, y: e.y + e.height / 2})
+      var to = H.view.to({x: e.x + e.width/2, y: e.y + e.height / 2})
       _graph.value._connectors[portId] = to
     }
   })
@@ -225,15 +225,15 @@ watch(_graph.value, async (val) => {
 
 const transformStyle = computed(() => ({
   "transform-origin": "0 0",
-  "transform": `scale(${_graph.value.view.scaling})
-  translate(${_graph.value.view.panning.x}px, ${_graph.value.view.panning.y}px)`
+  "transform": `scale(${H.view.scaling})
+  translate(${H.view.panning.x}px, ${H.view.panning.y}px)`
 }))
 
 // Background
 const gridSize = 100
 const subGridSize = 20
 const styles = computed(() => {
-  const view = _graph.value.view
+  const view = H.view
   return {
     backgroundPosition: `left ${view.panning.x * view.scaling}px top ${view.panning.y * view.scaling}px`,
     backgroundSize: `${gridSize * view.scaling}px ${gridSize * view.scaling}px,
@@ -242,7 +242,7 @@ const styles = computed(() => {
                      ${subGridSize * view.scaling}px ${subGridSize * view.scaling}px`
   }
 })
-const scaling = computed(() => _graph.value.view.scaling)
+const scaling = computed(() => H.view.scaling)
 
 
 const color = "#2c2c2c"

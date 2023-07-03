@@ -104,7 +104,7 @@ export const useHirondelle = defineStore('hirondelle', () => {
       targets.forEach(n => n.to.start())
     }
   })
-
+  // Retourne une liste d'objets avec les types pour affichage dans listes
   const nodeTypesOptions = computed(() => {
     var options = []
 
@@ -135,9 +135,35 @@ export const useHirondelle = defineStore('hirondelle', () => {
     "*": { default: null}
   }
 
-  // Utils
-  const _graphSize = ref()
-  const _mousePos = ref()
+  // View
+  const view = ref ({
+    scaling: 1,
+    panning: { x: 0, y: 0},
+    // Retourne la position dans le système de coordonée du graph
+    to(pos){
+      return { x: (pos.x / this.scaling) - this.panning.x, y: (pos.y / this.scaling) - this.panning.y }
+    },
+    // Retourne la position du graph dans l'affichage
+    from(pos){
+      return { x: (pos.x + this.panning.x) * this.scaling, y: (pos.y + this.panning.y) * this.scaling }
+    },
+    dimensions: {
+      width: 0,
+      height: 0
+    },
+    mouse: { x: 0, y: 0}
+  })
+  view.value.viewport = computed(() => {
+    if (!view.value.dimensions.width) return {}
+    var size = {}
+    var topLeft = view.value.to({ x: 0, y:0 })
+    var bottomRight = view.value.to({ x: view.value.dimensions.width, y: view.value.dimensions.height })
+    size.top = topLeft.y
+    size.left = topLeft.x
+    size.bottom = bottomRight.y
+    size.right = bottomRight.x
+    return size
+  })
 
   /*
     Un graph contient des nodes, et des connections
@@ -146,19 +172,6 @@ export const useHirondelle = defineStore('hirondelle', () => {
     nodes: [],
     connections: [],
     _connectors: {}, // to keep track of connectors positions
-    groups: [],
-    view: {
-      scaling: 1,
-      panning: { x: 0, y: 0},
-      // Retourne la position dans le système de coordonée du graph
-      to(pos){
-        return { x: (pos.x / this.scaling) - this.panning.x, y: (pos.y / this.scaling) - this.panning.y }
-      },
-      // Retourne la position du graph dans l'affichage
-      from(pos){
-        return { x: (pos.x + this.panning.x) * this.scaling, y: (pos.y + this.panning.y) * this.scaling }
-      }
-    },
     settings: {
       autoCloseNodes: false
     },
@@ -224,8 +237,8 @@ export const useHirondelle = defineStore('hirondelle', () => {
       var id = newNode.id || uid()
       var state = newNode.state
       // On centre le node sur l'écran si possible
-      if (!state && _graphSize.value) {
-        var center = this.view.to({ x: _graphSize.value.width / 2, y: _graphSize.value.height / 2})
+      if (!state && view.value.dimensions.width) {
+        var center = view.value.to({ x: view.value.dimensions.width / 2, y: view.value.dimensions.height / 2})
         state = {
           open: true,
           x: center.x - 150,
@@ -494,7 +507,7 @@ export const useHirondelle = defineStore('hirondelle', () => {
       var obj = {}
       obj.nodes = this.nodes.map(n => n.save())
       obj.connections = this.connections.filter(c => c.type != "temporary").map(c => c.save())
-      obj.view = { scaling: this.view.scaling, panning: this.view.panning }
+      obj.view = { scaling: view.value.scaling, panning: view.value.panning }
       obj.settings = this.settings
       return obj
     },
@@ -506,8 +519,8 @@ export const useHirondelle = defineStore('hirondelle', () => {
       if (obj.connections)
         obj.connections.forEach(c => this.addConnection(c))
       if (obj.view) {
-        this.view.scaling = obj.view.scaling
-        this.view.panning = obj.view.panning
+        view.value.scaling = obj.view.scaling
+        view.value.panning = obj.view.panning
       }
       if (obj.settings) this.settings = obj.settings
       this._loading = false
@@ -542,21 +555,9 @@ export const useHirondelle = defineStore('hirondelle', () => {
     }
   })
 
-  const graphViewport = computed(() => {
-    if (!_graphSize.value) return {}
-    var size = {}
-    var topLeft = graph.value.view.to({ x: 0, y:0 })
-    var bottomRight = graph.value.view.to({ x: _graphSize.value.width, y: _graphSize.value.height })
-    size.top = topLeft.y
-    size.left = topLeft.x
-    size.bottom = bottomRight.y
-    size.right = bottomRight.x
-    return size
-  })
-
   return {
     registerNodeType, nodeTypes,
     graph, paramTypes,
-    _graphSize, _mousePos, graphViewport, nodeTypesOptions
+    view, nodeTypesOptions
   }
 })

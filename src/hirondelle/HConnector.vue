@@ -138,13 +138,13 @@ const startConnection = ({type="main", paramFromName=null, event}) => {
 
   // On ajoute une connection temporaire
   var temporaryConnection = ref(node.value.graph.addConnection({
-    from: { state: node.value.graph.view.to(startPos)},
-    to: { state: node.value.graph.view.to(startPos)},
+    from: { state: H.view.to(startPos)},
+    to: { state: H.view.to(startPos)},
     type: "temporary"
   }))
 
   const updateConnection = (event) => {
-    let view = node.value.graph.view
+    let view = H.view
     temporaryConnection.value.to.state = view.to({x: event.pageX, y: event.pageY})
     var portType = findAttribute(event.target, "data-port-type")
     var toParamType = findAttribute(event.target, "data-param-type")

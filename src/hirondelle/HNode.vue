@@ -9,7 +9,7 @@
     </div>
   </template>
   <template v-else >
-  <div class="h-node" :data-node-id="node.id" v-show="visible" 
+  <div class="h-node" :data-node-id="node.id" v-show="visible"
     :style="`left:${node.state?.x}px; top: ${node.state?.y}px;`"
     @mouseenter="node.graph.settings.autoCloseNodes ? node.state.open = true : ''"
     @mouseleave="node.graph.settings.autoCloseNodes ? node.state.open = false : ''" :id="node.id">
@@ -219,12 +219,12 @@ const props = defineProps({
 const emits = defineEmits(["edit"])
 
 const node = computed(() => props.node)
-const simplified = computed(() => node.value.graph.view.scaling < .3) // || PZ.isMoving
+const simplified = computed(() => H.view.scaling < .3) // || PZ.isMoving
 const visible = computed(() =>
-  node.value.state.x + (node.value._state?.width || 300) > H.graphViewport.left + 20 &&
-  node.value.state.x < H.graphViewport.right - 20 &&
-  node.value.state.y + (node.value._state?.height || 300) > H.graphViewport.top - 20 &&
-  node.value.state.y < H.graphViewport.bottom - 20
+  node.value.state.x + (node.value._state?.width || 300) > H.view.viewport.left + 20 &&
+  node.value.state.x < H.view.viewport.right - 20 &&
+  node.value.state.y + (node.value._state?.height || 300) > H.view.viewport.top - 20 &&
+  node.value.state.y < H.view.viewport.bottom - 20
   )
 
 const headerClass = computed(() => node.value.type.isSystem ? 'bg-secondary'
