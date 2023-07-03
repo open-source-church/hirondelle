@@ -8,12 +8,13 @@
     @click.right="selected = []"
     @keyup.self.delete="deleteSelectedNodes"
     @keyup.self.ctrl.c.exact="CB.copy(selected)"
-    @keyup.self.ctrl.v.exact="() => selected = CB.paste()"
+    @keyup.self.ctrl.v.exact="() => selected = CB.paste(parentNode)"
   >
     <div class="absolute-top-left" style="z-index: 10">
       <q-breadcrumbs>
         <q-breadcrumbs-el v-for="b in breadcrumbs" :key="b.id" :label="b.id || b.type?.title || 'Root'" @click="setParent(b)"/>
       </q-breadcrumbs>
+      {{ H.graphViewport }}
     </div>
     <!-- Background -->
     <div class="h-background no-pointer-events h-prevent-select" :style="styles"></div>
@@ -182,24 +183,28 @@ watch(() => _graph.value.view.selection, () => {
 const _view = computed(() => _graph.value.view)
 var last = {}
 watch(_graph.value, async (val) => {
-  var state = _.cloneDeep({
-    view: _graph.value.view,
-    nodeState: parentNode.value.nodes.map(n => n.state)
-  })
+  if (PZ.isMoving) return
+  var state = {
+    view: { x: _graph.value.view.panning.x, y: _graph.value.view.panning.y, scaling: _graph.value.view.scaling },
+    nodeState: parentNode.value.nodes.map(n => ({x: n.state.x, y: n.state.y, open: n.state.open}))
+  }
   if (_.isEqual(last, state)) return
 
-  await nextTick()
   var el = document.querySelectorAll('[data-port-type]')
-  var c = {}
+  // var c = {}
+  if (!_graph.value._connectors) _graph.value._connectors = {}
   el.forEach(e => {
     var portId = e.getAttribute("id")
     e = e.getBoundingClientRect()
-    var to = _graph.value.view.to({x: e.x + e.width/2, y: e.y + e.height / 2})
-    c[portId] = to
+    if (e.width && e.height) {
+      var to = _graph.value.view.to({x: e.x + e.width/2, y: e.y + e.height / 2})
+      _graph.value._connectors[portId] = to
+    }
   })
-  last = state
-  _graph.value._connectors = c
-})
+  if (!_.isEmpty(_graph.value._connectors))
+    last = state
+  // _graph.value._connectors = c
+}, {flush: 'post'})
 
 // Transform
 
@@ -225,7 +230,7 @@ const styles = computed(() => {
 const scaling = computed(() => _graph.value.view.scaling)
 
 
-const color = "#222222"
+const color = "#2c2c2c"
 const lineColor = "#333333"
 const isMoving = PZ.isMoving
 

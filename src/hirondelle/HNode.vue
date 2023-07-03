@@ -1,14 +1,21 @@
 <template>
-  <q-card class="h-node" :style="`left:${node.state?.x}px; top: ${node.state?.y}px;`" :data-node-id="node.id"
+  <template v-if="simplified">
+    <div class="h-node"
+    :style="`left:${node.state?.x}px; top: ${node.state?.y}px;
+    width:300px;
+    height:${node._state?.height || 300}px;`">
+    <q-card-section :class="headerClass" />
+    <q-resize-observer @resize="updatePortPositions" />
+    </div>
+  </template>
+  <template v-else >
+  <div class="h-node" :data-node-id="node.id" v-show="visible"
+    :style="`left:${node.state?.x}px; top: ${node.state?.y}px;`"
     @mouseenter="node.graph.settings.autoCloseNodes ? node.state.open = true : ''"
     @mouseleave="node.graph.settings.autoCloseNodes ? node.state.open = false : ''" :id="node.id">
     <!-- Title -->
     <q-card-section
-      :class="`row items-center text-dark q-pa-xs
-        ${node.type.isSystem ? 'bg-secondary'
-          : node.type.isTrigger ? 'bg-accent text-white'
-          : node.type.isAction ? 'bg-primary'
-          : 'bg-grey-8 text-white'}`">
+      :class="'row items-center text-dark q-pa-xs ' + headerClass">
       <q-btn flat dense class="col-auto q-pr-xs" :icon="node.state.open ? 'expand_more' : 'expand_less'" size="sm"
         @click="node.state.open = !node.state.open" />
       <q-icon v-if="!node.type.active" class="col-auto q-pr-xs" name="warning" size="md" color="negative" >
@@ -65,9 +72,6 @@
         <q-item dense v-for="(output, name) in outputs" :key="name">
           <!-- <q-item-section /> -->
           <q-item-section >
-            <!-- <q-select v-if="input.options" :label="name" dense filled clearable v-model="node.values.output[name]" :options="input.options" />
-            <q-toggle v-else-if="input.type == 'boolean'" :label="name" dense v-model="node.values.output[name]"/>
-            <q-input v-else dense filled :label="name" v-model="node.values.output[name]" :type="input.type" /> -->
             <HParam :disable="false" :param="output" :name="name" v-model="node.values.output[name]" :node="node" />
             <HConnector port-type="output" port-class="param" :node="node" :param-name="name" />
           </q-item-section>
@@ -191,7 +195,10 @@
       </div>
     </q-card-section>
     <q-resize-observer @resize="updatePortPositions" />
-  </q-card>
+  </div>
+
+
+  </template>
 </template>
 
 <script setup>
@@ -200,6 +207,11 @@ import { ref, computed, reactive, watch, onMounted } from 'vue'
 import _ from 'lodash'
 import HParam from "src/hirondelle/HParam.vue"
 import HConnector from "src/hirondelle/HConnector.vue"
+import { useHirondelle } from './hirondelle';
+import { useMovePanZoom } from './movePanZoom';
+
+const H = useHirondelle()
+const PZ = useMovePanZoom()
 
 const props = defineProps({
   node: { type: Object, required: true }
@@ -207,6 +219,19 @@ const props = defineProps({
 const emits = defineEmits(["edit"])
 
 const node = computed(() => props.node)
+const simplified = computed(() => node.value.graph.view.scaling < .3) // || PZ.isMoving
+const visible = computed(() =>
+  node.value.state.x + (node.value._state?.width || 300) > H.graphViewport.left + 20 &&
+  node.value.state.x < H.graphViewport.right - 20 &&
+  node.value.state.y + (node.value._state?.height || 300) > H.graphViewport.top - 20 &&
+  node.value.state.y < H.graphViewport.bottom - 20
+  )
+
+const headerClass = computed(() => node.value.type.isSystem ? 'bg-secondary'
+          : node.value.type.isTrigger ? 'bg-accent text-white'
+          : node.value.type.isAction ? 'bg-primary'
+          : 'bg-grey-8 text-white')
+
 
 const paramSources = computed(() => {
   // En fait on l'utilise juste pour le watcher, mais pour les valeurs on utilise
@@ -234,7 +259,6 @@ watch(paramSources, () => {
 })
 
 const updatePortPositions = (val) => {
-
   node.value._state = {
     width: val.width,
     height: val.height
@@ -251,8 +275,14 @@ onMounted(() => {
 .h-node {
   position: absolute;
   width: 300px;
+  background: #212227;
+  border-radius: 10px;
   &:hover {
     z-index:10;
+  }
+
+  .q-card__section {
+    border-radius: 10px 10px 0px 0px;
   }
 }
 

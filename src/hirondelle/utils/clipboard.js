@@ -33,7 +33,7 @@ export const useClipboard = defineStore('clipboard', () => {
     $q.notify("Copié dans le presse papier")
   }
 
-  const paste = () => {
+  const paste = (parent = null) => {
 
     var cb = _.cloneDeep(clipboard.value)
 
@@ -80,7 +80,7 @@ export const useClipboard = defineStore('clipboard', () => {
 
     // On ajoute les nodes
     var nodes = []
-    cb.nodes.forEach(n => nodes.push(H.graph.addNode(n)))
+    cb.nodes.forEach(n => nodes.push(H.graph.addNode(n, parent)))
     // On ajoute les connections
     cb.connections.forEach(c => H.graph.addConnection(c))
 

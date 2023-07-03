@@ -55,11 +55,11 @@
       </q-chip>
     </div>
   </template>
-  <!-- Number: slider -->
+  <!-- Number -->
   <template v-else-if="param.type == 'number' && param.slider">
     <div class="row">
       <div class="col-12">{{ name }}</div>
-      <q-slider class="col-12" :min="param.slider.min" :max="param.slider.max" :color="param.slider.color"
+      <q-slider v-if="param.slider" class="col-12" :min="param.slider.min" :max="param.slider.max" :color="param.slider.color"
         :model-value="modelValue" @update:model-value="update" />
     </div>
   </template>
@@ -90,6 +90,7 @@ const props = defineProps({
 const emit = defineEmits(["update:modelValue"])
 
 const update = val => {
+  if (props.param.type == "number") val = ~~val
   if (props.param.type == 'rect') emit('update:modelValue', val)
   else emit('update:modelValue', val)
 }

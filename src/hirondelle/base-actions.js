@@ -21,15 +21,18 @@ export const useBaseActions = defineStore('baseActions', () => {
     category: "Base",
     active: true,
     inputs: {
-      time: { type: "number"}
+      time: { type: "number", default: 3000}
     },
     outputs: {
-      elapsedTime: { type: "number" },
+      elapsedTime: { type: "number", slider: {min: 0, max: 3000} },
       running: { type: "boolean" }
     },
     slots: {
       start: (node) => node.start(),
-      stop: (node) => clearInterval(node._interval),
+      stop: (node) =>  {
+        clearInterval(node._interval)
+        node.values.value.output.running = false
+      },
     },
     signals: {
       started: null,
@@ -38,15 +41,16 @@ export const useBaseActions = defineStore('baseActions', () => {
     action: async (opt, node) => {
       console.log("AND WE WAIT", opt.input.time, "ms")
       var t = 0
-      var delta = 100
+      var delta = 200
+      node.outputs.value.elapsedTime.slider.max = opt.input.time
       node._interval = setInterval(() => {
         t += delta
-        console.log("... we waited", t, "ms")
         opt.output.elapsedTime = t
       }, delta)
       opt.output.running = true
       node.emit("started")
       await delay(opt.input.time)
+      if (!opt.output.running) return
       node.emit("finished")
       opt.output.running = false
       clearInterval(node._interval)

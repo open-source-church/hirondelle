@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, computed, watch, toRef, nextTick } from 'vue'
+import { ref, computed, watch, toRef, nextTick, shallowRef } from 'vue'
 import _ from 'lodash'
 import { useQuasar, copyToClipboard, uid } from 'quasar'
 import OBSWebSocket from 'obs-websocket-js'
@@ -256,7 +256,7 @@ export const useHirondelle = defineStore('hirondelle', () => {
         if (slot == "main") {
           if (node.type.action && node.type.active)
             await node.type.action(node.values.value, node)
-            
+
             // Call connected nodes
             // Pas pour les groupes, parce qu'on appelle là suite que si des noeuds internes le demandent
             if(node.type.id != "group") {
@@ -289,9 +289,9 @@ export const useHirondelle = defineStore('hirondelle', () => {
         else
           newNode.nodes.forEach(n => this.addNode(n, node))
       }
-      watch(() => node.values.value.input, (val) => {
-        this.onInputValuesChange(node)
-      }, { deep: true, immediate: true })
+      // watch(() => node.values.value.input, (val) => {
+      //   this.onInputValuesChange(node)
+      // }, { deep: true, immediate: true })
       watch(() => node.values.value.output, (val) => {
         this.propagateOutputValues(node)
       }, { deep: true, immediate: true })
@@ -332,8 +332,8 @@ export const useHirondelle = defineStore('hirondelle', () => {
       // this.propagateOutputValues(node)
     },
     propagateOutputValues(node) {
-      console.log(node.type.id)
-      if (this._loading && node.type.id == "group") return
+      // console.log(node.type.id)
+      // if (this._loading && node.type.id == "group") return
       console.log("PROPAGATING VALUES", node.type.title)
       var val = node.values.value || node.values // FIXME: pourquoi des fois c'est une ref et des fois pas?
       // On update les params connections
@@ -345,6 +345,7 @@ export const useHirondelle = defineStore('hirondelle', () => {
         else if (c.type == "param") {
           // On update la valeur
           c.to.values.input[c.input] = val.output[c.output]
+          c.to.compute()
         }
         else
           c.to.compute()
@@ -408,7 +409,7 @@ export const useHirondelle = defineStore('hirondelle', () => {
       var input = connection.input
       var type = connection.type
       this.connections = this.connections.filter(c => c != connection)
-      this.onInputValuesChange(to)
+      to.compute()
       if (input) this.updateArrayInputParam(to, input)
       // Groups
       if (type == "clone") {
@@ -523,9 +524,21 @@ export const useHirondelle = defineStore('hirondelle', () => {
     }
   })
 
+  const graphViewport = computed(() => {
+    if (!_graphSize.value) return {}
+    var size = {}
+    var topLeft = graph.value.view.to({ x: 0, y:0 })
+    var bottomRight = graph.value.view.to({ x: _graphSize.value.width, y: _graphSize.value.height })
+    size.top = topLeft.y
+    size.left = topLeft.x
+    size.bottom = bottomRight.y
+    size.right = bottomRight.x
+    return size
+  })
+
   return {
     registerNodeType, nodeTypes,
     graph, paramTypes,
-    _graphSize: _graphSize, _mousePos
+    _graphSize, _mousePos, graphViewport
   }
 })
