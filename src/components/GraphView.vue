@@ -54,21 +54,26 @@ const graph = H.graph
 const selected = ref([])
 const parent = ref()
 
-
+var auto_load = true
+var auto_save = true
 
 // Loading and saving
-var state = S.get("graph.state")
-if (state) {
-  graph.load(state)
+if (auto_load) {
+  var state = S.get("graph.state")
+  if (state) {
+    graph.load(state)
+  }
 }
 
-const save = _.debounce(() => {
-  console.log("Saving graph")
-  S.set("graph.state", graph.save())
-}, 2000, {leading: true})
-watch(graph, () => {
-  save()
-}, { deep: true })
+if (auto_save) {
+  const save = _.debounce(() => {
+    console.log("Saving graph")
+    S.set("graph.state", graph.save())
+  }, 2000, {leading: true})
+  watch(graph, () => {
+    save()
+  }, { deep: true })
+}
 
 </script>
 

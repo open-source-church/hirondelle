@@ -1,19 +1,20 @@
 <template>
-  <q-btn flat dense :icon="opt.multiple ? 'circle' : 'square'" :class="opt.classes"
+  <q-btn v-once flat dense :icon="opt.multiple ? 'circle' : 'square'" :class="opt.classes"
       :color="opt.color" :size="opt.size" :style="opt.style"
-      :data-port-type="portType" :data-port-class="portClass" :data-param-name="paramName"
-      :data-node-id="node.id" :data-param-type="param.type"
-      :data-slot="slotName" :data-signal="signal" :data-port-open="opt.multiple || !sources.length"
+      :data-port-type="portType" :data-port-class="portClass" :data-param-id="paramId"
+      :data-node-id="node.id" :data-param-type="param?.type"
+      :data-slot="slotName" :data-signal="signal"
+      :data-port-open="opt.multiple || !sources.length"
       @touchstart.stop
       @mousedown.stop="triggerConnection"
-      :id="portId"
+      :id="id"
   >
-    <q-tooltip v-if="param.type" :class="`bg-${H.paramTypes[param.type]?.color}-2 text-dark`">
+    <q-tooltip v-if="param?.type" :class="`bg-${H.paramTypes[param?.type]?.color}-2 text-dark`">
       <span>{{ param.type }}</span>
       <span v-if="opt.multiple"> (multiple)</span>
       <span v-else> (unique)</span>
       <!-- <span>Connections: {{ sources.length }}</span> -->
-      <!-- <span> [{{portId}}]</span> -->
+      <span> [{{id}}]</span> {{ sources.length }}
     </q-tooltip>
   </q-btn>
 </template>
@@ -30,36 +31,32 @@ const props = defineProps({
   portType: { type: String, required: true },
   portClass: { type: String, required: true },
   node: { type: Object, required: true },
-  paramName: { type: String },
+  paramId: { type: String },
   slotName: { type: String },
   signal: { type: String }
 })
 
 const node = computed(() => props.node)
 
-const portId = computed(() => {
+const id = computed(() => {
   var id = `port-${props.node.id}-${props.portType}-${props.portClass}`
-  if (props.paramName) id += `-${props.paramName}`
+  if (props.paramId) id += `-${props.paramId}`
   if (props.slotName) id += `-${props.slotName}`
   if (props.signal) id += `-${props.signal}`
   return id
 })
 
-const param = computed(() => props.node[props.portType+"s"]?.[props.paramName] || {})
+const param = computed(() => props.node.findParam(props.paramId))
 
 // La list des connections vers ce connector
 const sources = computed(() => {
-  return props.node.graph.connections.filter(c =>
-  c[props.portType == "input" ? "to" : "from"].id == props.node.id &&
-  c[props.portType] == props.paramName &&
-  c.type == props.portClass &&
-  c.slot == props.slotName)
+  return props.node.graph.connections.filter(c => c.input?.id == props.paramId)
 })
 
 const opt = computed(() => {
   var opt = {}
   // Slots
-  if (props.portClass == "main" && props.slotName) {
+  if (props.portClass == "flow" && props.slotName) {
     opt.color = "green"
     opt.size = "sm"
     opt.multiple = true
@@ -69,7 +66,7 @@ const opt = computed(() => {
     }
   }
   // Signals
-  else if (props.portClass == "main" && props.signal) {
+  else if (props.portClass == "flow" && props.signal) {
     opt.color = "green"
     opt.size = "sm"
     opt.multiple = true
@@ -79,7 +76,7 @@ const opt = computed(() => {
     }
   }
   // Main
-  else if (props.portClass == "main") {
+  else if (props.portClass == "flow") {
     opt.color = "green"
     opt.size = "sm"
     opt.multiple = true
@@ -87,7 +84,7 @@ const opt = computed(() => {
       opt.classes = "absolute-top-left"
       opt.style = "left: -12px; top: 10px;"
     }
-    else if (props.portType == "output" && props.portClass == "main") {
+    else if (props.portType == "output" && props.portClass == "flow") {
       opt.classes = "absolute-top-right"
       opt.style = "right: -11px; top: 12px;"
     }
@@ -99,7 +96,7 @@ const opt = computed(() => {
   }
   // Param
   else if (props.portClass == "param") {
-    opt.color = H.paramTypes[param.value.type]?.color
+    opt.color = H.paramTypes[param.value?.type]?.color
     opt.size = "xs"
     if (props.portType == "input") {
       opt.classes = "absolute-top-left"
@@ -119,7 +116,7 @@ const triggerConnection = e => {
   if (props.portType == "output")
     startConnection({
       type:props.portClass,
-      paramFromName: props.paramName,
+      fromParamId: props.paramId,
       event: e})
 }
 
@@ -132,9 +129,9 @@ const findAttribute = (n, attr) => {
   }
 }
 
-const startConnection = ({type="main", paramFromName=null, event}) => {
+const startConnection = ({type="flow", fromParamId=null, event}) => {
   var startPos = { x: event.pageX, y: event.pageY}
-  var paramType = param.value.type
+  var paramType = param.value?.type
 
   // On ajoute une connection temporaire
   var temporaryConnection = ref(node.value.graph.addConnection({
@@ -159,11 +156,11 @@ const startConnection = ({type="main", paramFromName=null, event}) => {
 
   const isValid = (portType, portClass, toParamType, nodeId, portOpen) => {
     if (portType && portType != "input") return false
-    else if (nodeId && nodeId == node.value.id) return false
+    else if (portClass && nodeId && nodeId == node.value.id) return false
     else if (portClass && portOpen == "false") return false
     else if (portClass && (type == "group" || portClass == "group")) return true
     else if (portClass && portClass != type) return false
-    else if (type == "main" && portClass && portClass == type) return true
+    else if (type == "flow" && portClass && portClass == type) return true
     else if (type == "param" && toParamType) return (paramType == toParamType) || toParamType == "*"
     else return undefined
   }
@@ -174,7 +171,7 @@ const startConnection = ({type="main", paramFromName=null, event}) => {
     var t = event.target
     var portType = findAttribute(t, "data-port-type")
     var portClass = findAttribute(t, "data-port-class")
-    var paramToName = findAttribute(t, "data-param-name")
+    var toParamId = findAttribute(t, "data-param-id")
     var toParamType = findAttribute(t, "data-param-type")
     var nodeId = findAttribute(t, "data-node-id")
     var slot = findAttribute(t, "data-slot")
@@ -182,19 +179,19 @@ const startConnection = ({type="main", paramFromName=null, event}) => {
 
     if (isValid(portType, portClass, toParamType, nodeId, portOpen)) {
       // Main
-      if (type == "main") { // main connection
+      if (type == "flow") { // main connection
         console.log("CONNECTION", node.value.id, nodeId, slot, props.signal)
         node.value.graph.addConnection({from: node.value.id, to: nodeId, slot, signal: props.signal})
       }
       else if (type == "group") {
-        console.log(type, portType, portClass, paramToName)
-        if (portClass == "main")
+        console.log(type, portType, portClass, toParamId)
+        if (portClass == "flow")
           node.value.graph.addConnection({from: node.value.id, to: nodeId, slot})
         else if (portClass == "param")
           node.value.graph.addConnection({
             type: "clone",
             from: node.value.id,
-            to:nodeId, input: paramToName
+            to:nodeId, input: toParamId
         })
         // node.value.graph.addParamConnection(node.value.id, param, nodeId, param_name)
       }
@@ -202,15 +199,15 @@ const startConnection = ({type="main", paramFromName=null, event}) => {
         if (portClass == "group") {
           node.value.graph.addConnection({
             type: "clone",
-            from: node.value.id, output: paramFromName,
+            from: node.value.id, output: fromParamId,
             to:nodeId
           })
         }
         else {
           node.value.graph.addConnection({
             type: type,
-            from: node.value.id, output: paramFromName,
-            to:nodeId, input: paramToName
+            from: node.value.id, output: fromParamId,
+            to:nodeId, input: toParamId
           })
         }
       }

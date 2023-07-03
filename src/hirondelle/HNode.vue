@@ -32,9 +32,9 @@
       <q-btn flat dense v-if="node.type.accepts_output || node.type.action" :disable="node.running || !node.type.active" icon="play_circle" class="col-auto text-positive" @click="node.start()"/>
       <q-btn flat dense icon="delete" class="col-auto text-negative" @click="node.remove"/>
     </q-card-section>
-    <!-- Ports -->
-    <HConnector v-if="node.type.accepts_input" port-type="input" port-class="main" :node="node" />
-    <HConnector v-if="node.type.accepts_output" port-type="output" port-class="main" :node="node" />
+    <!-- Main Ports -->
+    <HConnector v-if="node.type.accepts_input" port-type="input" port-class="flow" :node="node" />
+    <HConnector v-if="node.type.accepts_output" port-type="output" port-class="flow" :node="node" />
     <!-- Group -->
     <q-card-section v-if="node.type.id == 'group' && node.state.open">
       <q-input dense filled v-model="node.title" label="Title"/>
@@ -48,7 +48,7 @@
             <q-item-label>
               {{ key }} <span class="text-grey">()</span>
             </q-item-label>
-            <HConnector port-type="input" port-class="main" :slot-name="key" :node="node"
+            <HConnector port-type="input" port-class="flow" :slot-name="key" :node="node"
             @click="() => node.start(key)" />
           </q-item-section>
         </q-item>
@@ -59,33 +59,33 @@
             <q-item-label>
               {{ key }} <span class="text-grey">()</span>
             </q-item-label>
-            <HConnector port-type="output" port-class="main" :signal="key" :node="node"
+            <HConnector port-type="output" port-class="flow" :signal="key" :node="node"
             @click="() => node.emit(key)" />
           </q-item-section>
         </q-item>
       </q-list>
     </q-card-section>
     <!-- Outputs -->
-    <q-card-section v-if="(node.state.open) && _.size(outputs)"
+    <q-card-section v-if="(node.state.open) && _.size(node.outputs)"
       class="q-pr-none q-pl-xl q-py-xs justify-end">
       <q-list>
-        <q-item dense v-for="(output, name) in outputs" :key="name">
+        <q-item dense v-for="(output, name) in node.outputs" :key="name">
           <!-- <q-item-section /> -->
           <q-item-section >
-            <HParam :disable="false" :param="output" :name="name" v-model="node.values.output[name]" :node="node" />
-            <HConnector port-type="output" port-class="param" :node="node" :param-name="name" />
+            <HParam :disable="false" :param="output" :name="name" v-model="node.values.output[name].val" :node="node" />
+            <HConnector port-type="output" port-class="param" :node="node" :param-id="output.id" />
           </q-item-section>
         </q-item>
       </q-list>
     </q-card-section>
     <!-- Inputs -->
-    <q-card-section v-if="(node.state.open) &&_.size(inputs)"
+    <q-card-section v-if="(node.state.open) &&_.size(node.inputs)"
       class="q-pl-none q-pr-xl q-pt-none q-pb-xs" >
       <q-list>
-        <q-item dense v-for="(input, name) in inputs" :key="name">
+        <q-item dense v-for="(input, name) in node.inputs" :key="name">
           <q-item-section>
-            <HParam :param="input" :name="name" v-model="node.values.input[name]" :node="node" />
-            <HConnector port-type="input" port-class="param" :node="node" :param-name="name" />
+            <HParam :param="input" :name="name" v-model="node.values.input[name].val" :node="node" />
+            <HConnector port-type="input" port-class="param" :node="node" :param-id="input.id" />
           </q-item-section>
         </q-item>
       </q-list>

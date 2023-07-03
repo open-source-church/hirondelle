@@ -95,11 +95,6 @@ const update = val => {
   else emit('update:modelValue', val)
 }
 
-// const paramSources = computed(() => {
-//   if (props.param.type == "object") return props.node.graph.paramSources(props.node.id, props.name)
-//   else return null
-// })
-
 </script>
 
 <style lang="scss">

@@ -231,22 +231,22 @@ export const useBaseActions = defineStore('baseActions', () => {
     outputs: {
       result: { type: "number" },
     },
-    compute (params) {
-      console.log("OPERATION", params)
-      if (params.input.operation == "add") {
-        params.output.result = params.input.val1 + params.input.val2
+    compute (values) {
+      console.log("OPERATION", values.input.operation.val, values.input.val1.val, values.input.val2.val)
+      if (values.input.operation.val == "add") {
+        values.output.result.val = values.input.val1.val + values.input.val2.val
       }
-      if (params.input.operation == "sub") {
-        params.output.result = params.input.val1 - params.input.val2
+      if (values.input.operation.val == "sub") {
+        values.output.result.val = values.input.val1.val - values.input.val2.val
       }
-      if (params.input.operation == "mul") {
-        params.output.result = params.input.val1 * params.input.val2
+      if (values.input.operation.val == "mul") {
+        values.output.result.val = values.input.val1.val * values.input.val2.val
       }
-      if (params.input.operation == "div") {
-        params.output.result = params.input.val1 / params.input.val2
+      if (values.input.operation.val == "div") {
+        values.output.result.val = values.input.val1.val / values.input.val2.val
       }
-      if (params.input.operation == "modulo") {
-        params.output.result = params.input.val1 % params.input.val2
+      if (values.input.operation.val == "modulo") {
+        values.output.result.val = values.input.val1.val % values.input.val2.val
       }
     },
   })
@@ -372,13 +372,20 @@ export const useBaseActions = defineStore('baseActions', () => {
     type: "param",
     category: "Variables",
     active: true,
-    outputs: {
-      boolean: { type: "boolean" },
+    inputs: {
+      name: { type: "string", default: "boolean" },
+      value: { type: "boolean" }
     },
     slots: {
-      setTrue: (node) => node.values.value.output.boolean = true,
-      setFalse: (node) => node.values.value.output.boolean = false,
-      toggle: (node) => node.values.value.output.boolean = !node.values.value.output.boolean,
+      setTrue: (node) => node.values.value.input.value.val = true,
+      setFalse: (node) => node.values.value.input.value.val = false,
+      toggle: (node) => node.values.value.input.value.val = !node.values.value.input.value.val,
+    },
+    compute (values, node) {
+      console.log("COMPUTING VAR BOOLEAN")
+      var name = values.input.name.val || "boolean"
+      node.setOutput(name, { id: Object.values(node.outputs.value)?.[0]?.id, type: "boolean" }, true)
+      values.output[name].val = values.input.value.val
     }
   })
   H.registerNodeType({

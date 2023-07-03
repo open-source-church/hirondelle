@@ -22,13 +22,13 @@ const remove = () => {
 const color = computed(() => {
   if (props.connection.valid == true) return "green"
   if (props.connection.valid == false) return "red"
-  if (props.connection.type == 'main') return "green"
+  if (props.connection.type == 'flow') return "green"
   if (props.connection.type == 'temporary' ) return "grey"
   else return "grey"
 })
 
 const strokeWidth = computed(() => {
-  if (props.connection.type == 'main') return 7
+  if (props.connection.type == 'flow') return 7
   if (props.connection.type == 'temporary') return 7
   if (props.connection.type == 'param') return 4
   else return "grey"
@@ -42,7 +42,7 @@ const addPos = (pos1, pos2) => {
 
 const getPortId = (node, type, portClass, param=null, slot=null, signal=null) => {
   var id = `port-${node.id}-${type}-${portClass}`
-  if (param) id += `-${param}`
+  if (param) id += `-${param.id}`
   if (slot) id += `-${slot}`
   if (signal) id += `-${signal}`
   return id
@@ -83,7 +83,7 @@ const d = computed(() => {
       n1 = c.graph._connectors[idFrom]
       if(!n1) {
         // Connect to main
-        var idFrom = getPortId(c.from, "output", "main")
+        var idFrom = getPortId(c.from, "output", "flow")
         n1 = c.graph._connectors[idFrom]
       }
     }
@@ -92,7 +92,7 @@ const d = computed(() => {
       n2 = c.graph._connectors[idTo]
       if(!n2) {
         // Connect to main
-        var idTo = getPortId(c.to, "input", "main")
+        var idTo = getPortId(c.to, "input", "flow")
         n2 = c.graph._connectors[idTo]
       }
     }

@@ -28,6 +28,27 @@ export const useHirondelle = defineStore('hirondelle', () => {
   */
   const nodeTypes = ref([])
   const nodeTypesListIds = computed(() => nodeTypes.value.map(n => n.id))
+
+  const varTypes = {
+    string: { default: "", color: "yellow" },
+    number: { default: 0, color: "blue" },
+    object: { default: {}, color: "grey" },
+    rect: { default: {x: 0, y: 0, width: 0, height: 0}, color: "brown" },
+    boolean: { default: false, color: "purple" },
+    color: { default: "#d700d7ff", color: "deep-orange"},
+    "*": { default: null}
+  }
+
+  // Installée sur les types, permet de créer une variable facilement
+  const newVar = function () {
+    return {
+      id: uid(),
+      type: this.type,
+      options: this.options,
+      val: this.default || varTypes[this.type].default
+    }
+  }
+
   const registerNodeType = (opt) => {
     if(!opt.id) {
       throw new Error("Il faut un type (unique).")
@@ -43,12 +64,12 @@ export const useHirondelle = defineStore('hirondelle', () => {
     // On map les interfaces
     if (!opt.inputs) opt.inputs = {}
     if (!opt.outputs) opt.outputs = {}
-    // var both = ["inputs", "outputs"]
-    // both.forEach(type =>
-    //   Object.keys(opt[type]).forEach(k => {
-    //     let param = opt[type][k]
-    //   })
-    // )
+    var both = ["inputs", "outputs"]
+    both.forEach(type =>
+      _.mapValues(opt[type], (type, name) => {
+        type.newVar = newVar
+      })
+    )
     if(!opt.type) opt.type = "action"
     if(opt.type == "trigger") opt.accepts_input = false
     if(opt.type == "param") {
@@ -59,7 +80,7 @@ export const useHirondelle = defineStore('hirondelle', () => {
     opt.isAction = opt.type == "action"
     opt.isParam = opt.type == "param"
     opt.isSystem = opt.type == "system"
-    // opt.active = ref(opt.active)
+
     nodeTypes.value.push(opt)
   }
   registerNodeType({
@@ -69,38 +90,11 @@ export const useHirondelle = defineStore('hirondelle', () => {
     active: true,
     compute(values, node) {
       console.log("COMPUTING GROUP")
-      // FIXME: sais pas pourquoi je dois utiliser les .id pour trouver :/
-      var internalInputs = node.graph.connections.filter(c => c.type == "clone" && c.from.id == node.id && c.to.parent.id == node.id)
-      var internalOutputs = node.graph.connections.filter(c => c.type == "clone" && c.to.id == node.id && c.from.parent.id == node.id)
-      // On ajoute les inputs
-      internalInputs.forEach(c => {
-        var input = c.to.inputs[c.input]
-        //  On crée un input
-        if (input) node.setInputs(c.input, input)
-        // On met à jour la valeur du node lié
-        console.log(values.input[c.input], c.to.values.input[c.input])
-        if (values.input[c.input]) c.to.values.input[c.input] = values.input[c.input]
-      })
-      // On supprime les inputs qui ne sont plus là
-      _.forEach(node.inputs.value, (v, k) => {
-        if (!internalInputs.map(c => c.input).includes(k)) delete node.inputs.value[k]
-      })
-      // On ajoute les outputs
-      internalOutputs.forEach(c => {
-        // On crée un output
-        node.setOutputs(c.output, c.from.type.outputs[c.output])
-        // On met à jour la valeur
-        values.output[c.output] = c.from.values.output[c.output]
-      })
-      // On supprime les outputs qui ne sont plus là
-      _.forEach(node.outputs.value, (v, k) => {
-        if (!internalOutputs.map(c => c.output).includes(k)) delete node.outputs.value[k]
-      })
     },
     action(values, node) {
       console.log("STARTING GROUPS")
       // call internal nodes
-      var targets = node.graph.connections.filter(c => c.type == "main" && c.from.id == node.id && c.to.parent.id == node.id)
+      var targets = node.graph.connections.filter(c => c.type == "flow" && c.from.id == node.id && c.to.parent.id == node.id)
       targets.forEach(n => n.to.start())
     }
   })
@@ -125,17 +119,10 @@ export const useHirondelle = defineStore('hirondelle', () => {
     return options
   })
 
-  const paramTypes = {
-    string: { default: "", color: "yellow" },
-    number: { default: 0, color: "blue" },
-    object: { default: {}, color: "grey" },
-    rect: { default: {x: 0, y: 0, width: 0, height: 0}, color: "brown" },
-    boolean: { default: false, color: "purple" },
-    color: { default: "#d700d7ff", color: "deep-orange"},
-    "*": { default: null}
-  }
+  /*
+    View
+  */
 
-  // View
   const view = ref ({
     scaling: 1,
     panning: { x: 0, y: 0},
@@ -165,7 +152,9 @@ export const useHirondelle = defineStore('hirondelle', () => {
     return size
   })
 
+
   /*
+    GRAPH
     Un graph contient des nodes, et des connections
   */
   const graph = ref({
@@ -175,6 +164,14 @@ export const useHirondelle = defineStore('hirondelle', () => {
     settings: {
       autoCloseNodes: false
     },
+    vars: [
+      {
+        id: uid(),
+        type: "string",
+        value: "salut",
+        options: ["A", "B", "C"]
+      }
+    ],
     newGroup(nodes) {
       var parent = nodes[0].parent
       // Finding average position
@@ -221,20 +218,22 @@ export const useHirondelle = defineStore('hirondelle', () => {
       }
     },
     addNode(newNode, parent=null) {
-      var type = newNode.type
-      if (typeof(newNode.type) == "string") newNode.type = nodeTypes.value.find(t => t.id == newNode.type)
+      // ID check
       if (this.nodes.map(n => n.id).includes(newNode.id)) {
         console.error("Un node existe déjà avec cet id:", newNode.id)
         return
       }
+      var id = newNode.id || uid()
+
+      // Type check
+      var type = newNode.type
+      if (typeof(newNode.type) == "string") newNode.type = nodeTypes.value.find(t => t.id == newNode.type)
       if(!newNode.type) {
         console.error("Pas trouvé de type pour", type)
         return
       }
-      var values = newNode.values || {
-        input: _.mapValues(newNode.type.inputs, p => p.default || paramTypes[p.type].default),
-        output: _.mapValues(newNode.type.outputs, p => p.default || paramTypes[p.type].default) }
-      var id = newNode.id || uid()
+
+      // State (position)
       var state = newNode.state
       // On centre le node sur l'écran si possible
       if (!state && view.value.dimensions.width) {
@@ -243,49 +242,46 @@ export const useHirondelle = defineStore('hirondelle', () => {
           open: true,
           x: center.x - 150,
           y: center.y - 100
-         }
+        }
       }
+
       var node = {
+        id: id,
         type: newNode.type,
         state: state || { x: 0, y: 0, open: true},
         graph: this,
-        id: id,
-        values: toRef(values),
         running: ref(false),
         nodes: [],
-        // inputs: ref(newNode.type.inputs || {}), // Dynamic inputs
-        // outputs: ref(newNode.type.outputs || {}), // Dynamic outpus
-        inputs: ref({}), // Dynamic inputs
-        outputs: ref({}), // Dynamic outpus
+        inputs: ref({}),
+        outputs: ref({}),
         title: newNode.title,
-        targets: (signal = null) => this.targets(id, signal),
       }
-      if(newNode.type.inputs)
-        node.inputs = ref(_.mapValues(newNode.type.inputs, p => p))
-      if(newNode.type.outputs)
-        node.outputs = ref(_.mapValues(newNode.type.outputs, p => p))
 
+      // Useful functions
       node.save = () => this.saveNode(node)
       node.emit = (signal = null) => node.targets(signal).forEach(t => t.node.start(t.slot))
-      node.compute = () => this.compute(node)
-      // Node specific inputs (param)
-      node.setInputs = (param, input) => {
-        node.inputs.value[param] = input
-        if (input.default && !node.values.value.input[param]) node.values.value.input[param] = input.default
+      node.remove = () => this.removeNode(node)
+      node.targets = (signal = null) => this.targets(id, signal),
+      // Retourne le type de paramètre pour 'paramId'
+      node.findParam = function (paramId) {
+        return _.find(this.inputs, p => p.id == paramId) || _.find(this.outputs, p => p.id == paramId)
       }
-      // Node specific inputs (param)
-      node.setOutputs = (param, output) => {
-        node.outputs.value[param] = output
-        if (output.default && !node.values.value.output[param]) node.values.value.output[param] == output.default
+      // Retourne le nom du paramètre pour 'paramId'
+      node.findParamName = function (paramId) {
+        return _.findKey(this.inputs, p => p.id == paramId) || _.findKey(this.outputs, p => p.id == paramId)
       }
-      node.start = async function (slot="main") {
-        if (!slot) slot = "main" // Pourquoi?? il y a une valeur par defaut "main" non?
+      node.compute = function () {
+        if (node.type.compute) node.type.compute(node.values.value, node)
+      }
+
+      node.start = async function (slot="flow") {
+        if (!slot) slot = "flow" // Pourquoi?? il y a une valeur par defaut "flow" non?
         console.log("STARTING", slot, "in", node.type.title, node.type.category)
         console.log("With params:", node.values.value)
         node.running.value = true
 
         // Main action
-        if (slot == "main") {
+        if (slot == "flow") {
           if (node.type.action && node.type.active)
             await node.type.action(node.values.value, node)
 
@@ -295,7 +291,7 @@ export const useHirondelle = defineStore('hirondelle', () => {
               node.emit()
             }
             // Si connecté à un group, on appelle le groupe
-            var group = node.graph.connections.filter(c => c.type == "main" && c.from.id == node.id && c.from.parent.id == c.to.id)
+            var group = node.graph.connections.filter(c => c.type == "flow" && c.from.id == node.id && c.from.parent.id == c.to.id)
             group.forEach(g => g.to.emit())
         }
         // Subroutine / function
@@ -306,7 +302,40 @@ export const useHirondelle = defineStore('hirondelle', () => {
         node.running.value = false
         console.log("And done.", node.type.title)
       }
-      node.remove = () => this.removeNode(node)
+      node.setInput = function (name, obj, replace=false) { node.setPort("input", name, obj, replace) }
+      node.setOutput = function (name, obj, replace=false) { node.setPort("output", name, obj, replace) }
+      node.setPort = function (type, name, obj, replace = false) {
+        console.log("REPLACE", replace, obj.id)
+        if (!type) type = "input"
+        if (!name) name = "unamed"
+        if (!obj.id) obj.id = uid()
+        if (!obj.type) obj.type = "*"
+        obj.newVar = newVar
+        if (replace) node[type+"s"].value = {}
+        node[type+"s"].value[name] = obj
+        // On met la valeur par défaut si pas déjà de valeur
+        if (!this.values.value[type][name]) this.values.value[type][name] = obj.newVar()
+      }
+
+      // Ports & values
+      // On ajoute un ref au node à chaque port, ainsi qu'un id (dans le doute)
+      // (mais surtout pour permettre de garder la connection en changeant le nom du port)
+      node.values = ref({ input: {}, output: {}})
+      // Inputs
+      if(newNode.type.inputs) {
+        node.inputs.value = _.mapValues(newNode.type.inputs, p => _.assign({ id: uid(), node: node }, p))
+        _.mapValues(node.inputs.value, (type, name) => node.values.value.input[name] = type.newVar())
+      }
+      watch(node.values, node.compute, { deep: true })
+      // Outputs
+      if(newNode.type.outputs)
+        node.outputs.value = _.mapValues(newNode.type.outputs, p => _.assign({ id: uid(), node: node }, p))
+        _.mapValues(node.outputs.value, (type, name) => node.values.value.output[name] = type.newVar())
+
+
+      if (newNode.values && node.type.id != "group") {
+        _.forEach(newNode.values, (val, name) => node.values.value.input[name].val = val)
+      }
 
       // On ajoute les éventuels enfants
       if (newNode.nodes?.length) {
@@ -320,12 +349,8 @@ export const useHirondelle = defineStore('hirondelle', () => {
         else
           newNode.nodes.forEach(n => this.addNode(n, node))
       }
-      watch(() => node.values.value.input, (val) => {
-        this.onInputValuesChange(node)
-      }, { deep: true, immediate: true })
-      watch(() => node.values.value.output, (val) => {
-        this.propagateOutputValues(node)
-      }, { deep: true, immediate: true })
+
+      node.compute()
 
       // On assigne au parent
       if (!parent) parent = this
@@ -334,119 +359,78 @@ export const useHirondelle = defineStore('hirondelle', () => {
       // On retourne le node
       return node
     },
-    compute(node) {
-      if (this._loading) return
-      var val = node.values.value || node.values // FIXME: pourquoi des fois c'est une ref et des fois pas?
-      // FIXME: les choses se chargent pas dans le bon ordre
-      try {
-        if (node.type.compute) node.type.compute(val, node)
-      } catch (err) {
-        console.error(err)
-      }
-      // On ne garde que les valeurs qui sont dans les inputs/outputs
-      var inputs = node.inputs.value || node.inputs // again...
-      _.forEach(val.input, (v, k) => {
-        if(!inputs[k]) delete val.input[k]
-      })
-      var outputs = node.outputs.value || node.outputs // again...
-      _.forEach(val.output, (v, k) => {
-        if(!outputs[k]) delete val.output[k]
-      })
-    },
-    // When values.input changes
-    onInputValuesChange(node) {
-      console.log("UPDATING VALUES", node.type.title)
-      var val = node.values.value || node.values // FIXME: pourquoi des fois c'est une ref et des fois pas?
-      // On compute s'il y a des choses à faire
-      this.compute(node)
-      // // On propage les résultats // ca se fait automatiquement normalement
-      // this.propagateOutputValues(node)
-    },
-    propagateOutputValues(node) {
-      // console.log(node.type.id)
-      // if (this._loading && node.type.id == "group") return
-      console.log("PROPAGATING VALUES", node.type.title)
-      var val = node.values.value || node.values // FIXME: pourquoi des fois c'est une ref et des fois pas?
-      // On update les params connections
-      var connections = this.connections.filter(c => c.from.id == node.id && (c.type == "param" || c.type == "clone"))
-      // Warning: si plusieurs paramètres connectés sur la même valeurs, ça prend le dernier
-      connections.forEach(c => {
-        if (c.to.type.inputs[c.input]?.array)
-          this.updateArrayInputParam(c.to, c.input)
-        else if (c.type == "param") {
-          // On update la valeur
-          c.to.values.input[c.input] = val.output[c.output]
-          c.to.compute()
-        }
-        else
-          c.to.compute()
-      })
-    },
-    updateArrayInputParam(node, inputName) {
-      // Si pas array, on ignore
-      if (!node.inputs[inputName].array) return
-      var connections = this.connections.filter(c => c.to.id == node.id && c.type == "param" && c.input == inputName)
-      // Tentative de faire un truc qui donne des valeurs différentes à des variables qui ont le même nom
-      // Mais ensuite c'est compliqué pour récupérer les types sources de chaque variable, puisque le nom a changé
-      // Alors on garde ça quelque part en stock. C'est pas très propre.
-      var indexes = {}
-      node.values.input[inputName] = {}
-      node._paramSourcesType = {} // Pour garder track des types
-      connections.forEach(c => {
-        var i = indexes[c.output] || ""
-        c.to.values.input[c.input][c.output+i] = c.from.values.output[c.output]
-        node._paramSourcesType[c.output+i] = c.from.outputs[c.output]
-        indexes[c.output] = (indexes[c.output] || 1) + 1
-      })
-    },
-    addConnection({from, to, type="main", input=null, output=null, slot=null, signal=null}) {
-      if (typeof(from) == "string") {
-        from = this.findNode(from)
-      }
-      if (typeof(to) == "string") {
-        to = this.findNode(to)
-      }
+    addConnection({from, to, type="flow", input=null, output=null, slot=null, signal=null}) {
+
+      if (typeof(from) == "string") from = this.findNode(from)
+      if (typeof(to) == "string") to = this.findNode(to)
+
       if (!from || !to) {
         console.error("Il manque des nodes:", from, to)
         return
       }
+      if (type == "param" || type == "clone") {
+        // On essaie avec les ids
+        var fromParam = from.findParam(output)
+        var toParam = to.findParam(input)
+        // Sinon avec les noms
+        console.log(from.outputs, to.inputs, output, input)
+        if (!fromParam) fromParam = from.outputs[output]
+        if (!toParam) toParam = to.inputs[input]
+
+        if (type == "param" && (!fromParam || !toParam) ||
+            type == "clone" && (!fromParam && !toParam)) {
+          console.error(`Les paramètres '${output}' et '${input}' sont introuvables.`)
+          return
+        }
+      }
+
       // On vérifie si la connection existe déjà
       if(this.connections.find(
         // Memes paramètres
-        (c => c.from.id == from.id && c.to.id == to.id && c.type == type &&
-              c.input == input && c.output == output &&
+        c => (c.from.id == from.id && c.to.id == to.id && c.type == type &&
+              c.input?.id == toParam?.id && c.output?.id == fromParam?.id &&
               c.slot == slot && c.signal == signal)
-        // Connection temporaire (il ne peut y en avoir qu'une)
-        || (c.type == "temporary" && type == "temporary"))) {
+              // Connection temporaire (il ne peut y en avoir qu'une)
+              || (c.type == "temporary" && type == "temporary"))) {
         console.log("Cette connection existe déjà")
         return
       }
-      var connection = { from, to, input, output, graph: this, type, slot, signal }
+
+      var connection = { from, to, output: fromParam, input: toParam, graph: this, type, slot, signal }
       connection.save = () => this.saveConnection(connection)
+      connection.fromParamName = () => from.findParamName(fromParam?.id)
+      connection.toParamName = () => to.findParamName(toParam?.id)
       this.connections.push(connection)
-      // Quand on crée une connections de paramètres, on update direct les values
+
+      // Quand on crée une connections de paramètres, on lie les valeurs
       if (connection.type == "param") {
-        this.propagateOutputValues(from)
+        to.values.input[connection.toParamName()] = from.values.output[connection.fromParamName()]
       }
+      // Quand on clone, on lie aussi les valeurs
       else if (connection.type == "clone") {
-        from.compute()
-        to.compute()
+        if (input) {
+          // FIXME: Si plusieurs connections avec le même nom de paramètres ça va bugger
+          from.setInput(connection.toParamName(), toParam)
+          from.values.input[connection.toParamName()] = to.values.input[connection.toParamName()]
+        }
+        else {
+          to.setOutput(connection.fromParamName(), fromParam)
+          to.values.output[connection.fromParamName()] = from.values.output[connection.fromParamName()]
+        }
       }
       return connection
     },
     removeConnection(connection) {
-      var from = connection.from
-      var to = connection.to
-      var input = connection.input
-      var type = connection.type
-      this.connections = this.connections.filter(c => c != connection)
-      to.compute()
-      if (input) this.updateArrayInputParam(to, input)
+      // Si on supprime un lien, on recrée une variable
+      if (connection.type == "param")
+        connection.to.values.input[connection.toParamName()] = connection.input.newVar()
       // Groups
-      if (type == "clone") {
-        from.compute()
-        to.compute()
+      if (connection.type == "clone") {
+        if (connection.input) delete connection.from.inputs[connection.toParamName()]
+        else delete connection.to.outputs[connection.fromParamName()]
       }
+      // On supprime la connection
+      this.connections = this.connections.filter(c => c != connection)
     },
     removeTemporaryConnection() {
       this.connections = this.connections.filter(c => c.type != "temporary")
@@ -465,14 +449,14 @@ export const useHirondelle = defineStore('hirondelle', () => {
     targets(nodeId, signal = null) {
       return this.connections.filter(
         c => c.from.id == nodeId &&
-        c.type == "main" &&
+        c.type == "flow" &&
         c.from.parent.id == c.to.parent.id &&
         c.signal == signal
       ).map(c => ({node: c.to, slot: c.slot}))
     },
     // La list des noeuds connectés vers
     sources(targetNodeId) {
-      return this.connections.filter(c => c.to.id == targetNodeId && c.type == "main").map(c => c.from)
+      return this.connections.filter(c => c.to.id == targetNodeId && c.type == "flow").map(c => c.from)
     },
     // La liste des paramètres connectés vers le param
     paramSources(targetNodeId) {
@@ -489,17 +473,24 @@ export const useHirondelle = defineStore('hirondelle', () => {
         id: parent.id,
         state: parent.state,
       }
-      if (parent.values) node.values = _.cloneDeep(parent.values.value)
+      // On ne sauve que les inputs
+      // if (parent.values.value) node.values = _.mapValues(parent.values.value.input, v => v.val)
+      node.values = {}
+      _.forEach(parent.inputs.value, (type, name) => node.values[name] = parent.values.value.input[name]?.val)
       if (parent.title) node.title = parent.title
       if (!_.isEmpty(parent.nodes)) node.nodes = parent.nodes.map(n => n.save())
       return node
     },
     saveConnection(connection) {
-      var conn = _.cloneDeep(connection)
-      conn.from = conn.from.id
-      conn.to = conn.to.id
-      delete conn.graph
-      delete conn.save
+      var conn = {
+        from: connection.from.id,
+        to: connection.to.id,
+        output: connection.fromParamName(),
+        input: connection.toParamName(),
+        type: connection.type,
+        slot: connection.slot,
+        signal: connection.signal
+      }
       conn = _.pickBy(conn, v => !_.isNil(v))
       return conn
     },
@@ -557,7 +548,7 @@ export const useHirondelle = defineStore('hirondelle', () => {
 
   return {
     registerNodeType, nodeTypes,
-    graph, paramTypes,
+    graph, paramTypes: varTypes,
     view, nodeTypesOptions
   }
 })

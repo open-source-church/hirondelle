@@ -69,7 +69,7 @@ import HConnector from "src/hirondelle/HConnector.vue"
 import HNodeTypes from "src/hirondelle/HNodeTypes.vue"
 import _ from "lodash"
 import { useClipboard } from './utils/clipboard'
-import { useQuasar } from 'quasar'
+import { uid, useQuasar } from 'quasar'
 
 const H = useHirondelle()
 const PZ = useMovePanZoom()
@@ -197,8 +197,8 @@ watch(() => H.view.selection, () => {
 // Updating port positions
 const _view = computed(() => H.view)
 var last = {}
-watch(_graph.value, async (val) => {
-  if (PZ.isMoving) return
+watch([_graph.value, H.view], async (val) => {
+  // if (PZ.isMoving) return
   var state = {
     view: { x: H.view.panning.x, y: H.view.panning.y, scaling: H.view.scaling },
     nodeState: parentNode.value.nodes.map(n => ({x: n.state.x, y: n.state.y, open: n.state.open}))
