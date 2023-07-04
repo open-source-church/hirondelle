@@ -50,7 +50,7 @@ H.registerNodeType({
     number: { type: "number" },
   },
   slots: {
-    reset: (node) => node.compute(),
+    reset: (values, node) => node.compute(),
   },
   compute(values, node) {
     values.output.number.val = _.random(
@@ -103,9 +103,9 @@ H.registerNodeType({
     boolean: { type: "boolean"},
   },
   slots: {
-    setTrue: (node) => node.values.value.input.value.val = true,
-    setFalse: (node) => node.values.value.input.value.val = false,
-    toggle: (node) => node.values.value.input.value.val = !node.values.value.input.value.val,
+    setTrue: (values) => values.input.value.val = true,
+    setFalse: (values) => values.input.value.val = false,
+    toggle: (values) => values.input.value.val = !values.input.value.val,
   },
   compute (values, node) {
     console.log("COMPUTING VAR BOOLEAN")
@@ -132,15 +132,15 @@ H.registerNodeType({
     split: { type: "boolean" },
     fromNumbers: { type: "boolean" },
     rect: { type: "rect" },
-    x: { type: "number", hidden: true },
-    y: { type: "number", hidden: true },
+    left: { type: "number", hidden: true },
+    top: { type: "number", hidden: true },
     width: { type: "number", hidden: true },
     height: { type: "number", hidden: true },
   },
   outputs: {
     rect: { type: "rect"},
-    x: { type: "number", hidden: true },
-    y: { type: "number", hidden: true },
+    left: { type: "number", hidden: true },
+    top: { type: "number", hidden: true },
     width: { type: "number", hidden: true },
     height: { type: "number", hidden: true },
   },
@@ -155,20 +155,20 @@ H.registerNodeType({
     // On met à jour les valeurs
     var rect
     if (values.input.fromNumbers.val) {
-      rect = { x: values.input.x.val, y: values.input.x.val,
+      rect = { x: values.input.left.val, y: values.input.top.val,
                width: values.input.width.val, height: values.input.height.val }
     } else {
       rect = values.input.rect.val
     }
-    values.output.x.val = rect.x
-    values.output.y.val = rect.y
+    values.output.left.val = rect.x
+    values.output.top.val = rect.y
     values.output.width.val = rect.width
     values.output.height.val = rect.height
     values.output[name].val = rect
     // On gère l'affichage
     node.inputs.value.rect.hidden = values.input.fromNumbers.val
     node.outputs.value[name].hidden = values.input.split.val
-    for (var p of ["x", "y", "width", "height"]) {
+    for (var p of ["left", "top", "width", "height"]) {
       node.inputs.value[p].hidden = !values.input.fromNumbers.val
       node.outputs.value[p].hidden = !values.input.split.val
     }

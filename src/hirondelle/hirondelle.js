@@ -308,7 +308,7 @@ export const useHirondelle = defineStore('hirondelle', () => {
         }
         // Subroutine / function
         else if (node.type.slots && slot in node.type.slots) {
-          await node.type.slots[slot](node)
+          await node.type.slots[slot](node.values.value, node)
         }
 
         node.running.value = false

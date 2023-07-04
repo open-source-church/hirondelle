@@ -1,15 +1,23 @@
 <template>
   <q-page >
+    <!-- Message boxes -->
     <div v-for="(t, i) in messageBoxes" :key="'tb-'+i"
       :transition-style="t.transition" class="fixed row items-center justify-around text-center"
       :style="`background-color: ${t.background}; left:${t.rect.x}px; top: ${t.rect.y}px; width: ${t.rect.width}px; height:${t.rect.height}px; ${t.style}`">
       {{ t.message }}
-  </div>
+    </div>
+    <!-- Progress bars -->
+    <q-linear-progress v-for="pb in progressBars.filter(pb => pb.visible)" :key="pb.id"
+    :animation-speed="pb.value ? 300 : 0"
+    :style="`background-color: ${pb.background}; left:${pb.rect.x}px; top: ${pb.rect.y}px; width: ${pb.rect.width}px; height:${pb.rect.height}px; ${pb.style}`"
+    :value="pb.value" class="absolute"
+    />
+
   </q-page>
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, resolveDirective } from 'vue'
 import { useQuasar } from 'quasar'
 import { Peer } from "peerjs"
 import _ from "lodash"
@@ -71,15 +79,24 @@ const messageBox = (opt) => {
     messageBoxes.value = messageBoxes.value.filter(tb => tb != opt)
   }, opt.duration)
 }
+
+const progressBars = ref([])
+const progressBar = (opt) => {
+  console.log(opt, progressBars.value)
+  var pb = progressBars.value.find(p => p.id == opt.id)
+  if (pb) _.assign(pb, opt)
+  else progressBars.value.push(opt)
+}
 const test = () => {
-  textBox()
+
 }
 
 const onMessage = (data) => {
   console.log(data)
   if (data?.action == "confettis") confetti(data)
   if (data?.action == "messageBox") messageBox(data)
-  else test()
+  if (data?.action == "progressBar") progressBar(data)
+  else test(data)
 }
 
 onMounted(() => {

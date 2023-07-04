@@ -26,10 +26,10 @@ H.registerNodeType({
     running: { type: "boolean" }
   },
   slots: {
-    start: (node) => node.start(),
-    stop: (node) =>  {
+    start: (values, node) => node.start(),
+    stop: (values, node) =>  {
       clearInterval(node._interval)
-      node.values.value.output.running.val = false
+      values.output.running.val = false
     },
   },
   signals: {
@@ -39,8 +39,9 @@ H.registerNodeType({
   action: async (values, node) => {
     console.log("AND WE WAIT", values.input.time.val, "ms")
     var t = 0
-    var delta = 200
+    var delta = 100
     node.outputs.value.elapsedTime.slider.max = values.input.time.val
+    values.output.elapsedTime.val = 0
     node._interval = setInterval(() => {
       t += delta
       values.output.elapsedTime.val = t
@@ -73,8 +74,8 @@ H.registerNodeType({
     active: { type: "boolean", default: true},
   },
   slots: {
-    start: (node) => node.values.value.input.active.val = true,
-    pause: (node) => node.values.value.input.active.val = false
+    start: (values, node) => values.input.active.val = true,
+    pause: (values, node) => values.input.active.val = false
   },
   signals: {
     ping: null
@@ -110,7 +111,7 @@ H.registerNodeType({
   accepts_output: false,
   accepts_input: false,
   slots: {
-    test: node => node.start()
+    test: (values, node) => node.start()
   },
   signals: {
     valid: null,
@@ -166,28 +167,6 @@ H.registerNodeType({
 
 // Text builder
 H.registerNodeType({
-  id: `BA:Text`,
-  title: "Text Builder",
-  type: "param",
-  category: "Operations",
-  description: "Connectez des variables, et utilisez les dans la template, par exemple 'Merci [userName]!'",
-  active: true,
-  inputs: {
-    template: { type: "string", textarea: true },
-    vars: { type: "*", array: true }
-  },
-  outputs: {
-    text: { type: "string", textarea: true },
-  },
-  compute (values) {
-    var t = values.input.template.val || ""
-    _.forEach(values.input.vars.val, v => t = t.replaceAll(`[${v.name}]`, v.val))
-    values.output.text.val = t
-  },
-})
-
-// Text builder
-H.registerNodeType({
   id: `BA:Counter`,
   title: "Couter",
   type: "action",
@@ -195,8 +174,8 @@ H.registerNodeType({
   description: "Augmente sa valeur ee 1 chaque fois qu'il est appelé.",
   active: true,
   slots: {
-    count: node => node.start(),
-    reset: node => node.values.value.output.count.val = 0,
+    count: (values, node) => node.start(),
+    reset: (values) => values.output.count.val = 0,
   },
   outputs: {
     count: { type: "number", default: 0 },
@@ -260,8 +239,8 @@ H.registerNodeType({
   category: "Operations",
   active: true,
   inputs: {
-    type: { type: "number", default: 1, options: [
-      { id: 1, label: "Sur 1" }, { id: 100, label: "Sur 100" }
+    type: { type: "number", default: 1, checkbox: true, options: [
+      { value: 1, label: "Sur 1" }, { value: 100, label: "Sur 100" }
     ]},
     value: { type: "number", default: 10 },
     min: { type: "number", default: 0 },

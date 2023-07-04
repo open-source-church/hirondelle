@@ -402,10 +402,46 @@ export const useOBS = defineStore('obs', () => {
         d.transition_in = _.sample(transitions)
         d.transition_out = _.sample(transitions)
       }
-      console.log(d)
       peer.send(d)
     },
   accepts_output: false,
+  })
+
+  H.registerNodeType({
+    id: "OBSSource:progressbar",
+    type: "action",
+    title: "Progress Bar",
+    category: "OBSSource",
+    active: peer_connected,
+    inputs: {
+      percentage: { type: "number", default: 50, slider: { min: 0, max: 100, color: "primary" } },
+      rect: { type: "rect", default: {x: 0, y: 0, width: 1920, height: 20} },
+      color: { type: "color", default: "#d700d799" },
+      background: { type: "color", default: "#d700d799" },
+      visible: { type: "boolean" },
+      style: { type: "string", description: "Additional styles, like 'opacity:.5'..." },
+    },
+    slots: {
+      show: (values) => values.input.visible.val = true,
+      hide: (values) => values.input.visible.val = false,
+    },
+    _update: _.throttle(d => peer.send(d), 100),
+    compute: function (values, node) {
+      if (!peer_connected.value) return
+      var d = {
+        action: "progressBar",
+        rect: values.input.rect.val,
+        visible: values.input.visible.val,
+        value: values.input.percentage.val / 100,
+        id: node.id,
+        color: values.input.background.val,
+        background: values.input.background.val,
+        style: values.input.style.val,
+      }
+      this._update(d)
+    },
+    accepts_output: false,
+    accepts_input: false,
   })
 
   // Get scene item rect
