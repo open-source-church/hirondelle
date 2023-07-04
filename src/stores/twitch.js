@@ -180,7 +180,7 @@ export const useTwitch = defineStore('twitch', () => {
     outputs: {
       userName: { type: "string" },
       rewardId: { type: "number" },
-      rewardTitle: { type: "string", options: rewards_title },
+      rewardTitle: { type: "string", options: () => rewards_title },
       rewardCost: { type: "number" },
       input: { type: "string" },
     },

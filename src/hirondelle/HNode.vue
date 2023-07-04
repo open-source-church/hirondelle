@@ -132,7 +132,7 @@
             </q-chip>
             <template v-if="v.options && node.state.filter[v.name].filterType == '='">
               <q-select class="col" dense filled clearable options-dense
-                :options="p.options" v-model="node.state.filter[v.name].filterText" />
+                :options="v.options" v-model="node.state.filter[v.name].filterText" />
             </template>
             <template v-else>
 

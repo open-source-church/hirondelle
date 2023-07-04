@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, computed, watch, toRef, nextTick, shallowRef } from 'vue'
+import { ref, computed, watch, toRef, nextTick, shallowRef, reactive } from 'vue'
 import _ from 'lodash'
 import { useQuasar, copyToClipboard, uid } from 'quasar'
 import OBSWebSocket from 'obs-websocket-js'
@@ -44,10 +44,10 @@ export const useHirondelle = defineStore('hirondelle', () => {
     return {
       id: uid(),
       type: this.type,
-      options: this.options,
       val: this.default || (this.array ? [] : varTypes[this.type].default),
       // name: this.name,
-      name: computed(() => this.name)
+      name: computed(() => this.name),
+      options: computed(() => this.options)
     }
   }
 
@@ -72,7 +72,7 @@ export const useHirondelle = defineStore('hirondelle', () => {
         type.newVar = newVar
       })
     )
-    console.log(opt.id, opt.outputs)
+
     if(!opt.type) opt.type = "action"
     if(opt.type == "trigger") opt.accepts_input = false
     if(opt.type == "param") {
@@ -168,14 +168,6 @@ export const useHirondelle = defineStore('hirondelle', () => {
     settings: {
       autoCloseNodes: false
     },
-    vars: [
-      {
-        id: uid(),
-        type: "string",
-        value: "salut",
-        options: ["A", "B", "C"]
-      }
-    ],
     newGroup(nodes) {
       var parent = nodes[0].parent
       // Finding average position
@@ -355,18 +347,26 @@ export const useHirondelle = defineStore('hirondelle', () => {
       // Inputs
       if(newNode.type.inputs) {
         node.inputs.value = _.mapValues(newNode.type.inputs, (param, name) => _.assign({ id: uid(), node, name }, param))
+        // Pour que "type.options" soit réactif, il faut le passer dans une function
+        // Je crois que c'est parce que pinia wrap le store avec reactive, et unwrap automatiquement les ref à l'intérieur
+        // Cf. https://pinia.vuejs.org/core-concepts/plugins.html#augmenting-a-store
+        // Donc quand on access les options ici, elles sont unwrappées
+        _.forEach(newNode.type.inputs, (param, name) => {
+          if (param.options && typeof(param.options) == "function") node.inputs.value[name].options = param.options()
+        })
         _.mapValues(node.inputs.value, (type, name) => node.values.value.input[name] = type.newVar())
       }
 
       // Outputs
       if(newNode.type.outputs) {
         node.outputs.value = _.mapValues(newNode.type.outputs, (param, name) => _.assign({ id: uid(), node, name }, param))
+        // See comment above
+        _.forEach(newNode.type.outputs, (param, name) => {
+          if (param.options && typeof(param.options) == "function") node.outputs.value[name].options = param.options()
+        })
         _.mapValues(node.outputs.value, (type, name) => node.values.value.output[name] = type.newVar())
       }
-      console.log("Types:", newNode.type.outputs)
-      console.log("Types:", node.outputs.value)
 
-      console.log(newNode.values)
       if (newNode.values && node.type.id != "group") {
         _.forEach(newNode.values, (val, name) => node.values.value.input[name].val = val)
       }
@@ -409,7 +409,6 @@ export const useHirondelle = defineStore('hirondelle', () => {
         var fromParam = from.findParam(output)
         var toParam = to.findParam(input)
         // Sinon avec les noms
-        console.log(from.outputs, to.inputs, output, input)
         if (!fromParam) fromParam = from.outputs[output]
         if (!toParam) toParam = to.inputs[input]
 
@@ -574,11 +573,9 @@ export const useHirondelle = defineStore('hirondelle', () => {
     },
     async startNodeType(typeId, outputValues) {
       var nodes = this.flatNodes()
-      console.log("NOEUDS:", nodes.length, this.nodes.length)
       nodes = nodes.filter(n => n.type.id == typeId)
-      // var nodes = this.nodes.filter(n => n.type.id == typeId)
       nodes.forEach(n => {
-        _.forEach(outputValues, (val, key) => n.values.value.output[key].val = val)
+        _.forEach(outputValues, (val, key) => n.values.output[key].val = val)
       })
       await nextTick() // Let reactivity do its thing
       nodes.forEach(n => n.start())

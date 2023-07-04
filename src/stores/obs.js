@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import OBSWebSocket from 'obs-websocket-js'
-import { ref, computed, watch, toRef, onMounted } from 'vue'
+import { ref, computed, watch, toRef, onMounted, reactive } from 'vue'
 import _ from 'lodash'
 import { useSettings } from './settings'
 import { useHirondelle } from 'src/hirondelle/hirondelle.js'
@@ -258,11 +258,11 @@ export const useOBS = defineStore('obs', () => {
   var events_lists_to_watch = [
     {
       name: "Scene Changed", obsname: "CurrentProgramSceneChanged", description: "La scène OBS change",
-      params: [ { name: "sceneName", description: "Nom de la nouvelle scène", options: scene_names } ]
+      params: [ { name: "sceneName", description: "Nom de la nouvelle scène", options: () => scene_names } ]
     },
     {
       name: "Preview Scene Changed", obsname: "CurrentPreviewSceneChanged", description: "La scène d'apperçu OBS change",
-      params: [ { name: "sceneName", description: "Nom de la nouvelle scène", options: scene_names } ]
+      params: [ { name: "sceneName", description: "Nom de la nouvelle scène", options: () => scene_names } ]
     },
     {
       name: "Studio Mode Changed", obsname: "StudioModeStateChanged", description: "Le mode studio a été activé ou désactivé",
@@ -306,10 +306,8 @@ export const useOBS = defineStore('obs', () => {
     category: "OBS",
     active: connected,
     inputs: {
-      sceneName: {
-        type: "string",
-        options: toRef(scene_names)
-     } },
+      sceneName: { type: "string", options: () => scene_names }
+    },
     // outputs: { sceneName: "string" },
     action: (values) => {
       console.log("SETTING SCENE NAME", values)
@@ -325,7 +323,7 @@ export const useOBS = defineStore('obs', () => {
     title: "Set Preview Scene",
     category: "OBS",
     active: connected,
-    inputs: { sceneName: { type: "string", options: toRef(scene_names) } },
+    inputs: { sceneName: { type: "string", options: () => scene_names } },
     action: (values) => {
       if (values.input.sceneName.val)
         obs_ws.call("SetCurrentPreviewScene", { sceneName: values.input.sceneName.val })
@@ -413,7 +411,6 @@ export const useOBS = defineStore('obs', () => {
   // Get scene item rect
   const getSceneItemRecs = async (sceneName) => {
     var r = await obs_ws.call("GetSceneItemList", { sceneName })
-    console.log(r)
     return r.sceneItems.map(i => ({
       id: i.sceneItemId,
       name: i.sourceName,
@@ -432,24 +429,23 @@ export const useOBS = defineStore('obs', () => {
     category: "OBS",
     active: connected,
     inputs: {
-      sceneName: { type: "string", options: scene_names },
+      sceneName: { type: "string", options: () => scene_names },
       sceneItemId: { type: "number", optionLabel: "name", optionValue: "id" }
     },
     outputs: {
       rect: { type: "rect" },
     },
     async compute (params, node) {
-      console.log("GET THING", params)
       if (!connected.value) return
       var sceneItems = await getSceneItemRecs(params.input.sceneName.val)
-      // node.setInputs("sceneItemId", { type: "number", options: sceneItems, optionLabel: "name", optionValue: "id" })
-      node.inputs["sceneItemId"].options = sceneItems
+      node.inputs.value["sceneItemId"].options = sceneItems
       var rect = sceneItems.find(i => i.id == params.input.sceneItemId.val)?.rect
       if (rect && !_.isEqual(rect, params.output.rect.val)) params.output.rect.val = rect
     },
   })
   // FIXME: trigger pas :(
   obs_ws.on("SceneItemTransformChanged", (p) => {
+    console.log("SCENE ITEM TRANSFORMED")
     H.graph.updateValuesFoNodeTypes("OBS:GetSceneItemRect")
   })
 
