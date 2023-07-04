@@ -3,6 +3,7 @@
    :stroke="color" fill="none" width="3" :stroke-width="strokeWidth"
    :stroke-dasharray="connection.type == 'temporary' ? '10' : ''"
    @click="remove"
+   @mouseover="printinfo"
    />
 </template>
 
@@ -23,6 +24,7 @@ const color = computed(() => {
   if (props.connection.valid == true) return "green"
   if (props.connection.valid == false) return "red"
   if (props.connection.type == 'flow') return "green"
+  if (props.connection.type == 'clone') return "orange"
   if (props.connection.type == 'temporary' ) return "grey"
   else return "grey"
 })
@@ -48,6 +50,16 @@ const getPortId = (node, type, portClass, param=null, slot=null, signal=null) =>
   return id
 }
 
+const printinfo = () => {
+  var c = props.connection
+  if (c.type == "temporary") return
+  console.log("Connection type:", c.type)
+  console.log("From:", c.from.title || c.from.type.title, c.from.ancestors)
+  console.log("To:", c.to.title || c.to.type.title, c.to.ancestors)
+  console.log("Common Ancestor", c.commonAncestor)
+
+}
+
 const d = computed(() => {
   var cPosFrom = props.connection.from._state
   var cPosTo = props.connection.to._state
@@ -64,19 +76,34 @@ const d = computed(() => {
     // n2 = addPos(posTo, { x: 0, y: 25})
 
     // Groups
-    if (c.from.type.id == "group" && c.to.parent == c.from) {
+    if (c.from.type.isGroup && c.to.parent == c.from) {
       var fromId = getPortId(c.from, "output", "group")
       n1 = c.graph._connectors[fromId] || {x: 0, y: 0}
       var type = c.type == "clone" ? "param" : c.type
       var idTo = getPortId(c.to, "input", type, c.input, c.slot)
       n2 = c.graph._connectors[idTo]
     }
-    if (c.to.type.id == "group" && c.from.parent == c.to) {
+    else if (c.to.type.isGroup && c.from.parent == c.to) {
       var toId = getPortId(c.to, "input", "group")
       n2 = c.graph._connectors[toId] || {x: 0, y: 0}
       var type = c.type == "clone" ? "param" : c.type
       var idFrom = getPortId(c.from, "output", type, c.output, c.slot)
       n1 = c.graph._connectors[idFrom]
+    }
+    else if (c.type == "clone") {
+      if (c.to.type.isGroup) {
+        var idFrom = getPortId(c.from, "output", "param", c.output, c.slot)
+        n1 = c.graph._connectors[idFrom]
+        var toId = getPortId(c.to, "input", "group")
+        n2 = c.graph._connectors[toId] || {x: 0, y: 0}
+      }
+      else {
+        var toId = getPortId(c.to, "output", "param", c.input, c.slot)
+        n1 = c.graph._connectors[toId]
+        var fromId = getPortId(c.from, "input", "group")
+        n2 = c.graph._connectors[fromId] || {x: 0, y: 0}
+
+      }
     }
     if (!n1) {
       var idFrom = getPortId(c.from, "output", c.type, c.output, null, c.signal)
@@ -87,6 +114,7 @@ const d = computed(() => {
         n1 = c.graph._connectors[idFrom]
       }
     }
+
     if (!n2) {
       var idTo = getPortId(c.to, "input", c.type, c.input, c.slot)
       n2 = c.graph._connectors[idTo]

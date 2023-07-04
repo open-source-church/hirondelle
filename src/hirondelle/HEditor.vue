@@ -14,17 +14,17 @@
   >
     <div class="absolute-top-left" style="z-index: 10">
       <q-breadcrumbs>
-        <q-breadcrumbs-el v-for="b in breadcrumbs" :key="b.id" :label="b.id || b.type?.title || 'Root'" @click="setParent(b)"/>
+        <q-breadcrumbs-el v-for="b in breadcrumbs" :key="b.id" :label="b.type?.title || 'Root'" @click="setParent(b)"/>
       </q-breadcrumbs>
     </div>
     <!-- Background -->
     <div class="h-background no-pointer-events h-prevent-select" :style="styles"></div>
     <!-- Group connectors -->
-    <div class="absolute-left items-center row rotate-270 h-prevent-select" v-if="parentNode.parent">
+    <div class="absolute-left items-center row rotate-270 h-prevent-select" v-if="parentNode.parent" style="z-index:20">
       <span class="absolute q-ml-xl text-grey no-pointer-events	" style="min-width: 200px;" > Group Input</span>
       <HConnector port-type="output" port-class="group" :node="parentNode" />
     </div>
-    <div class="absolute-right items-center row rotate-270" v-if="parentNode.parent">
+    <div class="absolute-right items-center row rotate-270 h-prevent-select" v-if="parentNode.parent" style="z-index:20">
       <span class="absolute q-ml-xl text-grey no-pointer-events	" style="min-width: 200px;" > Group Output</span>
       <HConnector port-type="input" port-class="group" :node="parentNode" />
     </div>
@@ -99,14 +99,17 @@ const setParent = (parent) => {
 
 const connections_in_group = computed(() => {
   return props.graph.connections.filter(c =>
-    // Même parent
-    (c.from.parent == (parentNode.value || props.graph) &&
-    c.to.parent == (parentNode.value || props.graph)) ||
-    // Temporaires
-    c.type == "temporary" ||
-
-    c.from == parentNode.value && c.to.parent == c.from ||
-    c.to == parentNode.value && c.from.parent == c.to
+    // Paramètres
+    c.type == "flow" && c.to.parent == c.from.parent && c.commonAncestor == parentNode.value?.id ||
+    // Paramètres
+    c.type == "param" && c.commonAncestor == parentNode.value?.id ||
+    // Clone vers le groupe
+    c.type != "param" && (c.from.parent == parentNode.value && c.to == parentNode.value) ||
+    c.type != "param" && (c.from == parentNode.value && c.to.parent == parentNode.value) ||
+    // Clone
+    c.type == "clone" && c.from.ancestors.includes(parentNode.value.id) && c.commonAncestor != parentNode.value.id||
+    // // Temporaires
+    c.type == "temporary"
     )
 })
 

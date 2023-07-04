@@ -83,6 +83,7 @@ export const useHirondelle = defineStore('hirondelle', () => {
     opt.isAction = opt.type == "action"
     opt.isParam = opt.type == "param"
     opt.isSystem = opt.type == "system"
+    opt.isGroup = opt.id == "group"
 
     nodeTypes.value.push(opt)
   }
@@ -174,7 +175,13 @@ export const useHirondelle = defineStore('hirondelle', () => {
       var x = nodes.map(n => n.state.x).reduce((a, b) => a + b) / nodes.length
       var y = nodes.map(n => n.state.y).reduce((a, b) => a + b) / nodes.length
 
-      console.log("CREATING GROUP")
+      // On prend les connections qui sont vers/depuis ce groupe de noeuds mais pas dans
+      var groupIds = _.flattenDeep([nodes.map(n => n.id), nodes.map(n => this.flatNodes(n).map(n => n.id))])
+      var connections = this.connections.filter(c =>
+        groupIds.includes(c.from.id) && !groupIds.includes(c.to.id) ||
+        !groupIds.includes(c.from.id) && groupIds.includes(c.to.id)
+        )
+
       var group = this.addNode({
         type: "group",
         title: "New group",
@@ -182,25 +189,39 @@ export const useHirondelle = defineStore('hirondelle', () => {
         state: { x, y, open: true}
         }, parent)
 
-      console.log("FIXING CONNECTIONS")
       // Fixing connections
-      this.connections.forEach(c => {
-        if (c.from.parent != c.to.parent) {
-          if (c.from.parent.parent == c.to.parent) {
-            const node = c.from.id
-            c.from = c.from.parent
-            var type = c.type == "param" ? "clone" : c.type
-            this.addConnection({from: node, to: group, type, input: c.input, output: c.output})
+      connections.forEach(c => {
+        console.log(c)
+        // Depuis le groupe
+        if (!groupIds.includes(c.to.id)) {
+          if (c.type == "flow") {
+            const nodeId = c.from.id
+            // On fait aller la connection depuis le groupe
+            c.from = group
+            // On ajoute une connection depuis le groupe
+            this.addConnection({from: nodeId, to: group.id, type: "flow"})
           }
-          if (c.from.parent == c.to.parent.parent) {
-            const node = c.to.id
-            c.to = c.to.parent
-            var type = c.type == "param" ? "clone" : c.type
-            this.addConnection({from: group, to: node, type, input: c.output, output: c.output})
+          else if (c.type == "param") {
+            // On ajoute une connection clone
+            this.addConnection({from: c.from.id, to: group.id, type: "clone", output: c.output.id})
           }
         }
+        // Vers le groupe
+        else if (!groupIds.includes(c.from.id)) {
+          if (c.type == "flow") {
+            const nodeId = c.to.id
+            // On fait aller la connection vers le groupe
+            c.to = group
+            // On ajoute une connection depuis le groupe
+            this.addConnection({from: group.id, to: nodeId, type: "flow"})
+          }
+          else if (c.type == "param") {
+            this.addConnection({from: group.id, to: c.to.id, type: "clone", input: c.input.id})
+          }
+        }
+        else console.log("BG", c.from.title, c.from.parent.title, c.to.parent.title)
       })
-      console.log("DONE")
+
       return group
     },
     findNode(nodeId, parent=null) {
@@ -270,6 +291,9 @@ export const useHirondelle = defineStore('hirondelle', () => {
       node.emit = (signal = null) => node.targets(signal).forEach(t => t.node.start(t.slot))
       node.remove = () => this.removeNode(node)
       node.targets = (signal = null) => this.targets(id, signal),
+      node.connectionsFrom = computed(() => this.connections.filter( c => c.from.id == node.id))
+      node.connectionsTo = computed(() => this.connections.filter( c => c.to.id == node.id))
+      node.ancestors = computed(() => node.parent?.ancestors?.value.concat(node.parent?.id || []) || [null])
       // Retourne le type de paramètre pour 'paramId'
       node.findParam = function (paramId) {
         return _.find(this.inputs, p => p.id == paramId) || _.find(this.outputs, p => p.id == paramId)
@@ -346,7 +370,7 @@ export const useHirondelle = defineStore('hirondelle', () => {
       node.values = ref({ input: {}, output: {}})
       // Inputs
       if(newNode.type.inputs) {
-        node.inputs.value = _.mapValues(newNode.type.inputs, (param, name) => _.assign({ id: uid(), node, name }, param))
+        node.inputs.value = _.mapValues(newNode.type.inputs, (param, name) => _.assign({ id: uid(), node, name }, _.cloneDeep(param)))
         // Pour que "type.options" soit réactif, il faut le passer dans une function
         // Je crois que c'est parce que pinia wrap le store avec reactive, et unwrap automatiquement les ref à l'intérieur
         // Cf. https://pinia.vuejs.org/core-concepts/plugins.html#augmenting-a-store
@@ -359,7 +383,7 @@ export const useHirondelle = defineStore('hirondelle', () => {
 
       // Outputs
       if(newNode.type.outputs) {
-        node.outputs.value = _.mapValues(newNode.type.outputs, (param, name) => _.assign({ id: uid(), node, name }, param))
+        node.outputs.value = _.mapValues(newNode.type.outputs, (param, name) => _.assign({ id: uid(), node, name }, _.cloneDeep(param)))
         // See comment above
         _.forEach(newNode.type.outputs, (param, name) => {
           if (param.options && typeof(param.options) == "function") node.outputs.value[name].options = param.options()
@@ -367,8 +391,11 @@ export const useHirondelle = defineStore('hirondelle', () => {
         _.mapValues(node.outputs.value, (type, name) => node.values.value.output[name] = type.newVar())
       }
 
+      // On charge les valeurs
       if (newNode.values && node.type.id != "group") {
-        _.forEach(newNode.values, (val, name) => node.values.value.input[name].val = val)
+        _.forEach(newNode.values, (val, name) => {
+          node.values.value.input[name].val = val
+        })
       }
 
       // On ajoute les éventuels enfants
@@ -436,6 +463,8 @@ export const useHirondelle = defineStore('hirondelle', () => {
       connection.fromParamName = () => from.findParamName(fromParam?.id)
       connection.toParamName = () => to.findParamName(toParam?.id)
       connection.remove = () => this.removeConnection(connection)
+      connection.commonAncestor = computed(() => connection.type == "temporary" ? null :
+        connection.from.ancestors.filter(a => connection.to.ancestors.includes(a)).at(-1))
       connection.id = uid()
       this.connections.push(connection)
 
@@ -449,18 +478,6 @@ export const useHirondelle = defineStore('hirondelle', () => {
         to.values.input[toParam.name].val.push(from.values.output[fromParam.name])
         connection._toVarId = from.values.output[fromParam.name].id
       }
-      // Quand on clone, on lie aussi les valeurs
-      else if (connection.type == "clone") {
-        if (input) {
-          // FIXME: Si plusieurs connections avec le même nom de paramètres ça va bugger
-          from.setInput(toParam)
-          from.values.input[toParam.name] = to.values.input[toParam.name]
-        }
-        else {
-          to.setOutput(fromParam)
-          to.values.output[fromParam.name] = from.values.output[fromParam.name]
-        }
-      }
       return connection
     },
     removeConnection(connection) {
@@ -473,8 +490,18 @@ export const useHirondelle = defineStore('hirondelle', () => {
           connection.to.values.input[connection.toParamName()].val.filter(v => v.id != connection._toVarId)
       // Groups
       if (connection.type == "clone") {
-        if (connection.input) delete connection.from.inputs[connection.toParamName()]
-        else delete connection.to.outputs[connection.fromParamName()]
+        // On supprime les autres connection depuis ou vers ce param
+        if (connection.input)
+        this.connections.filter(c =>
+          c.id != connection.id &&
+          c.input?.id == connection.input.id &&
+          c.from.parent == connection.from.parent
+          ).forEach (c => c.remove())
+        else this.connections.filter(c =>
+          c.id != connection.id &&
+          c.output?.id == connection.output?.id &&
+          c.to.parent == connection.to.parent
+          ).forEach (c => c.remove())
       }
       // On supprime la connection
       this.connections = this.connections.filter(c => c.id != connection.id)
@@ -544,11 +571,12 @@ export const useHirondelle = defineStore('hirondelle', () => {
       obj.settings = this.settings
       return obj
     },
-    load(obj) {
+    async load(obj)  {
       console.log("LOADING", obj)
       this._loading = true
       if (obj.nodes)
         obj.nodes.forEach(n => this.addNode(_.cloneDeep(n)))
+
       if (obj.connections)
         obj.connections.forEach(c => this.addConnection(c))
       if (obj.view) {

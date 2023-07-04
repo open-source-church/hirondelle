@@ -9,12 +9,13 @@
       @mousedown.stop="triggerConnection"
       :id="id"
   >
-    <q-tooltip v-if="param?.type" :class="`bg-${H.varTypes[param?.type]?.color}-2 text-dark`">
-      <span>{{ param.type }}</span>
+  <!-- v-if="param?.type" -->
+    <q-tooltip  :class="`bg-${H.varTypes[param?.type]?.color}-2 text-dark`">
+      <span>{{ param?.type }}</span>
       <span v-if="opt.multiple"> (multiple)</span>
       <span v-else> (unique)</span>
       <!-- <span>Connections: {{ sources.length }}</span> -->
-      <span> [{{id}}]</span> {{ sources.length }} {{ node.findParam(paramId).type }}
+      <span> [{{id}}]</span> {{ sources.length }}
     </q-tooltip>
   </q-btn>
 </template>
@@ -50,7 +51,11 @@ const param = computed(() => props.node.findParam(props.paramId))
 
 // La list des connections vers ce connector
 const sources = computed(() => {
-  return props.node.graph.connections.filter(c => c.input?.id == props.paramId)
+  if (props.portType == "input")
+    return props.node.connectionsTo.filter(c => c.type == "param" && c.input?.id == props.paramId)
+  else
+    return props.node.connectionsFrom.filter(c => c.type == "param" && c.output?.id == props.paramId)
+  return props.node.graph.connections.filter(c => c.input?.id == props.paramId && c.type != "clone")
 })
 
 const opt = computed(() => {
@@ -158,7 +163,7 @@ const startConnection = ({type="flow", fromParamId=null, event}) => {
   const isValid = (portType, portClass, toParamType, nodeId, portOpen) => {
     if (portType && portType != "input") return false
     else if (portClass && nodeId && nodeId == node.value.id) return false
-    else if (portClass && portOpen == "false") return false
+    else if (portClass && portOpen == "false" && type != "group") return false
     else if (portClass && (type == "group" || portClass == "group")) return true
     else if (portClass && portClass != type) return false
     else if (type == "flow" && portClass && portClass == type) return true

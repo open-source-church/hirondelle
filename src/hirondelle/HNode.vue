@@ -6,8 +6,8 @@
       height:${node._state?.height || 300}px;`">
       <q-card-section :class="headerClass" />
     <!-- Main Ports -->
-    <HConnector port-type="input" port-class="flow" :node="node" />
-    <HConnector port-type="output" port-class="flow" :node="node" />
+    <!-- <HConnector port-type="input" port-class="flow" :node="node" />
+    <HConnector port-type="output" port-class="flow" :node="node" /> -->
       <q-card-section class="row justify-around items-center full-height text-center">
         <span class="text-h4 q-pb-xl">{{ node.title || node.type.title }}</span>
       </q-card-section>
@@ -72,7 +72,7 @@
       </q-list>
     </q-card-section>
     <!-- Outputs -->
-    <q-card-section v-if="(node.state.open) && _.size(node.outputs)"
+    <q-card-section v-if="(node.state.open) && (_.size(node.outputs)  || node.type.isGroup)"
       class="q-pr-none q-pl-xl q-py-xs justify-end">
       <q-list>
         <q-item dense v-for="(output, name) in _.pickBy(node.outputs, p => !p.hidden)" :key="name">
@@ -82,10 +82,19 @@
             <HConnector port-type="output" port-class="param" :node="node" :param-id="output.id" />
           </q-item-section>
         </q-item>
+        <!-- On affiche les params des groupes -->
+        <template v-if="node.type.isGroup">
+          <q-item dense v-for="(c) in node.connectionsTo.filter(c => c.type == 'clone')" :key="c.output.name">
+            <q-item-section>
+              <HParam :param="c.output" :name="c.output.name" v-model="c.from.values.output[c.output.name].val" :node="c.to" />
+              <HConnector port-type="output" port-class="param" :node="c.from" :param-id="c.output.id" />
+            </q-item-section>
+          </q-item>
+        </template>
       </q-list>
     </q-card-section>
     <!-- Inputs -->
-    <q-card-section v-if="(node.state.open) &&_.size(node.inputs)"
+    <q-card-section v-if="(node.state.open) && (_.size(node.inputs) || node.type.isGroup)"
       class="q-pl-none q-pr-xl q-pt-none q-pb-xs" >
       <q-list>
         <q-item dense v-for="(input, name) in _.pickBy(node.inputs, p => !p.hidden)" :key="name">
@@ -94,6 +103,15 @@
             <HConnector port-type="input" port-class="param" :node="node" :param-id="input.id" />
           </q-item-section>
         </q-item>
+        <!-- On affiche les params des groupes -->
+        <template v-if="node.type.isGroup">
+          <q-item dense v-for="(c) in node.connectionsFrom.filter(c => c.type == 'clone')" :key="c.input.name">
+            <q-item-section>
+              <HParam :param="c.input" :name="c.input.name" v-model="c.to.values.input[c.input.name].val" :node="c.to" />
+              <HConnector port-type="input" port-class="param" :node="c.to" :param-id="c.input.id" />
+            </q-item-section>
+          </q-item>
+        </template>
       </q-list>
     </q-card-section>
     <!-- SPECIAL TYPES : CONDITIONS -->

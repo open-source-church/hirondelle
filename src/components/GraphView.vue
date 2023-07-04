@@ -19,11 +19,12 @@
       </q-list>
       </q-btn-dropdown>
       <q-toggle v-model="graph.settings.autoCloseNodes" label="Auto-Close Nodes" />
+      <q-toggle v-model="autoSave" label="Auto-Save" />
       <q-space />
       <q-btn :disable="!selected.length" flat icon="content_copy" color="primary" label="Copy" @click="CB.copy(selected)"  />
       <q-btn :disable="CB.empty" flat icon="content_paste" color="primary" label="Paste" @click="CB.paste()" />
       <q-space />
-      <q-btn v-if="selected.length > 1" flat icon="group_work" color="primary" label="Create Group" @click="graph.newGroup(selected)"/>
+      <q-btn v-if="selected.length > 0" flat icon="group_work" color="primary" label="Create Group" @click="graph.newGroup(selected)"/>
     </div>
     <div class="col fit" style="min-width: 100px; min-height:100px;" >
       <HEditor :graph="graph" @selected="selected=$event" @parentChanged="parent=$event" />
@@ -55,26 +56,26 @@ const graph = H.graph
 const selected = ref([])
 const parent = ref()
 
-var auto_load = true
-var auto_save = true
+var autoLoad = true
+var autoSave = ref(true)
 
 // Loading and saving
-if (auto_load) {
+if (autoLoad) {
   var state = S.get("graph.state")
   if (state) {
     graph.load(state)
   }
 }
 
-if (auto_save) {
-  const save = _.debounce(() => {
-    console.log("Saving graph")
-    S.set("graph.state", graph.save())
-  }, 2000, {leading: true})
-  watch(graph, () => {
-    save()
-  }, { deep: true })
-}
+
+const save = _.debounce(() => {
+  console.log("Saving graph")
+  S.set("graph.state", graph.save())
+}, 2000, {leading: true})
+
+watch(graph, () => {
+  if (autoSave.value) save()
+}, { deep: true })
 
 </script>
 
