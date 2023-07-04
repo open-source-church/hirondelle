@@ -1,5 +1,5 @@
 <template>
-  <q-dialog ref="dialogRef" @hide="onDialogHide">
+  <q-dialog ref="dialogRef" @hide="onDialogHide" position="top">
     <q-card style="min-width: 300px" >
       <q-card-section class="q-pa-none" >
         <q-select filled dense label="Node type" :options="options" ref="selectRef"
@@ -51,7 +51,12 @@ const filterFn = (val, update, abort) => {
 }
 
 onMounted(async () => {
-  setTimeout(() => selectRef.value.focus(), 300)
+  setTimeout(async () => {
+    // selectRef.value.focus()
+    selectRef.value.showPopup()
+    await nextTick()
+    selectRef.value.showPopup()
+  }, 500)
 })
 
 const submit = (val) => {

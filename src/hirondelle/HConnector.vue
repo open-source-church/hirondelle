@@ -1,20 +1,20 @@
 <template>
-  <q-btn v-once flat dense :icon="opt.multiple ? 'circle' : 'square'" :class="opt.classes"
+  <q-btn flat dense :icon="opt.multiple ? 'circle' : 'square'" :class="opt.classes"
       :color="opt.color" :size="opt.size" :style="opt.style"
       :data-port-type="portType" :data-port-class="portClass" :data-param-id="paramId"
       :data-node-id="node.id" :data-param-type="param?.type"
       :data-slot="slotName" :data-signal="signal"
-      :data-port-open="opt.multiple || !sources.length"
+      :data-port-open="opt.multiple || sources.length == 0"
       @touchstart.stop
       @mousedown.stop="triggerConnection"
       :id="id"
   >
-    <q-tooltip v-if="param?.type" :class="`bg-${H.paramTypes[param?.type]?.color}-2 text-dark`">
+    <q-tooltip v-if="param?.type" :class="`bg-${H.varTypes[param?.type]?.color}-2 text-dark`">
       <span>{{ param.type }}</span>
       <span v-if="opt.multiple"> (multiple)</span>
       <span v-else> (unique)</span>
       <!-- <span>Connections: {{ sources.length }}</span> -->
-      <span> [{{id}}]</span> {{ sources.length }}
+      <span> [{{id}}]</span> {{ sources.length }} {{ node.findParam(paramId).type }}
     </q-tooltip>
   </q-btn>
 </template>
@@ -55,14 +55,15 @@ const sources = computed(() => {
 
 const opt = computed(() => {
   var opt = {}
+  opt.classes = "q-pa-sm "
   // Slots
   if (props.portClass == "flow" && props.slotName) {
     opt.color = "green"
     opt.size = "sm"
     opt.multiple = true
     if (props.portType == "input") {
-      opt.classes = "absolute-top-left"
-      opt.style = "left:-12px; top: 5px;"
+      opt.classes += "absolute-top-left"
+      opt.style = "left:-16px; top: 0px;"
     }
   }
   // Signals
@@ -71,8 +72,8 @@ const opt = computed(() => {
     opt.size = "sm"
     opt.multiple = true
     if (props.portType == "output") {
-      opt.classes = "absolute-top-right"
-      opt.style = "right:-12px; top: 5px;"
+      opt.classes += "absolute-top-right"
+      opt.style = "right:-16px; top: 0px;"
     }
   }
   // Main
@@ -81,12 +82,12 @@ const opt = computed(() => {
     opt.size = "sm"
     opt.multiple = true
     if (props.portType == "input") {
-      opt.classes = "absolute-top-left"
-      opt.style = "left: -12px; top: 10px;"
+      opt.classes += "absolute-top-left"
+      opt.style = "left: -17px; top: 4px;"
     }
     else if (props.portType == "output" && props.portClass == "flow") {
-      opt.classes = "absolute-top-right"
-      opt.style = "right: -11px; top: 12px;"
+      opt.classes += "absolute-top-right"
+      opt.style = "right: -16px; top: 4px;"
     }
   }
   // Group
@@ -96,16 +97,16 @@ const opt = computed(() => {
   }
   // Param
   else if (props.portClass == "param") {
-    opt.color = H.paramTypes[param.value?.type]?.color
+    opt.color = H.varTypes[param.value?.type]?.color
     opt.size = "xs"
     if (props.portType == "input") {
-      opt.classes = "absolute-top-left"
-      opt.style = "left:-9px; top: 14px;"
+      opt.classes += "absolute-top-left"
+      opt.style = "left:-15px; top: 9px;"
       opt.multiple = param.value.array
     }
     else if (props.portType == "output") {
-      opt.classes = "absolute-top-right"
-      opt.style = "right:-10px; top: 12px"
+      opt.classes += "absolute-top-right"
+      opt.style = "right:-15px; top: 9px"
       opt.multiple = true
     }
   }

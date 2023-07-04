@@ -311,10 +311,10 @@ export const useOBS = defineStore('obs', () => {
         options: toRef(scene_names)
      } },
     // outputs: { sceneName: "string" },
-    action: (opt) => {
-      console.log("SETTING SCENE NAME", opt)
-      if (opt.input.sceneName)
-        obs_ws.call("SetCurrentProgramScene", { sceneName: opt.input.sceneName })
+    action: (values) => {
+      console.log("SETTING SCENE NAME", values)
+      if (values.input.sceneName.val)
+        obs_ws.call("SetCurrentProgramScene", { sceneName: values.input.sceneName.val })
       return {}
     }
   })
@@ -326,9 +326,9 @@ export const useOBS = defineStore('obs', () => {
     category: "OBS",
     active: connected,
     inputs: { sceneName: { type: "string", options: toRef(scene_names) } },
-    action: (opt) => {
-      if (opt.input.sceneName)
-        obs_ws.call("SetCurrentPreviewScene", { sceneName: opt.input.sceneName })
+    action: (values) => {
+      if (values.input.sceneName.val)
+        obs_ws.call("SetCurrentPreviewScene", { sceneName: values.input.sceneName.val })
       return {}
     }
   })
@@ -349,21 +349,21 @@ export const useOBS = defineStore('obs', () => {
       emojiSize: { type: "number", default: 30 },
       emojis: { type: "string", default: "🌈, ⚡️, 💥, ✨, 💫, 🌸, ❤️, 💚, 🩵, 💙, 💜, 💛, 🤍, 🤎" },
     },
-    action: (opt) => {
-      console.log(opt)
+    action: (values) => {
+      console.log(values)
 
       var d = {
         action: "confettis",
-        bursts: opt.input.bursts,
-        duration: opt.input.duration,
-        confettiNumber: opt.input.number,
+        bursts: values.input.bursts.val,
+        duration: values.input.duration.val,
+        confettiNumber: values.input.number.val,
       }
-      if (opt.input.useEmojis) {
-        d.emojis = opt.input.emojis.split(",").map(c => encodeURI(c.trim()))
-        d.emojiSize = opt.input.emojiSize
+      if (values.input.useEmojis.val) {
+        d.emojis = values.input.emojis.val.split(",").map(c => encodeURI(c.trim()))
+        d.emojiSize = values.input.emojiSize.val
       } else {
-        d.confettiRadius = opt.input.radius
-        d.confettiColors = opt.input.colors.split(",").map(c => c.trim())
+        d.confettiRadius = values.input.radius.val
+        d.confettiColors = values.input.colors.val.split(",").map(c => c.trim())
       }
       console.log(d)
       peer.send(d)
@@ -397,9 +397,9 @@ export const useOBS = defineStore('obs', () => {
       background: { type: "color", default: "#d700d799" },
       style: { type: "string", default: "font-size: 50px;" },
     },
-    action: (opt) => {
+    action: (values) => {
       var d = { action: "messageBox" }
-      _.assign(d, opt.input)
+      _.assign(d, _.mapValues(values.input, v => v.val))
       if (d.random) {
         d.transition_in = _.sample(transitions)
         d.transition_out = _.sample(transitions)
@@ -433,7 +433,7 @@ export const useOBS = defineStore('obs', () => {
     active: connected,
     inputs: {
       sceneName: { type: "string", options: scene_names },
-      // sceneItemId: { type: "number", optionLabel: "name", optionValue: "id" }
+      sceneItemId: { type: "number", optionLabel: "name", optionValue: "id" }
     },
     outputs: {
       rect: { type: "rect" },
@@ -441,10 +441,11 @@ export const useOBS = defineStore('obs', () => {
     async compute (params, node) {
       console.log("GET THING", params)
       if (!connected.value) return
-      var sceneItems = await getSceneItemRecs(params.input.sceneName)
-      node.setInputs("sceneItemId", { type: "number", options: sceneItems, optionLabel: "name", optionValue: "id" })
-      var rect = sceneItems.find(i => i.id == params.input.sceneItemId)?.rect
-      if (rect && !_.isEqual(rect, params.output.rect)) params.output.rect = rect
+      var sceneItems = await getSceneItemRecs(params.input.sceneName.val)
+      // node.setInputs("sceneItemId", { type: "number", options: sceneItems, optionLabel: "name", optionValue: "id" })
+      node.inputs["sceneItemId"].options = sceneItems
+      var rect = sceneItems.find(i => i.id == params.input.sceneItemId.val)?.rect
+      if (rect && !_.isEqual(rect, params.output.rect.val)) params.output.rect.val = rect
     },
   })
   // FIXME: trigger pas :(

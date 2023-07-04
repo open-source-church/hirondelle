@@ -10,6 +10,7 @@
     @keyup.self.ctrl.c.exact="CB.copy(selected)"
     @keyup.self.ctrl.v.exact="() => selected = CB.paste(parentNode)"
     @keyup.self.shift.a.exact="newNodeDialog"
+    @dblclick.self="newNodeDialog"
   >
     <div class="absolute-top-left" style="z-index: 10">
       <q-breadcrumbs>
@@ -114,7 +115,6 @@ const newNodeDialog = () => {
   var state = { x: H.view.mouse.x, y: H.view.mouse.y }
   state.x -= 150
   state.y -= 20
-  console.log(state)
   state = H.view.to(state)
   state.open = true
 
@@ -207,6 +207,7 @@ watch([_graph.value, H.view], async (val) => {
 
   var el = document.querySelectorAll('[data-port-type]')
   // var c = {}
+  // _graph.value._connectors = {}
   if (!_graph.value._connectors) _graph.value._connectors = {}
   el.forEach(e => {
     var portId = e.getAttribute("id")

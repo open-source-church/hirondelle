@@ -26,6 +26,8 @@ const props = defineProps({
   items : { Object, required: true }
 })
 
+defineEmits(["selected"])
+
 </script>
 
 <style lang="scss">

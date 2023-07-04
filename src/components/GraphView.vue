@@ -40,15 +40,16 @@ import { useSettings } from 'stores/settings'
 // Node
 import HEditor from "src/hirondelle/HEditor.vue"
 import { useHirondelle } from "src/hirondelle/hirondelle.js"
-import { useBaseActions } from "src/hirondelle/base-actions.js"
 import { useClipboard } from "src/hirondelle/utils/clipboard.js"
+// Importing types
+import "src/hirondelle/types/variables.js"
+import "src/hirondelle/types/base-actions.js"
 
 const $q = useQuasar()
 const S = useSettings()
 
 const H = useHirondelle()
 const CB = useClipboard()
-useBaseActions()
 
 const graph = H.graph
 const selected = ref([])

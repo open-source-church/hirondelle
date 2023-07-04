@@ -3,10 +3,10 @@
   <template v-if="param.array">
     <div class="row items-center">
       <div class="col-12 caption">{{ name }}</div>
-      <q-chip v-for="(val, param) in _.forEach(modelValue)" :key="val"
-        square class="bg-grey text-dark">
-        {{ param }}
-        <q-tooltip>{{ val }}</q-tooltip>
+      <q-chip v-for="v in modelValue" :key="v.id"
+        square :class="`bg-${H.varTypes[v?.type]?.color}-3 text-dark`">
+        {{ v.name }}
+        <q-tooltip>{{ v.val }}</q-tooltip>
       </q-chip>
     </div>
   </template>
@@ -33,15 +33,18 @@
   </template>
   <!-- Rect -->
   <template v-else-if="param.type == 'rect'">
-    <div class="row q-col-gutter-xs">
-      <q-input :disable="disable" class="col-6" dense filled type="number" label="left" :model-value="modelValue.x"
-        @update:model-value="val => update(_.assign(modelValue, {x: val}))" />
-      <q-input :disable="disable" class="col-6" dense filled type="number" label="top" :model-value="modelValue.y"
-        @update:model-value="val => update(_.assign(modelValue, {y: val}))"  />
-      <q-input :disable="disable" class="col-6" dense filled type="number" label="width" :model-value="modelValue.width"
-        @update:model-value="val => update(_.assign(modelValue, {width: val}))"  />
-      <q-input :disable="disable" class="col-6" dense filled type="number" label="height" :model-value="modelValue.height"
-        @update:model-value="val => update(_.assign(modelValue, {height: val}))"  />
+    <div class="row items-center">
+      <div class="col-12 caption">{{ name }}</div>
+      <div class="row q-col-gutter-xs">
+        <q-input :disable="disable" class="col-6" dense filled label="left" :model-value="modelValue.x"
+          @update:model-value="val => update(val, 'x')" debounce="1000" />
+        <q-input :disable="disable" class="col-6" dense filled label="top" :model-value="modelValue.y"
+          @update:model-value="val => update(val, 'y')" debounce="1000" />
+        <q-input :disable="disable" class="col-6" dense filled label="width" :model-value="modelValue.width"
+          @update:model-value="val => update(val, 'width')" debounce="1000" />
+        <q-input :disable="disable" class="col-6" dense filled label="height" :model-value="modelValue.height"
+          @update:model-value="val => update(val, 'height')" debounce="1000" />
+      </div>
     </div>
   </template>
   <!-- Object -->
@@ -65,12 +68,19 @@
   </template>
   <!-- String -->
   <template v-else>
-    <q-select v-if="param.options" options-dense :disable="disable"
-      :label="name" dense filled clearable :options="param.options"
+    <div>
+      <div v-if="param.options && param.checkbox">{{ name }}</div>
+      <q-option-group v-if="param.options && param.checkbox" dense :disable="disable" :options="param.options"
+      :label="name" :clearable="param.clearable" :type="param.multiple ? 'checkbox' : 'radio'"
+      :option-label="param.optionLabel || 'label'" :option-value="param.optionValue || 'id'" emit-value map-options
+      :model-value="modelValue" @update:model-value="update" inline/>
+      <q-select v-else-if="param.options" options-dense :disable="disable" :options="param.options"
+      :label="name" dense filled :clearable="param.clearable" :multiple="param.multiple"
       :option-label="param.optionLabel || 'label'" :option-value="param.optionValue || 'id'" emit-value map-options
       :model-value="modelValue" @update:model-value="update"/>
-    <q-input v-else dense filled :label="name" :type="param.type" :textarea="param.textarea" :autogrow="param.textarea"
-      :model-value="modelValue" @update:model-value="update" :disable="disable"  />
+      <q-input v-else dense filled :label="name" :textarea="param.textarea" :autogrow="param.textarea"
+      :model-value="modelValue" @update:model-value="update" :disable="disable" :debounce="param.type=='number' ? 1000:0" />
+    </div>
   </template>
 
 </template>
@@ -79,6 +89,9 @@
 
 import { ref, computed, reactive, watch, onMounted } from 'vue'
 import _ from "lodash"
+import { useHirondelle } from './hirondelle'
+
+const H = useHirondelle()
 
 const props = defineProps({
   param: { type: Object, required: true },
@@ -89,10 +102,25 @@ const props = defineProps({
 })
 const emit = defineEmits(["update:modelValue"])
 
-const update = val => {
-  if (props.param.type == "number") val = ~~val
-  if (props.param.type == 'rect') emit('update:modelValue', val)
-  else emit('update:modelValue', val)
+const update = (val, rectProp) => {
+  // On regarde si c'est une expression mathématique
+  if (["number", "rect"].includes(props.param.type)) {
+    if(val.toString().match(/[\d+\+ \-\*\/\(\)]+/)) {
+      try {
+        var r = Function(`return (${val.toString()})`)()
+        val = r
+      } catch {
+        console.log(`'${val.toString()}' n'est pas une expression valide :(`)
+        return
+      }
+    }
+    else
+      // On converti en nombre
+      val = ~~val
+  }
+  if (props.param.type == 'rect') val = _.assign(props.modelValue, { [rectProp]: val })
+
+  emit('update:modelValue', val)
 }
 
 </script>

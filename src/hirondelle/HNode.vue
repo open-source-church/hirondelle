@@ -1,11 +1,17 @@
 <template>
   <template v-if="simplified">
-    <div class="h-node"
-    :style="`left:${node.state?.x}px; top: ${node.state?.y}px;
-    width:300px;
-    height:${node._state?.height || 300}px;`">
-    <q-card-section :class="headerClass" />
-    <q-resize-observer @resize="updatePortPositions" />
+    <div class="h-node" v-memo="[node.state.x, node.title]"
+      :style="`left:${node.state?.x}px; top: ${node.state?.y}px;
+      width:300px;
+      height:${node._state?.height || 300}px;`">
+      <q-card-section :class="headerClass" />
+    <!-- Main Ports -->
+    <HConnector port-type="input" port-class="flow" :node="node" />
+    <HConnector port-type="output" port-class="flow" :node="node" />
+      <q-card-section class="row justify-around items-center full-height text-center">
+        <span class="text-h4 q-pb-xl">{{ node.title || node.type.title }}</span>
+      </q-card-section>
+      <q-resize-observer @resize="updatePortPositions" />
     </div>
   </template>
   <template v-else >
@@ -21,13 +27,13 @@
       <q-icon v-if="!node.type.active" class="col-auto q-pr-xs" name="warning" size="md" color="negative" >
         <q-tooltip>'{{ node.type.category }}' n'est pas connecté</q-tooltip>
       </q-icon>
-      <div class="col">
+      <div class="col ellipsis">
         {{ node.title || node.type.title }}
         <q-badge v-if="node.nodes.length" class="bg-accent">{{ node.nodes.length }}</q-badge>
       </div>
       <q-btn flat dense v-if="node.type.id == 'group'" icon="edit" class="col-auto" @click="$emit('edit', node)"/>
       <q-btn flat dense v-if="node.type.info && node.state.open" icon="info" color="info" class="col-auto">
-        <q-tooltip>{{ node.type.info }}</q-tooltip>
+        <q-tooltip anchor="top middle" self="bottom middle" class="bg-info text-dark text-body2" >{{ node.type.info }}</q-tooltip>
       </q-btn>
       <q-btn flat dense v-if="node.type.accepts_output || node.type.action" :disable="node.running || !node.type.active" icon="play_circle" class="col-auto text-positive" @click="node.start()"/>
       <q-btn flat dense icon="delete" class="col-auto text-negative" @click="node.remove"/>
@@ -69,7 +75,7 @@
     <q-card-section v-if="(node.state.open) && _.size(node.outputs)"
       class="q-pr-none q-pl-xl q-py-xs justify-end">
       <q-list>
-        <q-item dense v-for="(output, name) in node.outputs" :key="name">
+        <q-item dense v-for="(output, name) in _.pickBy(node.outputs, p => !p.hidden)" :key="name">
           <!-- <q-item-section /> -->
           <q-item-section >
             <HParam :disable="false" :param="output" :name="name" v-model="node.values.output[name].val" :node="node" />
@@ -82,7 +88,7 @@
     <q-card-section v-if="(node.state.open) &&_.size(node.inputs)"
       class="q-pl-none q-pr-xl q-pt-none q-pb-xs" >
       <q-list>
-        <q-item dense v-for="(input, name) in node.inputs" :key="name">
+        <q-item dense v-for="(input, name) in _.pickBy(node.inputs, p => !p.hidden)" :key="name">
           <q-item-section>
             <HParam :param="input" :name="name" v-model="node.values.input[name].val" :node="node" />
             <HConnector port-type="input" port-class="param" :node="node" :param-id="input.id" />
@@ -93,17 +99,17 @@
     <!-- SPECIAL TYPES : CONDITIONS -->
     <q-card-section class="q-pa-sm" v-if="node.type.id == 'BA:Condition'">
       <div v-if="(node.state.open)">
-        <div class="text-info" v-if="_.isEmpty(paramSources.vars)">
+        <div class="text-info" v-if="!node.values.input.vars.val.length">
           <q-icon name="info" />
           Ajouter des connections vers 'vars' pour filtrer des trucs.
         </div>
-        <div v-for="(p, k) in node._paramSourcesType" :key="k">
-          <span class="text-subtitle2">{{ k }}</span>
+        <div v-for="(v) in node.values.input.vars.val" :key="v.id">
+          <span class="text-subtitle2">{{ v.name }}</span>
           <!-- Strings -->
-          <div v-if="p.type == 'string'" class="row items-center">
+          <div v-if="v.type == 'string'" class="row items-center">
             <q-chip square class="col-auto cursor-pointer bg-grey-9 q-mr-sm">
-              <q-icon v-if="!node.state.filter?.[k].filterType" name="expand_more" />
-              <span>{{ node.state.filter?.[k].filterType || ""}}</span>
+              <q-icon v-if="!node.state.filter?.[v.name].filterType" name="expand_more" />
+              <span>{{ node.state.filter?.[v.name].filterType || ""}}</span>
               <q-menu>
                 <q-list dense>
                   <q-item clickable v-close-popup
@@ -115,7 +121,7 @@
                       { type: 'Est contenu dans', label: 'Est contenu dans', icon: ''},
 
                     ]" :key="o.type"
-                    @click="node.state.filter[k].filterType = o.type">
+                    @click="node.state.filter[v.name].filterType = o.type">
                     <q-item-section avatar>
                       <q-chip dense square class="col-auto bg-grey-9"> {{ o.type}} </q-chip>
                     </q-item-section>
@@ -124,25 +130,25 @@
                 </q-list>
               </q-menu>
             </q-chip>
-            <template v-if="p.options && node.state.filter[k].filterType == '='">
+            <template v-if="v.options && node.state.filter[v.name].filterType == '='">
               <q-select class="col" dense filled clearable options-dense
-                :options="p.options" v-model="node.state.filter[k].filterText" />
+                :options="p.options" v-model="node.state.filter[v.name].filterText" />
             </template>
             <template v-else>
 
               <q-space />
-              <q-btn v-if="node.state.filter?.[k].filterType" flat dense icon="sym_o_match_case" :color="node.state.filter[k].matchCase ? 'accent':''"
-              @click="node.state.filter[k].matchCase = !node.state.filter[k].matchCase">
+              <q-btn v-if="node.state.filter?.[v.name].filterType" flat dense icon="sym_o_match_case" :color="node.state.filter[v.name].matchCase ? 'accent':''"
+              @click="node.state.filter[v.name].matchCase = !node.state.filter[v.name].matchCase">
               <q-tooltip>Match case</q-tooltip>
             </q-btn>
-            <q-input v-if="node.state.filter?.[k].filterType" class="col-12" dense filled v-model="node.state.filter[k].filterText"/>
+            <q-input v-if="node.state.filter?.[v.name].filterType" class="col-12" dense filled v-model="node.state.filter[v.name].filterText"/>
           </template>
           </div>
           <!-- Number -->
-          <div v-if="p.type == 'number'" class="row items-center">
+          <div v-if="v.type == 'number'" class="row items-center">
             <q-chip square class="col-auto cursor-pointer bg-grey-9 q-mr-sm">
-              <q-icon v-if="!node.state.filter?.[k].filterType" name="expand_more" />
-              <span>{{ node.state.filter?.[k].filterType || ""}}</span>
+              <q-icon v-if="!node.state.filter?.[v.name].filterType" name="expand_more" />
+              <span>{{ node.state.filter?.[v.name].filterType || ""}}</span>
               <q-menu>
                 <q-list dense>
                   <q-item clickable v-close-popup
@@ -154,7 +160,7 @@
                       { type: '< x <', label: 'Entre ...', icon: ''},
 
                     ]" :key="o.type"
-                    @click="node.state.filter[k].filterType = o.type">
+                    @click="node.state.filter[v.name].filterType = o.type">
                     <q-item-section avatar>
                       <q-chip dense square class="col-auto bg-grey-9"> {{ o.type}} </q-chip>
                     </q-item-section>
@@ -163,16 +169,16 @@
                 </q-list>
               </q-menu>
             </q-chip>
-            <q-input v-if="['='].includes(node.state.filter?.[k].filterType)" class="col" dense filled type="number" v-model="node.state.filter[k].equals" label="Égal"/>
-            <q-input v-if="['>', '< x <'].includes(node.state.filter?.[k].filterType)" class="col" dense filled type="number" v-model="node.state.filter[k].greaterThan" label="Plus grand que"/>
-            <span v-if="node.state.filter?.[k].filterType == '< x <'" class="col-auto text-center q-px-sm">et</span>
-            <q-input v-if="['<', '< x <'].includes(node.state.filter?.[k].filterType)" class="col" dense filled type="number" v-model="node.state.filter[k].lesserThan" label="Plus petit que"/>
+            <q-input v-if="['='].includes(node.state.filter?.[v.name].filterType)" class="col" dense filled type="number" v-model="node.state.filter[v.name].equals" label="Égal"/>
+            <q-input v-if="['>', '< x <'].includes(node.state.filter?.[v.name].filterType)" class="col" dense filled type="number" v-model="node.state.filter[v.name].greaterThan" label="Plus grand que"/>
+            <span v-if="node.state.filter?.[v.name].filterType == '< x <'" class="col-auto text-center q-px-sm">et</span>
+            <q-input v-if="['<', '< x <'].includes(node.state.filter?.[v.name].filterType)" class="col" dense filled type="number" v-model="node.state.filter[v.name].lesserThan" label="Plus petit que"/>
           </div>
           <!-- Boolean -->
-          <div v-if="p.type == 'boolean'" class="row items-center">
+          <div v-if="v.type == 'boolean'" class="row items-center">
             <q-chip square class="col-auto cursor-pointer bg-grey-9 q-mr-sm">
-              <q-icon v-if="!node.state.filter?.[k].filterType" name="expand_more" />
-              <span>{{ node.state.filter?.[k].filterType || ""}}</span>
+              <q-icon v-if="!node.state.filter?.[v.name].filterType" name="expand_more" />
+              <span>{{ node.state.filter?.[v.name].filterType || ""}}</span>
               <q-menu>
                 <q-list dense>
                   <q-item clickable v-close-popup
@@ -180,7 +186,7 @@
                       { type: '', label: 'Ignorer', icon: ''},
                       { type: '=', label: 'Égal', icon: ''},
                     ]" :key="o.type"
-                    @click="node.state.filter[k].filterType = o.type">
+                    @click="node.state.filter[v.name].filterType = o.type">
                     <q-item-section avatar>
                       <q-chip dense square class="col-auto bg-grey-9"> {{ o.type}} </q-chip>
                     </q-item-section>
@@ -189,7 +195,7 @@
                 </q-list>
               </q-menu>
             </q-chip>
-            <q-toggle v-if="node.state.filter?.[k].filterType" v-model="node.state.filter[k].equals" :label="node.state.filter[k].equals ? 'True' : 'False'"/>
+            <q-toggle v-if="node.state.filter?.[v.name]?.filterType" v-model="node.state.filter[v.name].equals" :label="node.state.filter[v.name].equals ? 'True' : 'False'"/>
           </div>
         </div>
       </div>
@@ -232,13 +238,6 @@ const headerClass = computed(() => node.value.type.isSystem ? 'bg-secondary'
           : node.value.type.isAction ? 'bg-primary'
           : 'bg-grey-8 text-white')
 
-
-const paramSources = computed(() => {
-  // En fait on l'utilise juste pour le watcher, mais pour les valeurs on utilise
-  // un hack avec node._paramSourcesType
-  return node.value.graph.paramSources(node.value.id)
-})
-
 const inputs = computed(() => {
   return props.node.inputs
 })
@@ -246,19 +245,18 @@ const outputs = computed(() => {
   return props.node.outputs
 })
 
-watch(paramSources, () => {
-  if (node.value.type.id == 'BA:Condition' && node.value._paramSourcesType) {
+watch(node.value, () => {
+  if (node.value.type.id == 'BA:Condition' && node.value.values.input.vars) {
     if (!node.value.state.filter) node.value.state.filter = {}
     // On ajoute les options du filtre dans les propriétés du noeuds
-    Object.keys(node.value._paramSourcesType).forEach(k => {
-      if (!(k in node.value.state.filter)) {
-        node.value.state.filter[k] = {}
-      }
+    node.value.values.input.vars.val.forEach(v => {
+      if (!(v.name in node.value.state.filter)) node.value.state.filter[v.name] = {}
     })
   }
 })
 
 const updatePortPositions = (val) => {
+  if (node.value._state?.width && simplified.value) return
   node.value._state = {
     width: val.width,
     height: val.height
