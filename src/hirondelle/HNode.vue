@@ -49,15 +49,17 @@
     <q-card-section v-if="(node.state.open) && (_.size(node.type.slots) || _.size(node.type.signals))"
       class="q-pl-none q-pr-none q-pb-xs row">
       <q-list class="col-6">
-        <q-item dense v-for="(f, key) in node.type.slots" :key="key" class="">
-          <q-item-section>
-            <q-item-label>
-              {{ key }} <span class="text-grey">()</span>
-            </q-item-label>
-            <HConnector port-type="input" port-class="flow" :slot-name="key" :node="node"
-            @click="() => node.start(key)" />
-          </q-item-section>
-        </q-item>
+        <template v-for="(f, key) in node.type.slots" :key="key">
+          <q-item dense class="" v-if="!node._state.slots?.[key]?.hidden">
+            <q-item-section>
+              <q-item-label>
+                {{ key }} <span class="text-grey">()</span>
+              </q-item-label>
+              <HConnector port-type="input" port-class="flow" :slot-name="key" :node="node"
+              @click="() => node.start(key)" />
+            </q-item-section>
+          </q-item>
+        </template>
       </q-list>
       <q-list class="col-6">
         <q-item dense v-for="(f, key) in node.type.signals" :key="key" class="text-right">
@@ -69,6 +71,27 @@
             @click="() => node.emit(key)" />
           </q-item-section>
         </q-item>
+      </q-list>
+    </q-card-section>
+    <!-- Inputs -->
+    <q-card-section v-if="(node.state.open) && (_.size(node.inputs) || node.type.isGroup)"
+      class="q-pl-none q-pr-xl q-pt-none q-pb-xs" >
+      <q-list>
+        <q-item dense v-for="(input, name) in _.pickBy(node.inputs, p => !p.hidden)" :key="name">
+          <q-item-section>
+            <HParam :param="input" :name="name" v-model="node.values.input[name].val" :node="node" />
+            <HConnector port-type="input" port-class="param" :node="node" :param-id="input.id" />
+          </q-item-section>
+        </q-item>
+        <!-- On affiche les params des groupes -->
+        <template v-if="node.type.isGroup">
+          <q-item dense v-for="(c) in node.connectionsFrom.filter(c => c.type == 'clone')" :key="c.input.name">
+            <q-item-section>
+              <HParam :param="c.input" :name="c.input.name" v-model="c.to.values.input[c.input.name].val" :node="c.to" />
+              <HConnector port-type="input" port-class="param" :node="c.to" :param-id="c.input.id" />
+            </q-item-section>
+          </q-item>
+        </template>
       </q-list>
     </q-card-section>
     <!-- Outputs -->
@@ -88,27 +111,6 @@
             <q-item-section>
               <HParam :param="c.output" :name="c.output.name" v-model="c.from.values.output[c.output.name].val" :node="c.to" />
               <HConnector port-type="output" port-class="param" :node="c.from" :param-id="c.output.id" />
-            </q-item-section>
-          </q-item>
-        </template>
-      </q-list>
-    </q-card-section>
-    <!-- Inputs -->
-    <q-card-section v-if="(node.state.open) && (_.size(node.inputs) || node.type.isGroup)"
-      class="q-pl-none q-pr-xl q-pt-none q-pb-xs" >
-      <q-list>
-        <q-item dense v-for="(input, name) in _.pickBy(node.inputs, p => !p.hidden)" :key="name">
-          <q-item-section>
-            <HParam :param="input" :name="name" v-model="node.values.input[name].val" :node="node" />
-            <HConnector port-type="input" port-class="param" :node="node" :param-id="input.id" />
-          </q-item-section>
-        </q-item>
-        <!-- On affiche les params des groupes -->
-        <template v-if="node.type.isGroup">
-          <q-item dense v-for="(c) in node.connectionsFrom.filter(c => c.type == 'clone')" :key="c.input.name">
-            <q-item-section>
-              <HParam :param="c.input" :name="c.input.name" v-model="c.to.values.input[c.input.name].val" :node="c.to" />
-              <HConnector port-type="input" port-class="param" :node="c.to" :param-id="c.input.id" />
             </q-item-section>
           </q-item>
         </template>
@@ -275,10 +277,8 @@ watch(node.value, () => {
 
 const updatePortPositions = (val) => {
   if (node.value._state?.width && simplified.value) return
-  node.value._state = {
-    width: val.width,
-    height: val.height
-  }
+  node.value._state.width = val.width
+  node.value._state.height = val.height
 }
 
 onMounted(() => {

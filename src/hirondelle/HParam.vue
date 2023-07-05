@@ -1,6 +1,6 @@
 <template>
-  <!-- Array -->
-  <template v-if="param.array">
+  <!-- Multiple -->
+  <template v-if="param.multiple">
     <div class="row items-center">
       <div class="col-12 caption">{{ name }}</div>
       <q-chip v-for="val in modelValue" :key="val.id"
@@ -8,10 +8,20 @@
         {{ val.name }}
         <q-tooltip v-if="typeof(val.val) == 'object'">
           <q-chip v-for="(v, key) in val.val" :key="key" class="bg-secondary text-dark q-pa-none q-pr-sm">
-            <q-chip class="bg-accent q-ma-none q-pl-xs q-pr-sm q-mr-sm">{{ v.name }}</q-chip>
-            {{ v.val }}</q-chip>
+            <q-chip class="bg-accent q-ma-none q-pl-xs q-pr-sm q-mr-sm">{{ key }}</q-chip>
+            {{ v }}</q-chip>
          </q-tooltip>
         <q-tooltip v-else>{{ val.val }} </q-tooltip>
+      </q-chip>
+    </div>
+  </template>
+  <!-- Array -->
+  <template v-else-if="param.array && !param.options">
+    <div class="row items-center">
+      <div class="col-12 caption">{{ name }}</div>
+      <q-chip v-for="(val, i) in modelValue" :key="i"
+        square :class="`bg-${H.varTypes[param.type]?.color}-3 text-dark`">
+        {{ val }}
       </q-chip>
     </div>
   </template>
@@ -76,7 +86,7 @@
     <div>
       <div v-if="param.options && param.checkbox">{{ name }}</div>
       <q-option-group v-if="param.options && param.checkbox" dense :disable="disable" :options="param.options"
-      :label="name" :clearable="param.clearable" :type="param.multiple ? 'checkbox' : 'radio'"
+      :label="name" :clearable="param.clearable" :type="param.array ? 'checkbox' : 'radio'"
       :option-label="param.optionLabel || 'label'" :option-value="param.optionValue || 'id'" emit-value map-options
       :model-value="modelValue" @update:model-value="update" inline/>
       <q-select v-else-if="param.options" options-dense :disable="disable" :options="param.options"

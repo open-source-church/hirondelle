@@ -14,7 +14,7 @@
       <span>{{ param?.type }}</span>
       <span v-if="opt.multiple"> (multiple)</span>
       <span v-else> (unique)</span>
-      <span v-if="param.array"> [array]</span>
+      <span v-if="param?.array"> [array]</span>
 
       <!-- <span>Connections: {{ sources.length }}</span> -->
       <!-- <span> [{{id}}]</span> {{ sources.length }} -->
@@ -109,7 +109,7 @@ const opt = computed(() => {
     if (props.portType == "input") {
       opt.classes += "absolute-top-left"
       opt.style = "left:-15px; top: 9px;"
-      opt.multiple = param.value.array
+      opt.multiple = param.value.array || param.value.multiple
     }
     else if (props.portType == "output") {
       opt.classes += "absolute-top-right"

@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, computed, watch, toRef } from 'vue'
+import { ref, computed, watch, toRef, nextTick } from 'vue'
 import _ from 'lodash'
 import { useQuasar, copyToClipboard, uid, colors } from 'quasar'
 import { useHirondelle } from '../hirondelle'
@@ -103,7 +103,7 @@ H.registerNodeType({
       { id: "and", label: "AND" },
       { id: "or", label: "OR" }
     ]},
-    vars: { type: "*", array: true}
+    vars: { type: "*", multiple: true}
   },
   outputs: {
     result: { type: "boolean" }
@@ -272,7 +272,7 @@ H.registerNodeType({
       {id: "eq", label: "Égal"},
       {id: "dif", label: "Different"}
     ]},
-    values: { type: "boolean", array: true },
+    values: { type: "boolean", multiple: true },
   },
   outputs: {
     result: { type: "boolean" },
@@ -330,47 +330,87 @@ H.registerNodeType({
       { id: "merge", label: "Merge" },
       { id: "get", label: "Get Value" },
     ] },
-    arrays: { type: "*", array: true },
+    arrays: { type: "*", multiple: true },
     name: { type: "string", default: "array" },
     index: { type: "number", slider : {min: 0, max: 0} },
+    loop: { type: "boolean" },
   },
   slots: {
-    next: (values) => values.input.index.val = (values.input.index.val + 1) % values.output.count.val
+    startLoop: async (values, node) => {
+      values.input.index.val = 0
+      await nextTick()
+      node.emit("forEach")
+    },
+    next: async (values, node) => {
+      var i = values.input.index.val
+      if (values.input.loop.val)
+        values.input.index.val = (values.input.index.val + 1) % values.output.count.val
+      else
+        values.input.index.val = Math.min(values.input.index.val + 1, values.output.count.val -1)
+      if (i != values.input.index.val) {
+        await nextTick()
+        node.emit("forEach")
+      }
+    },
+  },
+  signals: {
+    forEach: null,
   },
   compute(values, node) {
     console.log("ARRAY STUFF")
-    console.log(values)
     // On récupère toutes les valeurs dans une liste
     var vals = []
-    values.input.arrays.val.forEach(val => val.getType().array ? val.val.forEach(v => vals.push(v)) : vals.push(val))
-    // values.input.arrays.val.forEach(val => vals.push(val))
+    values.input.arrays.val.forEach(val => {
+      if (val.array)
+        vals = vals.concat(val.val.map((v, i) => ({ name: `${val.name}-${i}`, type: val.type, val: v })))
+      else
+        vals.push({ name: val.name, type: val.type, val: val.val })
+    })
 
+    // Spread: on présente les valeurs toutes plates
     if (values.input.action.val == "spread") {
-      // On les présente toutes plates
-      vals.forEach((v, i) => {
-        node.setOutput({ name: v.name, type: v.type, val: v.val}, i == 0)
+      node.outputs.value = {}
+      vals.forEach((v) => {
+        node.setOutput({ name: v.name, type: v.type, val: v.val})
       })
     }
 
+    // Merge
     else if (values.input.action.val == "merge") {
       var name = values.input.name.val || "array"
+      // On essaie de déterminer le type
+      var types = _.uniq(values.input.arrays.val.map(v => v.type))
+      var type = types.length == 1 ? types[0] : "*"
       // On change le nom du port
-      node.setOutput({ name, type: "*", array: true, val: vals}, true)
+      node.setOutput({ id: "output-name", name, type, array: true, val: vals.map(v => v.val)}, true)
+      // var v = node.outputs.value[name].newVar(vals.map(v => v.val), name)
+      // values.output[name].val = v
     }
 
+    // Get
     else if (values.input.action.val == "get") {
       // On change le nom du port
       node.inputs.value.index.slider.max = vals.length -1
       var val = vals.at(values.input.index.val)
-      if (val) node.setOutput({ name: val.name, type: val.type, val: val.val}, true)
+      node.outputs.value = {}
+      if (val) {
+        val.id = "output-val"
+        val.name = "value"
+        node.setOutput(val)
+      }
+      node.setOutput({ id: "output-index", name: "index", type: "number", val: values.input.index.val })
     }
-    node.setOutput({ name: "count", type: "number", val: vals.length})
+    // Dans tous les cas on rajoute un count
+    node.setOutput({ id: "output-name", name: "count", type: "number", val: vals.length})
 
     node.inputs.value.name.hidden = values.input.action.val != "merge"
     node.inputs.value.index.hidden = values.input.action.val != "get"
+    node.inputs.value.loop.hidden = values.input.action.val != "get"
 
-    console.log(vals.length)
-    console.log(values)
+    _.set(node._state, "slots.next.hidden", values.input.action.val != "get")
+    _.set(node._state, "slots.startLoop.hidden", values.input.action.val != "get")
+    _.set(node._state, "signals.forEach.hidden", values.input.action.val != "get")
 
+    console.log(values.input.action.val, node.outputs.value)
   }
 })

@@ -68,9 +68,9 @@ H.registerNodeType({
   active: true,
   inputs: {
     name: { type: "string", default: "text" },
-    vars: { type: "*", array: true },
+    vars: { type: "*", multiple: true },
     template: { type: "string" , default: ""},
-    actions: { type: "string", default: [], checkbox: true, multiple: true, options: [
+    actions: { type: "string", default: [], checkbox: true, array: true, options: [
       { value: "split", label: "Split" },
       { value: "trim", label: "Trim" },
     ] },
@@ -95,25 +95,22 @@ H.registerNodeType({
     })
     // object
     // t = t.replaceAll(`/\[([^\.]+)\.([^\.]+)\]/`, (m, p1, p2) => {
-    t = t.replaceAll(/\[([^\.]+)\.([^\.]+)\]/g, (m, p1, p2) => {
+    t = t.replaceAll(/\[([^\.]+)\.(\d+)\]/g, (m, p1, p2) => {
       console.log("Matching", m, p1, p2)
-      var v = values.input.vars.val.find(v => v.name == p1)?.val.find(v => v.name == p2)?.val
-      console.log(values)
-      console.log(v)
+      var v = values.input.vars.val.find(v => v.name == p1)?.val[p2]
       return v || m
     })
     if (values.input.actions.val.includes("trim")) t = t.trim()
 
     if (values.input.actions.val.includes("split")) {
       t = t.split(values.input.delimiter.val)
-      console.log(t, values.input.delimiter.val)
       if (values.input.actions.val.includes("trim")) t = t.map(e => e.trim())
-      // t = t.map((e, i) => ({ id: uid(), type: "string", name: `${name}-${i+1}`, val: e}))
-       t = t.map((e, i) => node.outputs.value.text.newVar(e, `${name}-${i+1}`))
     }
 
+    // FIXME: changer array comme ça n'est pas reactif quand on appel newVar
     node.outputs.value[name].array = values.input.actions.val.includes("split")
     values.output[name].val = t
+    values.output[name].array = values.input.actions.val.includes("split")
 
     node.inputs.value.delimiter.hidden = !values.input.actions.val.includes("split")
 
@@ -221,7 +218,7 @@ H.registerNodeType({
       { value: "rgb", label: "RGB" },
       { value: "hsv", label: "HSV" },
     ]},
-    to: { type: "string", default:["string"], checkbox: true, multiple: true, options: [
+    to: { type: "string", default:["string"], checkbox: true, array: true, options: [
       { value: "string", label: "Text" },
       { value: "rgb", label: "RGB" },
       { value: "hsv", label: "HSV" },

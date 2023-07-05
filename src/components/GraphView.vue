@@ -57,7 +57,7 @@ const selected = ref([])
 const parent = ref()
 
 var autoLoad = true
-var autoSave = ref(true)
+var autoSave = ref(false)
 
 // Loading and saving
 if (autoLoad) {

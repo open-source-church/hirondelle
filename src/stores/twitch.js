@@ -230,6 +230,9 @@ export const useTwitch = defineStore('twitch', () => {
     active: eventsub_started,
     type: "trigger",
     accepts_output: false,
+    inputs: {
+      test: { type: "boolean" },
+    },
     outputs: {
       title: { type: "string" },
       startDate: { type: "string" },
@@ -252,9 +255,12 @@ export const useTwitch = defineStore('twitch', () => {
       values.output.choices.val = []
       values.output.votes.val = []
       var o = ["Salut", "mon", "gars"]
-      o.forEach((t, i) => values.output.choices.val.push({ id: uid(), type: "string", val: t, name: `choice-${i+1}` }))
+      // o.forEach((t, i) => values.output.choices.val.push({ id: uid(), type: "string", val: t, name: `choice-${i+1}` }))
+      values.output.choices.val = o
       var v = [12, 234, 0]
-      v.forEach((t, i) => values.output.votes.val.push({ id: uid(), type: "number", val: t, name: `votes-${i+1}` }))
+      if (values.input.test.val) v = [12232, 223211, 22]
+      // v.forEach((t, i) => values.output.votes.val.push({ id: uid(), type: "number", val: t, name: `votes-${i+1}` }))
+      values.output.votes.val = v
       console.log(values)
     }
   })
@@ -265,15 +271,12 @@ export const useTwitch = defineStore('twitch', () => {
   const channelPollEvent = (event, signal) => {
     console.log("POLL START", event, signal)
 
-    var choices = event.choices.forEach((t, i) => ({ type: "string", val: t.title, name: `choice-${i+1}` }))
-    var votes = event.choices.forEach((t, i) => ({ type: "number", val: t.totalVotes, name: `votes-${i+1}` }))
-
     var opt = {
       title: event.title,
       startDate: event.startDate,
       endDate: event.endDate,
-      choices: choices,
-      votes: votes,
+      choices: event.choices.map(c => c.title),
+      votes: event.votes.map(v => v.totalVotes),
       completed: event.status == "completed",
       bitsVoting: event.isBitsVotingEnabled,
       bitsPerVote:event.bitsPerVote,
