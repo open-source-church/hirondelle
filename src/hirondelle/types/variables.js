@@ -70,6 +70,11 @@ H.registerNodeType({
     name: { type: "string", default: "text" },
     vars: { type: "*", array: true },
     template: { type: "string" , default: ""},
+    actions: { type: "string", default: [], checkbox: true, multiple: true, options: [
+      { value: "split", label: "Split" },
+      { value: "trim", label: "Trim" },
+    ] },
+    delimiter: { type: "string", default: "," },
   },
   outputs: {
     text: { type: "string" },
@@ -84,8 +89,34 @@ H.registerNodeType({
     }
     // On met à jour la valeur
     var t = values.input.template.val || ""
-    _.forEach(values.input.vars.val, v => t = t.replaceAll(`[${v.name}]`, v.val))
+    _.forEach(values.input.vars.val, v => {
+      // var
+      t = t.replaceAll(`[${v.name}]`, v.val)
+    })
+    // object
+    // t = t.replaceAll(`/\[([^\.]+)\.([^\.]+)\]/`, (m, p1, p2) => {
+    t = t.replaceAll(/\[([^\.]+)\.([^\.]+)\]/g, (m, p1, p2) => {
+      console.log("Matching", m, p1, p2)
+      var v = values.input.vars.val.find(v => v.name == p1)?.val.find(v => v.name == p2)?.val
+      console.log(values)
+      console.log(v)
+      return v || m
+    })
+    if (values.input.actions.val.includes("trim")) t = t.trim()
+
+    if (values.input.actions.val.includes("split")) {
+      t = t.split(values.input.delimiter.val)
+      console.log(t, values.input.delimiter.val)
+      if (values.input.actions.val.includes("trim")) t = t.map(e => e.trim())
+      // t = t.map((e, i) => ({ id: uid(), type: "string", name: `${name}-${i+1}`, val: e}))
+       t = t.map((e, i) => node.outputs.value.text.newVar(e, `${name}-${i+1}`))
+    }
+
+    node.outputs.value[name].array = values.input.actions.val.includes("split")
     values.output[name].val = t
+
+    node.inputs.value.delimiter.hidden = !values.input.actions.val.includes("split")
+
     node.title.value = `Text: ${name} (${t})`
   }
 })

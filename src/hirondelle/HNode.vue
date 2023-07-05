@@ -8,7 +8,7 @@
     <!-- Main Ports -->
     <!-- <HConnector port-type="input" port-class="flow" :node="node" />
     <HConnector port-type="output" port-class="flow" :node="node" /> -->
-      <q-card-section class="row justify-around items-center full-height text-center">
+      <q-card-section c-if="node.state.open" class="row justify-around items-center full-height text-center">
         <span class="text-h4 q-pb-xl">{{ node.title || node.type.title }}</span>
       </q-card-section>
       <q-resize-observer @resize="updatePortPositions" />

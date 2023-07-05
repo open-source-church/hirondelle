@@ -3,7 +3,6 @@
    :stroke="color" fill="none" width="3" :stroke-width="strokeWidth"
    :stroke-dasharray="connection.type == 'temporary' ? '10' : ''"
    @click="remove"
-   @mouseover="printinfo"
    />
 </template>
 

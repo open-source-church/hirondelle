@@ -138,10 +138,14 @@ export const useTwitch = defineStore('twitch', () => {
     eventsub.onUserSocketConnect(ev => eventsub_started.value = true)
     eventsub.onUserSocketDisconnect(ev => eventsub_started.value = false)
     eventsub.onChannelRedemptionAdd(user.value, channelRedemptionEvent)
-    eventsub.onChannelPollBegin(user.value, event => console.log("POLL BEGIN", event))
+    eventsub.onChannelPollBegin(user.value, channelPollEventBegins)
+    eventsub.onChannelPollEnd(user.value, channelPollEventEnds)
+    eventsub.onChannelPollProgress(user.value, channelPollEventProgress)
     eventsub.onChannelRewardUpdate(user.value, get_rewards)
     eventsub.onChannelRewardAdd(user.value, get_rewards)
     eventsub.onChannelRewardRemove(user.value, get_rewards)
+    eventsub.onChannelSubscription(user.value, channelSubscriptionEvent)
+    eventsub.onChannelFollow(user.value, user.value, channelFollowEvent)
 
     // Rewards si le user est au moins affilié
     if(user.value.broadcasterType)
@@ -173,24 +177,9 @@ export const useTwitch = defineStore('twitch', () => {
   const rewards_title = computed(() => rewards.value.map(r => r.title))
 
   H.registerNodeType({
-    id: "Twitch:onReward",
-    title: "Une récompense a été récupérée",
-    category: "Twitch",
-    active: eventsub_started,
-    outputs: {
-      userName: { type: "string" },
-      rewardId: { type: "number" },
-      rewardTitle: { type: "string", options: () => rewards_title },
-      rewardCost: { type: "number" },
-      input: { type: "string" },
-    },
-    type: "trigger"
-  })
-
-  H.registerNodeType({
     id: "Twitch:onMessage",
     type: "trigger",
-    title: "Un message est envoyé dans le chat",
+    title: "Chat message",
     category: "Twitch",
     active: chat_connected,
     outputs: {
@@ -207,6 +196,21 @@ export const useTwitch = defineStore('twitch', () => {
       isFirst: msg.isFirst})
   }
 
+  H.registerNodeType({
+    id: "Twitch:onReward",
+    title: "Reward",
+    category: "Twitch",
+    active: eventsub_started,
+    outputs: {
+      userName: { type: "string" },
+      rewardId: { type: "number" },
+      rewardTitle: { type: "string", options: () => rewards_title },
+      rewardCost: { type: "number" },
+      input: { type: "string" },
+    },
+    type: "trigger"
+  })
+
   const channelRedemptionEvent = event => {
     console.log("REDEMPTION", event)
     var opt = {
@@ -217,23 +221,115 @@ export const useTwitch = defineStore('twitch', () => {
       input: event.input
     }
     H.graph.startNodeType("Twitch:onReward", opt)
-    /*
-    broadcasterDisplayName
-    broadcasterId
-    broadcasterName
-    id
-    input
-    redemptionDate
-    rewardCost
-    rewardId
-    rewardPrompt
-    rewardTitle
-    status
-    userDisplayName
-    userId
-    userName
-    */
   }
+
+  H.registerNodeType({
+    id: "Twitch:pollEvent",
+    title: "A poll is happening",
+    category: "Twitch",
+    active: eventsub_started,
+    type: "trigger",
+    accepts_output: false,
+    outputs: {
+      title: { type: "string" },
+      startDate: { type: "string" },
+      endDate: { type: "string", default: "Tue Jul 04 2023 18:41:16 GMT+0200 (heure d’été d’Europe centrale)" },
+      choices: { type: "string", array: true },
+      votes: { type: "number", array: true },
+      completed: { type: "boolean" },
+      bitsVoting: { type: "boolean" },
+      bitsPerVote: { type: "number" },
+      channelPointsVoting: { type: "boolean" },
+      channelPointsPerVote: { type: "number" }
+    },
+    signals: {
+      started: null,
+      progress: null,
+      finished: null
+    },
+    compute: function (values, node) {
+      console.log(values)
+      values.output.choices.val = []
+      values.output.votes.val = []
+      var o = ["Salut", "mon", "gars"]
+      o.forEach((t, i) => values.output.choices.val.push({ id: uid(), type: "string", val: t, name: `choice-${i+1}` }))
+      var v = [12, 234, 0]
+      v.forEach((t, i) => values.output.votes.val.push({ id: uid(), type: "number", val: t, name: `votes-${i+1}` }))
+      console.log(values)
+    }
+  })
+
+  const channelPollEventBegins = event => channelPollEvent(event, "started")
+  const channelPollEventProgress = event => channelPollEvent(event, "progress")
+  const channelPollEventEnds = event => channelPollEvent(event, "finished")
+  const channelPollEvent = (event, signal) => {
+    console.log("POLL START", event, signal)
+
+    var choices = event.choices.forEach((t, i) => ({ type: "string", val: t.title, name: `choice-${i+1}` }))
+    var votes = event.choices.forEach((t, i) => ({ type: "number", val: t.totalVotes, name: `votes-${i+1}` }))
+
+    var opt = {
+      title: event.title,
+      startDate: event.startDate,
+      endDate: event.endDate,
+      choices: choices,
+      votes: votes,
+      completed: event.status == "completed",
+      bitsVoting: event.isBitsVotingEnabled,
+      bitsPerVote:event.bitsPerVote,
+      channelPointsVoting: event.isChannelPointsVotingEnabled,
+      channelPointsPerVote: event.channelPointsPerVote,
+    }
+    H.graph.startNodeType("Twitch:pollEvent", opt, signal)
+  }
+
+  H.registerNodeType({
+    id: "Twitch:followEvent",
+    title: "A new follower",
+    category: "Twitch",
+    active: eventsub_started,
+    outputs: {
+      userName: { type: "string" },
+      userDisplayName: { type: "string" },
+    },
+    type: "trigger",
+  })
+
+  const channelFollowEvent = (event) => {
+    console.log("Channel follow", event)
+    var opt = {
+      userName: event.userName,
+      userDisplayName: event.userDisplayName,
+    }
+    H.graph.startNodeType("Twitch:followEvent", opt)
+  }
+
+  H.registerNodeType({
+    id: "Twitch:subscriptionEvent",
+    title: "A new subscription",
+    category: "Twitch",
+    active: eventsub_started,
+    outputs: {
+      userName: { type: "string" },
+      userDisplayName: { type: "string" },
+      tier: { type: "number" },
+      isGift: { type: "boolean" }
+    },
+    type: "trigger",
+  })
+
+  const channelSubscriptionEvent = (event) => {
+    console.log("Channel subscription", event)
+    var opt = {
+      userName: event.userName,
+      userDisplayName: event.userDisplayName,
+      tier: event.tier,
+      isGift: event.isGift,
+    }
+    H.graph.startNodeType("Twitch:subscriptionEvent", opt)
+  }
+
+
 
   return {
     access_token, state,

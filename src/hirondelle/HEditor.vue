@@ -10,6 +10,7 @@
     @keyup.self.ctrl.c.exact="CB.copy(selected)"
     @keyup.self.ctrl.v.exact="() => selected = CB.paste(parentNode)"
     @keyup.self.shift.a.exact="newNodeDialog"
+    @keyup.self.shift.g.exact="() => graph.newGroup(selected)"
     @dblclick.self="newNodeDialog"
   >
     <div class="absolute-top-left" style="z-index: 10">
@@ -204,7 +205,7 @@ watch([_graph.value, H.view], async (val) => {
   // if (PZ.isMoving) return
   var state = {
     view: { x: H.view.panning.x, y: H.view.panning.y, scaling: H.view.scaling },
-    nodeState: parentNode.value.nodes.map(n => ({x: n.state.x, y: n.state.y, open: n.state.open}))
+    nodeState: parentNode.value.nodes.map(n => [n.state.x, n.state.y, n.state.open, n._state?.width, n._state?.height])
   }
   if (_.isEqual(last, state)) return
 

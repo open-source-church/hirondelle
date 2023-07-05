@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, computed, watch, toRef, nextTick, shallowRef, reactive } from 'vue'
+import { ref, computed, watch, markRaw, toRef, nextTick, shallowRef, reactive } from 'vue'
 import _ from 'lodash'
 import { useQuasar, copyToClipboard, uid } from 'quasar'
 import OBSWebSocket from 'obs-websocket-js'
@@ -36,19 +36,22 @@ export const useHirondelle = defineStore('hirondelle', () => {
     rect: { default: {x: 0, y: 0, width: 0, height: 0}, color: "brown" },
     boolean: { default: false, color: "purple" },
     color: { default: "#d700d7ff", color: "deep-orange"},
-    "*": { default: null, color: "white"}
+    "*": { default: null, color: "grey"}
   }
 
   // Installée sur les types, permet de créer une variable facilement
-  const newVar = function () {
-    return {
+  const newVar = function (val, name) {
+    return reactive({
       id: uid(),
       type: this.type,
-      val: this.default || (this.array ? [] : varTypes[this.type].default),
+      val: val || this.default || (this.array ? [] : varTypes[this.type].default),
       // name: this.name,
-      name: computed(() => this.name),
-      options: computed(() => this.options)
-    }
+      name: computed(() => name || this.name),
+      options: computed(() => this.options),
+      object: computed(() => this.array ? 1 : 0),
+      getType: () => this,
+      // _type: markRaw(this)
+    })
   }
 
   const registerNodeType = (opt) => {
@@ -348,8 +351,8 @@ export const useHirondelle = defineStore('hirondelle', () => {
         obj.newVar = newVar
         if (replace) node[type+"s"].value = {}
         node[type+"s"].value[obj.name] = obj
-        // On met la valeur par défaut si pas déjà de valeur
-        if (!this.values.value[type][obj.name]) this.values.value[type][obj.name] = obj.newVar()
+        // On met la valeur par défaut si pas déjà de valeur ou si une est fournie
+        if (!this.values.value[type][obj.name] || obj.val) this.values.value[type][obj.name] = obj.newVar(obj.val)
       }
       node.setInputName = function(newName, oldName) { node.setPortName("input", newName, oldName)}
       node.setOutputName = function(newName, oldName) { node.setPortName("output", newName, oldName)}
@@ -475,8 +478,17 @@ export const useHirondelle = defineStore('hirondelle', () => {
       // Pour un tableau, on pousse la variable, et on garde une trace
       if (connection.type == "param" && toParam.array) {
         // to.values.input[toParam.name].val.push(_.assign(from.values.output[fromParam.name], { source: from }))
-        to.values.input[toParam.name].val.push(from.values.output[fromParam.name])
-        connection._toVarId = from.values.output[fromParam.name].id
+
+        if (fromParam.array && false) {
+          to.values.input[toParam.name].val = to.values.input[toParam.name].val.concat(from.values.output[fromParam.name].val)
+          connection._toVarIds = from.values.output[fromParam.name].val.map(v => v.id)
+        }
+        else {
+          to.values.input[toParam.name].val.push(from.values.output[fromParam.name])
+          connection._toVarIds = [from.values.output[fromParam.name].id]
+        }
+
+        console.log(connection._toVarIds)
       }
       return connection
     },
@@ -487,7 +499,7 @@ export const useHirondelle = defineStore('hirondelle', () => {
       // Si c'est un array, on retire la variable
       if (connection.type == "param" && connection.input.array)
         connection.to.values.input[connection.toParamName()].val =
-          connection.to.values.input[connection.toParamName()].val.filter(v => v.id != connection._toVarId)
+          connection.to.values.input[connection.toParamName()].val.filter(v => !connection._toVarIds.includes(v.id))
       // Groups
       if (connection.type == "clone") {
         // On supprime les autres connection depuis ou vers ce param
@@ -599,14 +611,18 @@ export const useHirondelle = defineStore('hirondelle', () => {
       addNodes(root)
       return nodes
     },
-    async startNodeType(typeId, outputValues) {
+    async startNodeType(typeId, outputValues, signal) {
       var nodes = this.flatNodes()
       nodes = nodes.filter(n => n.type.id == typeId)
       nodes.forEach(n => {
-        _.forEach(outputValues, (val, key) => n.values.output[key].val = val)
+        _.forEach(outputValues, (val, key) => {
+          // if (n.outputs[key].array)
+          // else
+          n.values.output[key].val = val
+        })
       })
       await nextTick() // Let reactivity do its thing
-      nodes.forEach(n => n.start())
+      nodes.forEach(n => n.start(signal))
     },
     computeNodesForTypes(typeId) {
       var nodes = this.flatNodes().filter(n => n.type.id == typeId)

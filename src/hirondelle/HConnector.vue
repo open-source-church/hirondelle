@@ -14,8 +14,10 @@
       <span>{{ param?.type }}</span>
       <span v-if="opt.multiple"> (multiple)</span>
       <span v-else> (unique)</span>
+      <span v-if="param.array"> [array]</span>
+
       <!-- <span>Connections: {{ sources.length }}</span> -->
-      <span> [{{id}}]</span> {{ sources.length }}
+      <!-- <span> [{{id}}]</span> {{ sources.length }} -->
     </q-tooltip>
   </q-btn>
 </template>

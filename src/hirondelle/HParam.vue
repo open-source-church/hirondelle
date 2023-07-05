@@ -3,10 +3,15 @@
   <template v-if="param.array">
     <div class="row items-center">
       <div class="col-12 caption">{{ name }}</div>
-      <q-chip v-for="v in modelValue" :key="v.id"
-        square :class="`bg-${H.varTypes[v?.type]?.color}-3 text-dark`">
-        {{ v.name }}
-        <q-tooltip>{{ v.val }}</q-tooltip>
+      <q-chip v-for="val in modelValue" :key="val.id"
+        square :class="`bg-${H.varTypes[val?.type]?.color}-3 text-dark`">
+        {{ val.name }}
+        <q-tooltip v-if="typeof(val.val) == 'object'">
+          <q-chip v-for="(v, key) in val.val" :key="key" class="bg-secondary text-dark q-pa-none q-pr-sm">
+            <q-chip class="bg-accent q-ma-none q-pl-xs q-pr-sm q-mr-sm">{{ v.name }}</q-chip>
+            {{ v.val }}</q-chip>
+         </q-tooltip>
+        <q-tooltip v-else>{{ val.val }} </q-tooltip>
       </q-chip>
     </div>
   </template>

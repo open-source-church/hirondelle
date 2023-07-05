@@ -315,3 +315,62 @@ H.registerNodeType({
     node._lastwatch = _.cloneDeep(values.input.watch.val)
   }
 })
+
+
+H.registerNodeType({
+  id: `BA:Array`,
+  title: "Array",
+  type: "param",
+  category: "Utilities",
+  active: true,
+  description: "To manipulate arrays.",
+  inputs: {
+    action: { type: "string", default: "spread", options: [
+      { id: "spread", label: "Spread" },
+      { id: "merge", label: "Merge" },
+      { id: "get", label: "Get Value" },
+    ] },
+    arrays: { type: "*", array: true },
+    name: { type: "string", default: "array" },
+    index: { type: "number", slider : {min: 0, max: 0} },
+  },
+  slots: {
+    next: (values) => values.input.index.val = (values.input.index.val + 1) % values.output.count.val
+  },
+  compute(values, node) {
+    console.log("ARRAY STUFF")
+    console.log(values)
+    // On récupère toutes les valeurs dans une liste
+    var vals = []
+    values.input.arrays.val.forEach(val => val.getType().array ? val.val.forEach(v => vals.push(v)) : vals.push(val))
+    // values.input.arrays.val.forEach(val => vals.push(val))
+
+    if (values.input.action.val == "spread") {
+      // On les présente toutes plates
+      vals.forEach((v, i) => {
+        node.setOutput({ name: v.name, type: v.type, val: v.val}, i == 0)
+      })
+    }
+
+    else if (values.input.action.val == "merge") {
+      var name = values.input.name.val || "array"
+      // On change le nom du port
+      node.setOutput({ name, type: "*", array: true, val: vals}, true)
+    }
+
+    else if (values.input.action.val == "get") {
+      // On change le nom du port
+      node.inputs.value.index.slider.max = vals.length -1
+      var val = vals.at(values.input.index.val)
+      if (val) node.setOutput({ name: val.name, type: val.type, val: val.val}, true)
+    }
+    node.setOutput({ name: "count", type: "number", val: vals.length})
+
+    node.inputs.value.name.hidden = values.input.action.val != "merge"
+    node.inputs.value.index.hidden = values.input.action.val != "get"
+
+    console.log(vals.length)
+    console.log(values)
+
+  }
+})
