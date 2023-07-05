@@ -23,6 +23,8 @@ import { Peer } from "peerjs"
 import _ from "lodash"
 import 'transition-style'
 import JSConfetti from 'js-confetti'
+import {Howl, Howler} from 'howler'
+
 const jsConfetti = new JSConfetti()
 
 
@@ -87,15 +89,37 @@ const progressBar = (opt) => {
   if (pb) _.assign(pb, opt)
   else progressBars.value.push(opt)
 }
-const test = () => {
 
+const playSound = (opt) => {
+  // https://www.myinstants.com/media/sounds/kaamelott-paladin.mp3
+  // https://kaamelott-soundboard.2ec0b4.fr/sounds/ah_ah_ah_les_pegus.mp3
+  // https://cdn.pixabay.com/audio/2021/08/04/audio_0625c1539c.mp3 // success
+  // https://cdn.pixabay.com/audio/2022/03/15/audio_e8b2fa25cf.mp3 // good result
+  var sound = new Howl({
+    src: [opt.src],
+    html5: true,
+    volume: opt.volume
+  })
+  sound.play()
+}
+
+const test = () => {
+  var obj = {
+    action: "confettis",
+    bursts: 1,
+    duration: 0,
+    confettiNumber: 30,
+    confettiRadius: 10
+  }
+  confetti(obj)
 }
 
 const onMessage = (data) => {
   console.log(data)
   if (data?.action == "confettis") confetti(data)
-  if (data?.action == "messageBox") messageBox(data)
-  if (data?.action == "progressBar") progressBar(data)
+  else if (data?.action == "messageBox") messageBox(data)
+  else if (data?.action == "progressBar") progressBar(data)
+  else if (data?.action == "playSound") playSound(data)
   else test(data)
 }
 

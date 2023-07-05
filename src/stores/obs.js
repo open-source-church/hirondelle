@@ -485,6 +485,34 @@ export const useOBS = defineStore('obs', () => {
     H.graph.updateValuesFoNodeTypes("OBS:GetSceneItemRect")
   })
 
+  // Play sound
+
+  H.registerNodeType({
+    id: "OBSSource:playSound",
+    type: "action",
+    title: "Play Sound",
+    category: "OBSSource",
+    active: peer_connected,
+    inputs: {
+      name: { type: "string", default: "My Sound" },
+      src: { type: "string", default: "https://www.myinstants.com/media/sounds/kaamelott-paladin.mp3" },
+      volume: { type: "number", default: 100, slider: { min: 0, max: 100}}
+    },
+    action: function (values, node) {
+      if (!peer_connected.value) return
+      var d = {
+        action: "playSound",
+        src: values.input.src.val,
+        volume: values.input.volume.val / 100,
+      }
+      peer.send(d)
+    },
+    compute: function (values, node) {
+      node.title = "Play sound: " + values.input.name.val
+    },
+    accepts_output: false,
+    accepts_input: true,
+  })
   return {
     connect, disconnect, connected,
     setPreviewScene, setProgramScene, setStudioMode, setProfile, setSceneCollection,

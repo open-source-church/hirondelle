@@ -39,7 +39,7 @@ H.registerNodeType({
   action: async (values, node) => {
     console.log("AND WE WAIT", values.input.time.val, "ms")
     var t = 0
-    var delta = 100
+    var delta = 1000
     node.outputs.value.elapsedTime.slider.max = values.input.time.val
     values.output.elapsedTime.val = 0
     node._interval = setInterval(() => {

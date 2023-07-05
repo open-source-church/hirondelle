@@ -13,10 +13,11 @@
     @keyup.self.shift.g.exact="() => graph.newGroup(selected)"
     @dblclick.self="newNodeDialog"
   >
-    <div class="absolute-top-left" style="z-index: 10">
+    <div class="absolute-top-left h-prevent-select" style="z-index: 10">
       <q-breadcrumbs>
         <q-breadcrumbs-el v-for="b in breadcrumbs" :key="b.id" :label="b.type?.title || 'Root'" @click="setParent(b)"/>
       </q-breadcrumbs>
+      <!-- Mouse: {{ H.view.to(H.view.mouse) }} -->
     </div>
     <!-- Background -->
     <div class="h-background no-pointer-events h-prevent-select" :style="styles"></div>
@@ -30,7 +31,7 @@
       <HConnector port-type="input" port-class="group" :node="parentNode" />
     </div>
     <!-- Nodes -->
-    <div class="h-node-container h-prevent-select" :style="transformStyle" >
+    <div class="h-node-container h-prevent-select" :style="transformStyle"  >
       <HNode v-for="n in parentNode.nodes" :key="n.id" :node="n"
         v-touch-pan.prevent.mouse="e => PZ.move(e, selected.includes(n) ? selected : [n], H.view)"
         :class="selected.includes(n) ? 'selected' : ''"
@@ -235,13 +236,16 @@ const transformStyle = computed(() => ({
 }))
 
 // Background
+const megaGridSize = 1000
 const gridSize = 100
 const subGridSize = 20
 const styles = computed(() => {
   const view = H.view
   return {
     backgroundPosition: `left ${view.panning.x * view.scaling}px top ${view.panning.y * view.scaling}px`,
-    backgroundSize: `${gridSize * view.scaling}px ${gridSize * view.scaling}px,
+    backgroundSize: `${megaGridSize * view.scaling}px ${megaGridSize * view.scaling}px,
+                     ${megaGridSize * view.scaling}px ${megaGridSize * view.scaling}px,
+                     ${gridSize * view.scaling}px ${gridSize * view.scaling}px,
                      ${gridSize * view.scaling}px ${gridSize * view.scaling}px,
                      ${subGridSize * view.scaling}px ${subGridSize * view.scaling}px,
                      ${subGridSize * view.scaling}px ${subGridSize * view.scaling}px`
@@ -275,7 +279,10 @@ const isMoving = PZ.isMoving
 
   .h-background {
     background-color: v-bind("color");
-    background-image: linear-gradient(v-bind("lineColor") 2px, transparent 2px),
+    background-image:
+        linear-gradient(v-bind("lineColor") 5px, transparent 2px),
+        linear-gradient(90deg, v-bind("lineColor") 5px, transparent 2px),
+        linear-gradient(v-bind("lineColor") 2px, transparent 2px),
         linear-gradient(90deg, v-bind("lineColor") 2px, transparent 2px),
         linear-gradient(v-bind("lineColor") 1px, transparent 1px),
         linear-gradient(90deg, v-bind("lineColor") 1px, transparent 1px);

@@ -297,7 +297,7 @@ export const useHirondelle = defineStore('hirondelle', () => {
       node.targets = (signal = null) => this.targets(id, signal),
       node.connectionsFrom = computed(() => this.connections.filter( c => c.from.id == node.id))
       node.connectionsTo = computed(() => this.connections.filter( c => c.to.id == node.id))
-      node.ancestors = computed(() => node.parent?.ancestors?.value.concat(node.parent?.id || []) || [null])
+      node.ancestors = computed(() => node.parent?.ancestors?.value?.concat(node.parent?.id || []) || [null])
       // Retourne le type de paramètre pour 'paramId'
       node.findParam = function (paramId) {
         return _.find(this.inputs, p => p.id == paramId) || _.find(this.outputs, p => p.id == paramId)
@@ -308,7 +308,7 @@ export const useHirondelle = defineStore('hirondelle', () => {
       }
       node.compute = function () {
         if (node._computing) return
-        console.log("Computing", node.title.value || node.type.title)
+        // console.log("Computing", node.title.value || node.type.title)
         node._computing = true
         if (node.type.compute) node.type.compute(node.values.value, node)
         node._computing = false
@@ -316,8 +316,8 @@ export const useHirondelle = defineStore('hirondelle', () => {
 
       node.start = async function (slot="flow") {
         if (!slot) slot = "flow" // Pourquoi?? il y a une valeur par defaut "flow" non?
-        console.log("STARTING", slot, "in", node.type.title, node.type.category)
-        console.log("With params:", node.values.value)
+        // console.log("STARTING", slot, "in", node.type.title, node.type.category)
+        // console.log("With params:", node.values.value)
         node.running.value = true
 
         // Main action
@@ -340,7 +340,7 @@ export const useHirondelle = defineStore('hirondelle', () => {
         }
 
         node.running.value = false
-        console.log("And done.", node.type.title)
+        // console.log("And done.", node.type.title)
       }
       node.setInput = function (obj, replace=false) { node.setPort("input", obj, replace) }
       node.setOutput = function (obj, replace=false) { node.setPort("output", obj, replace) }
@@ -400,7 +400,9 @@ export const useHirondelle = defineStore('hirondelle', () => {
       // On charge les valeurs
       if (newNode.values && node.type.id != "group") {
         _.forEach(newNode.values, (val, name) => {
-          node.values.value.input[name].val = val
+          try {
+            node.values.value.input[name].val = val
+          } catch (err) { console.error(err)}
         })
       }
 
@@ -461,7 +463,7 @@ export const useHirondelle = defineStore('hirondelle', () => {
               // Connection temporaire (il ne peut y en avoir qu'une)
               || (c.type == "temporary" && type == "temporary"))) {
         console.log("Cette connection existe déjà")
-        return 
+        return
       }
 
       var connection = { from, to, output: fromParam, input: toParam, graph: this, type, slot, signal }
@@ -476,7 +478,7 @@ export const useHirondelle = defineStore('hirondelle', () => {
       connection.updateVars = function () {
         // Quand on crée une connections multiple, on ajoute la val à une liste et on garde une trace
         if (connection.type == "param" && toParam.multiple) {
-          to.values.input[toParam.name].val = to.values.input[toParam.name].val.filter(v => !connection._toVarIds.includes(v.id))
+          to.values.input[toParam.name].val = to.values.input[toParam.name].val.filter(v => !connection._toVarIds?.includes(v.id))
           to.values.input[toParam.name].val.push(from.values.output[fromParam.name])
           connection._toVarIds = [from.values.output[fromParam.name].id]
         }
