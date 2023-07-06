@@ -1,0 +1,9 @@
+# Redirects all url to index.html
+# This allows the use of vue createWebHistory pushState
+# cf. https://docs.netlify.com/routing/redirects/rewrites-proxies/#history-pushstate-and-single-page-apps
+#     https://router.vuejs.org/guide/essentials/history-mode.html#html5-mode
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
