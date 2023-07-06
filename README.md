@@ -1,4 +1,4 @@
-# Bot pour twitch et obs (osc-obs-bot)
+# Hirondelle
 
 #### Create bots for OBS and Twitch graphically
 
