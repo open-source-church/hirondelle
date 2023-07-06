@@ -54,7 +54,8 @@ export const useTwitch = defineStore('twitch', () => {
       "user:read:follows",
       "channel:read:subscriptions",
       "channel:read:polls", "channel:manage:polls",
-      "moderator:read:chatters", "moderator:read:followers"
+      "moderator:read:chatters", "moderator:read:followers",
+      "moderator:manage:announcements"
     ]
     var params = {
       client_id,
@@ -177,26 +178,6 @@ export const useTwitch = defineStore('twitch', () => {
   const rewards_title = computed(() => rewards.value.map(r => r.title))
 
   H.registerNodeType({
-    id: "Twitch:onMessage",
-    type: "trigger",
-    title: "Chat message",
-    category: "Twitch",
-    active: chat_connected,
-    outputs: {
-      channel: { type: "string" },
-      user: { type: "string" },
-      text: { type: "string" },
-      isFirst: { type: "boolean" }
-    },
-  })
-
-  const messageEvent = (channel, user, text, msg) => {
-    console.log(channel, user, text, msg)
-    H.graph.startNodeType("Twitch:onMessage", {channel, user, text,
-      isFirst: msg.isFirst})
-  }
-
-  H.registerNodeType({
     id: "Twitch:onReward",
     title: "Reward",
     category: "Twitch",
@@ -222,6 +203,76 @@ export const useTwitch = defineStore('twitch', () => {
     }
     H.graph.startNodeType("Twitch:onReward", opt)
   }
+
+  /*
+    Messages
+  */
+
+  H.registerNodeType({
+    id: "Twitch:sendAnnouncement",
+    title: "Send announcement",
+    category: "Twitch",
+    active: chat_connected,
+    inputs: {
+      color: { type: "string", default: "primary", options: ["blue", "green", "orange", "purple", "primary" ] },
+      message: { type: "string" }
+    },
+    action: async (values) => {
+      console.log("Sending announcement please.")
+      var r = await apiClient.chat.sendAnnouncement(channel.value || user.value, user.value, {
+        color: values.input.color.val,
+        message: values.input.message.val
+      })
+      console.log(r)
+    }
+  })
+
+  H.registerNodeType({
+    id: "Twitch:sendMessage",
+    title: "Send message",
+    category: "Twitch",
+    active: chat_connected,
+    inputs: {
+      message: { type: "string" },
+      replyTo: { type: "string" },
+    },
+    action: async (values) => {
+      console.log("Sending message please.")
+      console.log(channel.value)
+      console.log(user.value)
+      var r = await chatClient.value.say(
+        channel.value.name || user.value.name,
+        values.input.message.val,
+        { replyTo: values.input.replyTo.val }
+      )
+      console.log(r)
+    }
+  })
+
+  H.registerNodeType({
+    id: "Twitch:onMessage",
+    type: "trigger",
+    title: "Chat message",
+    category: "Twitch",
+    active: chat_connected,
+    outputs: {
+      channel: { type: "string" },
+      user: { type: "string" },
+      text: { type: "string" },
+      isFirst: { type: "boolean" },
+      id: { type: "string" }
+    },
+  })
+
+  const messageEvent = (channel, user, text, msg) => {
+    console.log(channel, user, text, msg)
+    H.graph.startNodeType("Twitch:onMessage", {channel, user, text,
+      isFirst: msg.isFirst, id: msg.id})
+  }
+
+  /*
+    Polls
+  */
 
   H.registerNodeType({
     id: "Twitch:pollEvent",
@@ -249,19 +300,6 @@ export const useTwitch = defineStore('twitch', () => {
       started: null,
       progress: null,
       finished: null
-    },
-    compute: function (values, node) {
-      console.log(values)
-      values.output.choices.val = []
-      values.output.votes.val = []
-      var o = ["Salut", "mon", "gars"]
-      // o.forEach((t, i) => values.output.choices.val.push({ id: uid(), type: "string", val: t, name: `choice-${i+1}` }))
-      values.output.choices.val = o
-      var v = [12, 234, 0]
-      if (values.input.test.val) v = [12232, 223211, 22]
-      // v.forEach((t, i) => values.output.votes.val.push({ id: uid(), type: "number", val: t, name: `votes-${i+1}` }))
-      values.output.votes.val = v
-      console.log(values)
     }
   })
 
