@@ -7,6 +7,8 @@ export const useMovePanZoom = defineStore('movePanZoom', () => {
 
   const H = useHirondelle()
 
+  const throttleDelay = 40
+
   const setScaling = (view, pos, newScale) => {
     const point = [ pos.x / view.scaling - view.panning.x, pos.y / view.scaling - view.panning.y ]
     view.scaling = newScale
@@ -71,7 +73,7 @@ export const useMovePanZoom = defineStore('movePanZoom', () => {
       setScaling(view, midPoint(...pointersLast), viewState.scaling * distance(...pointersLast) / pointerDistance)
     }
   }
-  const onPointerMove = _.throttle(_onPointerMove, 50)
+  const onPointerMove = _.throttle(_onPointerMove, throttleDelay)
 
   const midPoint = (event1, event2) => ({
     x: (event1.pageX + event2.pageX) / 2,
@@ -111,7 +113,7 @@ export const useMovePanZoom = defineStore('movePanZoom', () => {
       obj.state.y = ~~(startingPos[i].y + event.offset.y / H.view.scaling)
     })
   }
-  const move = _.throttle(_move, 50)
+  const move = _.throttle(_move, throttleDelay)
 
   return {
     mouseWheel, onPointerMove, onPointerDown, onPointerUp,

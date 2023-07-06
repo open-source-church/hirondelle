@@ -1,5 +1,5 @@
 <template>
-  <q-btn flat dense :icon="opt.multiple ? 'circle' : 'square'" :class="opt.classes"
+  <div flat dense :icon="opt.multiple ? 'circle' : 'square'" :class="opt.classes"
       :color="opt.color" :size="opt.size" :style="opt.style"
       :data-port-type="portType" :data-port-class="portClass" :data-param-id="paramId"
       :data-node-id="node.id" :data-param-type="param?.type"
@@ -9,17 +9,7 @@
       @mousedown.stop="triggerConnection"
       :id="id"
   >
-  <!-- v-if="param?.type" -->
-    <q-tooltip  :class="`bg-${H.varTypes[param?.type]?.color}-2 text-dark`">
-      <span>{{ param?.type }}</span>
-      <span v-if="opt.multiple"> (multiple)</span>
-      <span v-else> (unique)</span>
-      <span v-if="param?.array"> [array]</span>
-
-      <!-- <span>Connections: {{ sources.length }}</span> -->
-      <!-- <span> [{{id}}]</span> {{ sources.length }} -->
-    </q-tooltip>
-  </q-btn>
+  </div>
 </template>
 
 <script setup>
@@ -62,58 +52,58 @@ const sources = computed(() => {
 
 const opt = computed(() => {
   var opt = {}
-  opt.classes = "q-pa-sm "
+  opt.classes = "h-connector cursor-pointer	 q-pa-sm "
   // Slots
   if (props.portClass == "flow" && props.slotName) {
-    opt.color = "green"
+    opt.classes += "bg-green "
     opt.size = "sm"
     opt.multiple = true
     if (props.portType == "input") {
       opt.classes += "absolute-top-left"
-      opt.style = "left:-16px; top: 0px;"
+      opt.style = "left:-12px; top: 6px;"
     }
   }
   // Signals
   else if (props.portClass == "flow" && props.signal) {
-    opt.color = "green"
+    opt.classes += "bg-green "
     opt.size = "sm"
     opt.multiple = true
     if (props.portType == "output") {
       opt.classes += "absolute-top-right"
-      opt.style = "right:-16px; top: 0px;"
+      opt.style = "right:-11px; top: 6px;"
     }
   }
   // Main
   else if (props.portClass == "flow") {
-    opt.color = "green"
+    opt.classes += "bg-green "
     opt.size = "sm"
     opt.multiple = true
     if (props.portType == "input") {
       opt.classes += "absolute-top-left"
-      opt.style = "left: -17px; top: 4px;"
+      opt.style = "left: -12px; top: 6px;"
     }
     else if (props.portType == "output" && props.portClass == "flow") {
       opt.classes += "absolute-top-right"
-      opt.style = "right: -16px; top: 4px;"
+      opt.style = "right: -11px; top: 6px;"
     }
   }
   // Group
   else if (props.portClass == "group") {
-    opt.color = "green"
+    opt.classes += "bg-green "
     opt.multiple = true
   }
   // Param
   else if (props.portClass == "param") {
-    opt.color = H.varTypes[param.value?.type]?.color
+    opt.classes += `bg-${H.varTypes[param.value?.type]?.color} small `
     opt.size = "xs"
     if (props.portType == "input") {
       opt.classes += "absolute-top-left"
-      opt.style = "left:-15px; top: 9px;"
+      opt.style = "left:-7px; top: 5px;"
       opt.multiple = param.value.array || param.value.multiple
     }
     else if (props.portType == "output") {
       opt.classes += "absolute-top-right"
-      opt.style = "right:-15px; top: 9px"
+      opt.style = "right:-8px; top: 5px;"
       opt.multiple = true
     }
   }
@@ -138,8 +128,7 @@ const findAttribute = (n, attr) => {
 }
 
 const startConnection = ({type="flow", fromParamId=null, event}) => {
-  var top = document.getElementById('h-editor').getBoundingClientRect().y
-  var startPos = { x: event.pageX, y: event.pageY - top}
+  var startPos = { x: event.pageX, y: event.pageY}
   var paramType = param.value?.type
 
   // On ajoute une connection temporaire
@@ -151,7 +140,7 @@ const startConnection = ({type="flow", fromParamId=null, event}) => {
 
   const updateConnection = (event) => {
     let view = H.view
-    temporaryConnection.value.to.state = view.to({x: event.pageX, y: event.pageY - top})
+    temporaryConnection.value.to.state = view.to({x: event.pageX, y: event.pageY})
     var portType = findAttribute(event.target, "data-port-type")
     var toParamType = findAttribute(event.target, "data-param-type")
     var portClass = findAttribute(event.target, "data-port-class")
@@ -231,5 +220,22 @@ const startConnection = ({type="flow", fromParamId=null, event}) => {
 
 <style lang="scss">
 
+.h-connector {
+  border-radius: 50%;
+  padding: 10px;
+
+  &:hover{
+    padding: 14px;
+    margin: -2px;
+  }
+
+  &.small {
+    padding: 7px;
+    &:hover {
+      padding: 11px;
+      margin: -2px;
+    }
+  }
+}
 
 </style>

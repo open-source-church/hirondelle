@@ -471,12 +471,15 @@ export const useOBS = defineStore('obs', () => {
     outputs: {
       rect: { type: "rect" },
     },
-    async compute (params, node) {
+    async compute (values, node) {
       if (!connected.value) return
-      var sceneItems = await getSceneItemRecs(params.input.sceneName.val)
-      node.inputs.value["sceneItemId"].options = sceneItems
-      var rect = sceneItems.find(i => i.id == params.input.sceneItemId.val)?.rect
-      if (rect && !_.isEqual(rect, params.output.rect.val)) params.output.rect.val = rect
+      console.log("Before:", values)
+      var sceneItems = await getSceneItemRecs(values.input.sceneName.val)
+      if (!_.isEqual(sceneItems, node.inputs.value["sceneItemId"].options))
+        node.inputs.value["sceneItemId"].options = sceneItems
+      var rect = sceneItems.find(i => i.id == values.input.sceneItemId.val)?.rect
+      if (rect && !_.isEqual(rect, values.output.rect.val)) values.output.rect.val = rect
+      console.log("After:", values)
     },
   })
   // FIXME: trigger pas :(

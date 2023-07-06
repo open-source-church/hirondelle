@@ -3,14 +3,17 @@
    :stroke="color" fill="none" width="3" :stroke-width="strokeWidth"
    :stroke-dasharray="connection.type == 'temporary' ? '10' : ''"
    @click="remove"
-   @mouseover="printinfo"
    />
+   <!-- @mouseover="printinfo" -->
 </template>
 
 <script setup>
 
 import { ref, computed, reactive, watch, onMounted } from 'vue'
 import _ from "lodash"
+import { useHirondelle } from './hirondelle'
+
+const H = useHirondelle()
 
 const props = defineProps({
   connection: { type: Object, required: true }
@@ -77,36 +80,44 @@ const d = computed(() => {
 
     // Groups
     if (c.from.type.isGroup && c.to.parent == c.from) {
-      var fromId = getPortId(c.from, "output", "group")
-      n1 = c.graph._connectors[fromId] || {x: 0, y: 0}
-      var type = c.type == "clone" ? "param" : c.type
-      var idTo = getPortId(c.to, "input", type, c.input, c.slot)
-      n2 = c.graph._connectors[idTo]
+      n1 = H.view.to({ x:20, y: H.view.dimensions.height / 2})
+      if (type == "clone") type = "param"
     }
-    else if (c.to.type.isGroup && c.from.parent == c.to) {
-      var toId = getPortId(c.to, "input", "group")
-      n2 = c.graph._connectors[toId] || {x: 0, y: 0}
-      var type = c.type == "clone" ? "param" : c.type
-      var idFrom = getPortId(c.from, "output", type, c.output, c.slot)
-      n1 = c.graph._connectors[idFrom]
+    if (c.to.type.isGroup && c.to == c.from.parent) {
+      n2 = H.view.to({ x: H.view.dimensions.width - 20, y: H.view.dimensions.height / 2})
+      if (type == "clone") type = "param"
     }
-    else if (c.type == "clone") {
-      if (c.to.type.isGroup) {
-        var idFrom = getPortId(c.from, "output", "param", c.output, c.slot)
-        n1 = c.graph._connectors[idFrom]
-        var toId = getPortId(c.to, "input", "group")
-        n2 = c.graph._connectors[toId] || {x: 0, y: 0}
-      }
-      else {
-        var toId = getPortId(c.to, "output", "param", c.input, c.slot)
-        n1 = c.graph._connectors[toId]
-        var fromId = getPortId(c.from, "input", "group")
-        n2 = c.graph._connectors[fromId] || {x: 0, y: 0}
+    // if (c.from.type.isGroup && c.to.parent == c.from) {
+    //   var fromId = getPortId(c.from, "output", "group")
+    //   n1 = c.graph._connectors[fromId] || {x: 0, y: 0}
+    //   var type = c.type == "clone" ? "param" : c.type
+    //   var idTo = getPortId(c.to, "input", type, c.input, c.slot)
+    //   n2 = c.graph._connectors[idTo]
+    // }
+    // else if (c.to.type.isGroup && c.from.parent == c.to) {
+    //   var toId = getPortId(c.to, "input", "group")
+    //   n2 = c.graph._connectors[toId] || {x: 0, y: 0}
+    //   var type = c.type == "clone" ? "param" : c.type
+    //   var idFrom = getPortId(c.from, "output", type, c.output, c.slot)
+    //   n1 = c.graph._connectors[idFrom]
+    // }
+    // else if (c.type == "clone") {
+    //   if (c.to.type.isGroup) {
+    //     var idFrom = getPortId(c.from, "output", "param", c.output, c.slot)
+    //     n1 = c.graph._connectors[idFrom]
+    //     var toId = getPortId(c.to, "input", "group")
+    //     n2 = c.graph._connectors[toId] || {x: 0, y: 0}
+    //   }
+    //   else {
+    //     var toId = getPortId(c.to, "output", "param", c.input, c.slot)
+    //     n1 = c.graph._connectors[toId]
+    //     var fromId = getPortId(c.from, "input", "group")
+    //     n2 = c.graph._connectors[fromId] || {x: 0, y: 0}
 
-      }
-    }
+    //   }
+    // }
     if (!n1) {
-      var idFrom = getPortId(c.from, "output", c.type, c.output, null, c.signal)
+      var idFrom = getPortId(c.from, "output", type, c.output, null, c.signal)
       n1 = c.graph._connectors[idFrom]
       if(!n1) {
         // Connect to main
@@ -116,7 +127,7 @@ const d = computed(() => {
     }
 
     if (!n2) {
-      var idTo = getPortId(c.to, "input", c.type, c.input, c.slot)
+      var idTo = getPortId(c.to, "input", type, c.input, c.slot)
       n2 = c.graph._connectors[idTo]
       if(!n2) {
         // Connect to main

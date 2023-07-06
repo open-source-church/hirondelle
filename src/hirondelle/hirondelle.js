@@ -170,7 +170,8 @@ export const useHirondelle = defineStore('hirondelle', () => {
     connections: [],
     _connectors: {}, // to keep track of connectors positions
     settings: {
-      autoCloseNodes: false
+      autoCloseNodes: false,
+      autoSave: false
     },
     newGroup(nodes) {
       var parent = nodes[0].parent
@@ -308,7 +309,7 @@ export const useHirondelle = defineStore('hirondelle', () => {
       }
       node.compute = function () {
         if (node._computing) return
-        // console.log("Computing", node.title.value || node.type.title)
+        console.log("Computing", node.title.value || node.type.title)
         node._computing = true
         if (node.type.compute) node.type.compute(node.values.value, node)
         node._computing = false
@@ -494,7 +495,10 @@ export const useHirondelle = defineStore('hirondelle', () => {
       }
       connection.updateVars()
       if (connection.type == "param")
-        watch(from.values, connection.updateVars)
+        watch(() => from.values, () => {
+          console.error("Connection from value changed")
+          connection.updateVars()
+        })
 
       return connection
     },
@@ -650,6 +654,7 @@ export const useHirondelle = defineStore('hirondelle', () => {
       nodes.forEach(n => n.compute())
     }
   })
+
 
   return {
     registerNodeType, nodeTypes,

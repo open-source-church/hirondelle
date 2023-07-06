@@ -27,7 +27,11 @@
   </template>
   <!-- Boolean -->
   <template v-else-if="param.type == 'boolean'">
-    <q-toggle :disable="disable" :label="param.description || name" :model-value="modelValue" @update:model-value="update" />
+    <!-- <q-toggle :disable="disable" :label="param.description || name" :model-value="modelValue" @update:model-value="update" /> -->
+    <div class="q-py-sm">
+      <input type="checkbox" :id="param.id+'b'" :checked="modelValue"  @change="e => update(e.target.checked)" class="q-mr-sm"/>
+      <label>{{ param.description || name }}</label>
+    </div>
   </template>
   <!-- Color -->
   <template v-else-if="param.type == 'color'">
@@ -51,14 +55,16 @@
     <div class="row items-center">
       <div class="col-12 caption">{{ name }}</div>
       <div class="row q-col-gutter-sm">
-        <q-input :disable="disable" class="col-6" dense filled label="left" :model-value="modelValue.x"
+        <!-- <q-input :disable="disable" class="col-6" dense filled label="left" :model-value="modelValue.x"
           @update:model-value="val => update(val, 'x')" debounce="1000" />
         <q-input :disable="disable" class="col-6" dense filled label="top" :model-value="modelValue.y"
           @update:model-value="val => update(val, 'y')" debounce="1000" />
         <q-input :disable="disable" class="col-6" dense filled label="width" :model-value="modelValue.width"
           @update:model-value="val => update(val, 'width')" debounce="1000" />
         <q-input :disable="disable" class="col-6" dense filled label="height" :model-value="modelValue.height"
-          @update:model-value="val => update(val, 'height')" debounce="1000" />
+          @update:model-value="val => update(val, 'height')" debounce="1000" /> -->
+        <input class="col-6" v-for="p in ['x', 'y', 'width', 'height']" :key="p"
+          :value="modelValue[p]" @input="e => update(e.target.value, p)" />
       </div>
     </div>
   </template>
@@ -84,17 +90,31 @@
   <!-- String -->
   <template v-else>
     <div>
-      <div v-if="param.options && param.checkbox">{{ name }}</div>
-      <q-option-group v-if="param.options && param.checkbox" dense :disable="disable" :options="param.options"
+      <!-- <div v-if="param.options && param.checkbox">{{ name }}</div> -->
+      <!-- <q-option-group v-if="param.options && param.checkbox" dense :disable="disable" :options="param.options"
       :label="name" :clearable="param.clearable" :type="param.array ? 'checkbox' : 'radio'"
       :option-label="param.optionLabel || 'label'" :option-value="param.optionValue || 'value'" emit-value map-options
-      :model-value="modelValue" @update:model-value="update" inline/>
-      <q-select v-if="param.options" options-dense :disable="disable" :options="param.options"
+      :model-value="modelValue" @update:model-value="update" inline/> -->
+      <!-- <q-select  options-dense :disable="disable" :options="param.options"
       :label="name" dense filled :clearable="param.clearable" :multiple="param.multiple"
       :option-label="param.optionLabel || 'label'" :option-value="param.optionValue || 'value'" emit-value map-options
-      :model-value="modelValue" @update:model-value="update"/>
-      <q-input v-else dense filled :label="name" :textarea="param.textarea" :autogrow="param.textarea"
-      :model-value="modelValue" @update:model-value="update" :disable="disable" :debounce="param.type=='number' ? 1000:0" />
+      :model-value="modelValue" @update:model-value="update"/> -->
+      <!-- <q-input v-else dense filled :label="name" :textarea="param.textarea" :autogrow="param.textarea"
+      :model-value="modelValue" @update:model-value="update" :disable="disable" :debounce="param.type=='number' ? 1000:0" /> -->
+      <div>{{ name }}</div>
+      <div v-if="param.options && param.checkbox" class="row q-gutter-sm">
+        <div v-for="o in param.options" :key="o.value" class="q-gutter-xs">
+          <input :type="param.array ? 'checkbox' : 'radio'" :value="o.value" v-model="value" />
+          <label>{{ o.label }}</label>
+        </div>
+      </div>
+      <select v-else-if="param.options" v-model="value">
+        <option v-for="o in param.options" :key="o" :value="o[param.optionValue] || o.value || o" >
+          {{ o[param.optionLabel] || o.label || o }}
+        </option>
+      </select>
+      <textarea v-else-if="param.textarea" :type="param.type" v-model="value" />
+      <input v-else :type="param.type" v-model="value"/>
     </div>
   </template>
 
@@ -153,6 +173,16 @@ textarea, input {
   border: none;
   border-radius: 3px;
   padding: 4px;
+
+  &:focus-visible {
+    border: 1px solid #00ffdd;
+    outline: none;
+  }
 }
+
+select, textarea, input[type=text], input[type=number] {
+  width: 100%;
+}
+
 
 </style>

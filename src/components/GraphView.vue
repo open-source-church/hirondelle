@@ -1,6 +1,6 @@
 <template>
   <div class="column fit fixed">
-    <div class="col-auto row bg-dark" style="z-index:10;">
+    <div class="col-auto row bg-dark" style="z-index:0;">
       <!-- Triggers -->
       <q-btn-dropdown flat color="primary" label="Add node">
         <q-list>
@@ -68,14 +68,19 @@ if (autoLoad) {
 }
 
 
-const save = _.debounce(() => {
+const _save = () => {
   console.log("Saving graph")
   S.set("graph.state", graph.save())
-}, 2000, {leading: true})
+}
+const save = _.throttle(_save, 2000, { leading: true })
 
-watch(graph, () => {
+const graph_changed = computed(() => ({
+  nodeState: graph.flatNodes().map(n => [_.map(n.values.input, v => v.val), n.state.x, n.state.y])
+}))
+
+watch(graph_changed, () => {
   if (autoSave.value) save()
-}, { deep: true })
+}, { immediate: true })
 
 </script>
 

@@ -99,9 +99,9 @@ H.registerNodeType({
   category: "Logic",
   active: true,
   inputs: {
-    logic: { type: "string", default: "and", options: [
-      { id: "and", label: "AND" },
-      { id: "or", label: "OR" }
+    logic: { type: "string", default: "and", checkbox:true, options: [
+      { value: "and", label: "AND" },
+      { value: "or", label: "OR" }
     ]},
     vars: { type: "*", multiple: true}
   },
@@ -118,7 +118,13 @@ H.registerNodeType({
     invalid: null
   },
   compute(values, node) {
+    // On s'assure que le state filter existe
     if (!node.state.filter) node.state.filter = {}
+    // On ajoute les options du filtre dans les propriétés du noeuds
+    values.input.vars.val.forEach(v => {
+      if (!(v.name in node.state.filter)) node.state.filter[v.name] = {}
+    })
+    // On test
     if (values.input.logic.val == "and") {
       var f = _.every
       var ignore = true
@@ -195,12 +201,12 @@ H.registerNodeType({
   active: true,
   inputs: {
     operation: { type: "string", default: "add", options: [
-      {id: "add", label: "Addition"},
-      {id: "sub", label: "Substraction"},
-      {id: "mul", label: "Multiplication"},
-      {id: "div", label: "Division"},
-      {id: "modulo", label: "Modulo"},
-      {id: "pow", label: "Power"}
+      {value: "add", label: "Addition"},
+      {value: "sub", label: "Substraction"},
+      {value: "mul", label: "Multiplication"},
+      {value: "div", label: "Division"},
+      {value: "modulo", label: "Modulo"},
+      {value: "pow", label: "Power"}
     ]},
     val1: { type: "number" },
     val2: { type: "number" }
@@ -266,11 +272,11 @@ H.registerNodeType({
   active: true,
   inputs: {
     operation: { type: "string", default: "and", options: [
-      {id: "and", label: "Et"},
-      {id: "or", label: "Ou"},
-      {id: "not", label: "Not"},
-      {id: "eq", label: "Égal"},
-      {id: "dif", label: "Different"}
+      {value: "and", label: "Et"},
+      {value: "or", label: "Ou"},
+      {value: "not", label: "Not"},
+      {value: "eq", label: "Égal"},
+      {value: "dif", label: "Different"}
     ]},
     values: { type: "boolean", multiple: true },
   },
@@ -326,9 +332,9 @@ H.registerNodeType({
   description: "To manipulate arrays.",
   inputs: {
     action: { type: "string", default: "spread", options: [
-      { id: "spread", label: "Spread" },
-      { id: "merge", label: "Merge" },
-      { id: "get", label: "Get Value" },
+      { value: "spread", label: "Spread" },
+      { value: "merge", label: "Merge" },
+      { value: "get", label: "Get Value" },
     ] },
     arrays: { type: "*", multiple: true },
     name: { type: "string", default: "array" },

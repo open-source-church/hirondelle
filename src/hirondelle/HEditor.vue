@@ -1,6 +1,6 @@
 <template>
   <div
-    class="h-editor" tabindex="0"
+    class="h-editor" tabindex="0" id="h-editor"
     @wheel.self.prevent="e => PZ.mouseWheel(e, H.view)"
     @mousemove="e => PZ.onPointerMove(e, H.view)"
     @mousedown.self="e => PZ.onPointerDown(e, H.view)"
@@ -17,7 +17,6 @@
       <q-breadcrumbs>
         <q-breadcrumbs-el v-for="b in breadcrumbs" :key="b.id" :label="b.type?.title || 'Root'" @click="setParent(b)"/>
       </q-breadcrumbs>
-      <!-- Mouse: {{ H.view.to(H.view.mouse) }} -->
     </div>
     <!-- Background -->
     <div class="h-background no-pointer-events h-prevent-select" :style="styles"></div>
@@ -31,15 +30,15 @@
       <HConnector port-type="input" port-class="group" :node="parentNode" />
     </div>
     <!-- Nodes -->
-    <div class="h-node-container h-prevent-select" :style="transformStyle"  >
+    <div v-if="true" id="h-node-container" class="h-node-container h-prevent-select" :style="transformStyle"  >
       <HNode v-for="n in parentNode.nodes" :key="n.id" :node="n"
         v-touch-pan.prevent.mouse="e => PZ.move(e, selected.includes(n) ? selected : [n], H.view)"
         :class="selected.includes(n) ? 'selected' : ''"
         @click.ctrl.stop="selected = _.xor(selected, [n])"
         @click.exact.stop="selected = [n]"
         @edit="setParent($event)"
-        draggable="false" v-memo="[parentNode, selected.includes(n)]"
-         />
+        draggable="false"
+        />
     </div>
     <!-- Connections -->
     <svg class="h-connections-container h-prevent-select" :style="transformStyle">
@@ -66,6 +65,7 @@ import { ref, computed, reactive, watch, onMounted, toRef, nextTick } from 'vue'
 import { useHirondelle } from "./hirondelle.js"
 import { useMovePanZoom } from "./movePanZoom.js"
 import HNode from "src/hirondelle/HNode.vue"
+// import HNode from "src/hirondelle/HNodeNative.vue"
 import HMenu from "src/hirondelle/HMenu.vue"
 import HConnection from "src/hirondelle/HConnection.vue"
 import HConnector from "src/hirondelle/HConnector.vue"
@@ -78,6 +78,18 @@ const H = useHirondelle()
 const PZ = useMovePanZoom()
 const CB = useClipboard()
 const $q = useQuasar()
+
+const stylez = computed(() => {
+  var s = {}
+  _.range(20).forEach(x => {
+    s[x] = {}
+    _.range(20).forEach(y => {
+      s[x][y] = `width: 300px; height: 250px; left:${310 * x}px; top:${260*y}px; position: absolute;`
+    })
+  })
+  console.log(s)
+  return s
+})
 
 const props = defineProps({
   graph: { type: Object, required: false },
@@ -131,6 +143,7 @@ const newNodeDialog = () => {
 
 // Graph width
 const getGraphSize = size => {
+  console.error("Gettint graph size")
   H.view.dimensions = size
 }
 
@@ -201,31 +214,28 @@ watch(() => H.view.selection, () => {
 
 // Updating port positions
 const _view = computed(() => H.view)
-var last = {}
-watch([_graph.value, H.view], async (val) => {
-  // if (PZ.isMoving) return
-  var state = {
-    view: { x: H.view.panning.x, y: H.view.panning.y, scaling: H.view.scaling },
+const state = computed(() => ({
+    // view: { x: H.view.panning.x, y: H.view.panning.y, scaling: H.view.scaling },
     nodeState: parentNode.value.nodes.map(n => [n.state.x, n.state.y, n.state.open, n._state?.width, n._state?.height])
-  }
-  if (_.isEqual(last, state)) return
+  }))
 
+const _updatePortPositions = async () => {
+  await nextTick()
+  var top = document.getElementById('h-editor').getBoundingClientRect().y
   var el = document.querySelectorAll('[data-port-type]')
-  // var c = {}
-  // _graph.value._connectors = {}
+  _graph.value._connectors = {}
   if (!_graph.value._connectors) _graph.value._connectors = {}
   el.forEach(e => {
     var portId = e.getAttribute("id")
     e = e.getBoundingClientRect()
     if (e.width && e.height) {
-      var to = H.view.to({x: e.x + e.width/2, y: e.y + e.height / 2})
+      var to = H.view.to({x: e.x + e.width/2, y: e.y + e.height / 2 - top})
       _graph.value._connectors[portId] = to
     }
   })
-  if (!_.isEmpty(_graph.value._connectors))
-    last = state
-  // _graph.value._connectors = c
-}, {flush: 'post'})
+}
+const updatePortPositions = _.throttle(_updatePortPositions, 50)
+watch([state], async (val) => updatePortPositions(), { immediate: true})
 
 // Transform
 
@@ -293,7 +303,7 @@ const isMoving = PZ.isMoving
   }
 
   .h-node-container {
-    position: fixed;
+    position: absolute;
     top: 0;
     left: 0;
     z-index: 1;
@@ -304,7 +314,7 @@ const isMoving = PZ.isMoving
   }
 
   .h-connections-container {
-    position: fixed;
+    position: absolute;
     top: 0;
     left: 0;
     overflow: visible;
