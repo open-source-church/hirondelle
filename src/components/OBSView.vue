@@ -151,9 +151,9 @@ const H = useHirondelle()
 // Tabs
 const tab = ref("obs")
 
-const ip = ref(S.get("obs.ip") || "192.168.1.56")
+const ip = ref(S.get("obs.ip") || "localhost")
 const port = ref(S.get("obs.port") || "4455")
-const password = ref(S.get("obs.password") || "password")
+const password = ref(S.get("obs.password") || "")
 
 // Auto connect
 if (ip.value && port.value && password.value)
