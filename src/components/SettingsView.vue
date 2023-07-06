@@ -24,7 +24,8 @@
         <a href="https://www.open-source.church">
           <q-img src="https://www.open-source.church/images/logo/logo.webp" width="100px" />
         </a>
-        <p>Made by <a href="https://www.open-source.church">Open Source Church</a>.</p>
+        <p>Made by <a href="https://www.open-source.church" target="_blank">Open Source Church</a>.</p>
+        <p class="text-caption">Fork me on <a href="https://github.com/open-source-church/hirondelle" target="_blank">github</a>.</p>
       </div>
     </div>
   </div>
