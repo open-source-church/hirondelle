@@ -400,9 +400,11 @@ export const useHirondelle = defineStore('hirondelle', () => {
 
       // On charge les valeurs
       if (newNode.values && node.type.id != "group") {
-        _.forEach(newNode.values, (val, name) => {
+        _.forEach(newNode.values, async (val, name) => {
           try {
             node.values.value.input[name].val = val
+            // On permet au node de se mettre à jour s'il a besoin
+            node.compute()
           } catch (err) { console.error(err)}
         })
       }
@@ -420,6 +422,7 @@ export const useHirondelle = defineStore('hirondelle', () => {
           newNode.nodes.forEach(n => this.addNode(n, node))
       }
 
+      // On place un garde devant la porte
       watch(() => node.values.value.input, (val, old) => {
         node.compute()
       }, { deep: true, immediate: true })

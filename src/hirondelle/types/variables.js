@@ -17,7 +17,7 @@ H.registerNodeType({
   active: true,
   inputs: {
     name: { type: "string", default: "number" },
-    value: { type: "number" }
+    number: { type: "number" }
   },
   outputs: {
     number: { type: "number" },
@@ -27,12 +27,14 @@ H.registerNodeType({
     // On change le nom du port
     if (!node._outputName) node._outputName = "number"
     if (name != node._outputName) {
+      node.setInputName(name, node._outputName)
       node.setOutputName(name, node._outputName)
       node._outputName = name
     }
     // On met à jour la valeur
-    values.output[name].val = values.input.value.val
-    node.title.value = `Number: ${name} (${values.input.value.val})`
+    // values.output[name].val = values.input.value.val
+    values.output[name].val = values.input[name].val
+    // node.title.value = `Number: ${name} (${values.input[name].val})`
   }
 })
 H.registerNodeType({
