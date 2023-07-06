@@ -30,7 +30,8 @@ export const useOBS = defineStore('obs', () => {
   const OSCBotBrowserKeepOnAllScenes = ref(true)
 
   const connect = async (ip, port, password) => {
-    var url = `ws://${ip}:${port}`
+    var protocol = location.protocol == "https" ? "wss" : "ws"
+    var url = `${protocol}://${ip}:${port}`
     disconnect()
     try {
       var r = await obs_ws.connect(url, password)

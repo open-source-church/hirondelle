@@ -143,7 +143,6 @@ const newNodeDialog = () => {
 
 // Graph width
 const getGraphSize = size => {
-  console.error("Gettint graph size")
   H.view.dimensions = size
 }
 
