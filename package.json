@@ -1,8 +1,8 @@
 {
-  "name": "osc-obs-bot",
-  "version": "0.0.1",
-  "description": "OSC-OBS-BOT",
-  "productName": "Bot pour twitch et obs",
+  "name": "hirondelle",
+  "version": "0.1.0",
+  "description": "Bot pour twitch et OBS",
+  "productName": "Hirondelle",
   "author": "Olivier Keshavjee <olivier.keshavjee@gmail.com>",
   "private": true,
   "scripts": {
