@@ -1,22 +1,32 @@
 <template>
-  <div class="row">
-    <q-card class="col-4">
-      <q-card-section class="bg-primary text-dark">Export settings</q-card-section>
-      <q-card-section class="column">
-        <q-toggle label="OBS" v-model="export_opt.obs" />
-        <q-toggle label="Actions" v-model="export_opt.graph" />
-        <q-toggle label="Twitch" v-model="export_opt.twitch" />
-        <q-toggle label="Passwords" v-model="export_opt.passwords" />
-        <q-btn label="Export Settings" class="bg-primary text-dark" @click="exportSettings"/>
-      </q-card-section>
-    </q-card>
-    <q-card class="col-4">
-      <q-card-section class="bg-primary text-dark">Load settings</q-card-section>
-      <q-card-section class="column">
-        <q-input dense filled type="textarea" v-model="import_opt"/>
-        <q-btn label="Import Settings" class="bg-primary text-dark" @click="importSettings"/>
-      </q-card-section>
-    </q-card>
+  <div class="column">
+    <div class="col-1 row q-gutter-md">
+      <q-card class="col-auto">
+        <q-card-section class="bg-primary text-dark">Export settings</q-card-section>
+        <q-card-section class="column q-gutter-md">
+          <q-toggle label="OBS" v-model="export_opt.obs" />
+          <q-toggle label="Actions" v-model="export_opt.graph" />
+          <q-toggle label="Twitch" v-model="export_opt.twitch" />
+          <q-toggle label="Passwords" v-model="export_opt.passwords" />
+          <q-btn label="Export Settings" class="bg-primary text-dark" @click="exportSettings"/>
+        </q-card-section>
+      </q-card>
+      <q-card class="col">
+        <q-card-section class="bg-primary text-dark">Load settings</q-card-section>
+        <q-card-section class="q-gutter-md">
+          <q-input dense filled type="textarea" v-model="import_opt" placeholder="Colle ici quelque chose"/>
+          <q-btn class="bg-primary text-dark" label="Import Settings" @click="importSettings"/>
+        </q-card-section>
+      </q-card>
+    </div>
+    <div class="col-auto row items-center text-center">
+      <div class="col column q-mt-xl q-pa-xl items-center q-gutter-md">
+        <a href="https://www.open-source.church">
+          <q-img src="https://www.open-source.church/images/logo/logo.webp" width="100px" />
+        </a>
+        <p>Made by <a href="https://www.open-source.church">Open Source Church</a>.</p>
+      </div>
+    </div>
   </div>
 </template>
 
