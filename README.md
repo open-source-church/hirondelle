@@ -2,6 +2,10 @@
 
 Bot pour Twitch et OBS
 
+En développement, tout peut arriver.
+
+Serveur discord OSC: https://discord.gg/7FG3WvW
+
 ## Install the dependencies
 ```bash
 yarn
