@@ -7,7 +7,7 @@
       :data-port-open="opt.multiple || sources.length == 0"
       @touchstart.stop
       @mousedown.stop="triggerConnection"
-      :id="id" style="z-index:-10"
+      :id="id" 
   >
   <!-- v-if="param?.type" -->
     <q-tooltip  :class="`bg-${H.varTypes[param?.type]?.color}-2 text-dark`">

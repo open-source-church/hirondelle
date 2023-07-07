@@ -403,6 +403,7 @@ export const useOBS = defineStore('obs', () => {
         d.transition_in = _.sample(transitions)
         d.transition_out = _.sample(transitions)
       }
+      console.log(d.transition_in, d.transition_out)
       peer.send(d)
     },
   accepts_output: false,
@@ -439,6 +440,56 @@ export const useOBS = defineStore('obs', () => {
         background: values.input.background.val,
         style: values.input.style.val,
       }
+      this._update(d)
+    },
+    accepts_output: false,
+    accepts_input: false,
+  })
+
+  H.registerNodeType({
+    id: "OBSSource:showImage",
+    type: "action",
+    title: "Image",
+    category: "OBSSource",
+    active: peer_connected,
+    inputs: {
+      src: { type: "string" },
+      rect: { type: "rect", default: {x: 0, y: 0, width: 1920, height: 20} },
+      visible: { type: "boolean" },
+      random: { type: "boolean", default: false, description: "Random transitions"},
+      transition_in: { type: "string", default: "circle:hesitate", options: transitions },
+      transition_out: { type: "string", default: "wipe:up", options: transitions },
+      style: { type: "string", description: "Additional styles, like 'opacity:.5'..." },
+    },
+    slots: {
+      show: (values, node) => {
+        values.input.visible.val = true
+        node.compute()
+      },
+      hide: (values, node) => {
+        values.input.visible.val = false
+        node.compute()
+      },
+    },
+    _update: _.throttle(d => peer.send(d), 100),
+    compute: function (values, node) {
+      if (!peer_connected.value) return
+      var d = {
+        action: "showImage",
+        src: values.input.src.val,
+        rect: values.input.rect.val,
+        visible: values.input.visible.val,
+        id: node.id,
+        style: values.input.style.val,
+        random: values.input.random.val,
+        transition_in: values.input.transition_in.val,
+        transition_out: values.input.transition_out.val,
+      }
+      if (d.random) {
+        d.transition_in = _.sample(transitions)
+        d.transition_out = _.sample(transitions)
+      }
+      console.log(d.transition_in, d.transition_out)
       this._update(d)
     },
     accepts_output: false,

@@ -22,7 +22,7 @@ OBS:
 
 - Control OBS remotely
 - Respond to scene change, stream status change, etc.
-- Play sounds, display message boxes, progress bar, confettis, ...
+- Play sounds, display message boxes, progress bar, confettis, images / gifs, ...
 
 Twitch:
 

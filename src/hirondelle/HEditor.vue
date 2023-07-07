@@ -10,7 +10,7 @@
     @keyup.self.ctrl.c.exact="CB.copy(selected)"
     @keyup.self.ctrl.v.exact="() => selected = CB.paste(parentNode)"
     @keyup.self.shift.a.exact="newNodeDialog"
-    @keydown.prevent.self.ctrl.a.exact="selected = parentNode.nodes"
+    @keydown.self.prevent.ctrl.a.exact="selected = parentNode.nodes"
     @keydown.prevent.self.ctrl.g.exact="() => graph.newGroup(selected)"
     @dblclick.self="newNodeDialog"
   >
@@ -60,6 +60,7 @@
     <q-menu
         touch-position
         context-menu
+        target=".h-editor"
       >
       <HMenu :items="contextMenu" />
     </q-menu>

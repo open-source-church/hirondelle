@@ -1,17 +1,23 @@
 <template>
   <q-page >
-    <!-- Message boxes -->
-    <div v-for="(t, i) in messageBoxes" :key="'tb-'+i"
-      :transition-style="t.transition" class="fixed row items-center justify-around text-center"
-      :style="`background-color: ${t.background}; left:${t.rect.x}px; top: ${t.rect.y}px; width: ${t.rect.width}px; height:${t.rect.height}px; ${t.style}`">
-      {{ t.message }}
-    </div>
     <!-- Progress bars -->
     <q-linear-progress v-for="pb in progressBars.filter(pb => pb.visible)" :key="pb.id"
     :animation-speed="pb.value ? 300 : 0"
     :style="`background-color: ${pb.background}; left:${pb.rect.x}px; top: ${pb.rect.y}px; width: ${pb.rect.width}px; height:${pb.rect.height}px; ${pb.style}`"
     :value="pb.value" class="absolute"
     />
+    <!-- Images -->
+    <q-img v-for="img in images" :key="img.id" :v-show="img.visible"
+    :transition-style="img.transition"
+    :style="`left:${img.rect.x}px; top: ${img.rect.y}px; width: ${img.rect.width}px; height:${img.rect.height}px; ${img.style}`"
+    :src="img.src" class="absolute"
+    />
+    <!-- Message boxes -->
+    <div v-for="(t, i) in messageBoxes" :key="'tb-'+i"
+      :transition-style="t.transition" class="fixed row items-center justify-around text-center"
+      :style="`background-color: ${t.background}; left:${t.rect.x}px; top: ${t.rect.y}px; width: ${t.rect.width}px; height:${t.rect.height}px; ${t.style}`">
+      {{ t.message }}
+    </div>
 
   </q-page>
 </template>
@@ -82,9 +88,17 @@ const messageBox = (opt) => {
   }, opt.duration)
 }
 
+const images = ref([])
+const showImage = (opt) => {
+  var pb = images.value.find(p => p.id == opt.id)
+  if (opt.visible) opt.transition = "in:" + opt.transition_in
+  else opt.transition = "out:" + opt.transition_out
+  if (pb) _.assign(pb, opt)
+  else images.value.push(opt)
+}
+
 const progressBars = ref([])
 const progressBar = (opt) => {
-  console.log(opt, progressBars.value)
   var pb = progressBars.value.find(p => p.id == opt.id)
   if (pb) _.assign(pb, opt)
   else progressBars.value.push(opt)
@@ -124,6 +138,7 @@ const onMessage = (data) => {
   else if (data?.action == "messageBox") messageBox(data)
   else if (data?.action == "progressBar") progressBar(data)
   else if (data?.action == "playSound") playSound(data)
+  else if (data?.action == "showImage") showImage(data)
   else test(data)
 }
 

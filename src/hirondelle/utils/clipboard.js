@@ -54,7 +54,7 @@ export const useClipboard = defineStore('clipboard', () => {
       var center = {x: 0, y: 0}
     var delta = {
       x: center.x - x - 150,
-      y: center.y - y - 25
+      y: center.y - y - 25 - H.view.dimensions.top
     }
 
     var idMap = {}

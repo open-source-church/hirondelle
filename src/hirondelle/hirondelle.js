@@ -102,7 +102,8 @@ export const useHirondelle = defineStore('hirondelle', () => {
       console.log("STARTING GROUPS")
       // call internal nodes
       var targets = node.graph.connections.filter(c => c.type == "flow" && c.from.id == node.id && c.to.parent.id == node.id)
-      targets.forEach(n => n.to.start())
+      console.log(targets)
+      targets.forEach(c => c.to.start(c.slot))
     }
   })
 
@@ -359,6 +360,8 @@ export const useHirondelle = defineStore('hirondelle', () => {
         node[type+"s"].value[obj.name] = obj
         // On met la valeur par défaut si pas déjà de valeur ou si une est fournie
         if (!this.values.value[type][obj.name] || obj.val != undefined) this.values.value[type][obj.name] = obj.newVar(obj.val)
+        // On remet à jour les valeurs connectées je pense
+        node.graph.connections.filter(c => c.output?.id == obj.id).forEach(c => c.updateVars())
       }
       node.setInputName = function(newName, oldName) { node.setPortName("input", newName, oldName)}
       node.setOutputName = function(newName, oldName) { node.setPortName("output", newName, oldName)}
@@ -584,7 +587,7 @@ export const useHirondelle = defineStore('hirondelle', () => {
       // if (parent.values.value) node.values = _.mapValues(parent.values.value.input, v => v.val)
       node.values = {}
       _.forEach(parent.inputs.value, (type, name) => {
-        if (!parent.inputs.value[name].multiple && !parent.inputs.value[name].array)
+        if (!parent.inputs.value[name].multiple)  // && !parent.inputs.value[name].array
           node.values[name] = parent.values.value.input[name]?.val
       })
       if (parent.title) node.title = parent.title
