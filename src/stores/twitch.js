@@ -13,7 +13,7 @@ import { useHirondelle } from 'src/hirondelle/hirondelle.js'
 // import { useRouter } from 'vue-router'
 
 // Default clientId for osc bot
-var CLIENT_ID = process.env.CLIENT_ID
+var CLIENT_ID = "6i4k8vmif0nhzrqsibuxixvcse4ao4" || process.env.CLIENT_ID
 var client_id = CLIENT_ID
 
 export const useTwitch = defineStore('twitch', () => {
