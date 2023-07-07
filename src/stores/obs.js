@@ -26,7 +26,7 @@ export const useOBS = defineStore('obs', () => {
 
   const _data = ref({}) // all data we get from OBS
 
-  var OSCBotBrowserName = "OSCBotBrowser[TEMP]"
+  var OSCBotBrowserName = "HirondelleBrowser[Bot]"
   const OSCBotBrowserKeepOnAllScenes = ref(true)
 
   const connect = async (ip, port, password) => {
