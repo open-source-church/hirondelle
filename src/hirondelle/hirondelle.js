@@ -144,7 +144,8 @@ export const useHirondelle = defineStore('hirondelle', () => {
     },
     dimensions: {
       width: 0,
-      height: 0
+      height: 0,
+      top: 0 // La hauteur de viewport
     },
     mouse: { x: 0, y: 0}
   })
@@ -174,6 +175,7 @@ export const useHirondelle = defineStore('hirondelle', () => {
       autoSave: false
     },
     newGroup(nodes) {
+      if(_.isEmpty(nodes)) return
       var parent = nodes[0].parent
       // Finding average position
       var x = nodes.map(n => n.state.x).reduce((a, b) => a + b) / nodes.length
@@ -223,7 +225,7 @@ export const useHirondelle = defineStore('hirondelle', () => {
             this.addConnection({from: group.id, to: c.to.id, type: "clone", input: c.input.id})
           }
         }
-        else console.log("BG", c.from.title, c.from.parent.title, c.to.parent.title)
+        else console.error("BG", c.from.title, c.from.parent.title, c.to.parent.title)
       })
 
       return group
@@ -289,6 +291,7 @@ export const useHirondelle = defineStore('hirondelle', () => {
         inputs: ref({}),
         outputs: ref({}),
         title: ref(newNode.title),
+        parent: ref(null)
       }
 
       // Useful functions
@@ -298,7 +301,8 @@ export const useHirondelle = defineStore('hirondelle', () => {
       node.targets = (signal = null) => this.targets(id, signal),
       node.connectionsFrom = computed(() => this.connections.filter( c => c.from.id == node.id))
       node.connectionsTo = computed(() => this.connections.filter( c => c.to.id == node.id))
-      node.ancestors = computed(() => node.parent?.ancestors?.value?.concat(node.parent?.id || []) || [null])
+      node.ancestors = computed(() => node.parent?.value.ancestors?.concat([node.parent.value.id]) || [null])
+      node.active = computed(() => node.type.active && _.every(node.nodes.map(n => n.active.value)))
       // Retourne le type de paramètre pour 'paramId'
       node.findParam = function (paramId) {
         return _.find(this.inputs, p => p.id == paramId) || _.find(this.outputs, p => p.id == paramId)
@@ -414,6 +418,7 @@ export const useHirondelle = defineStore('hirondelle', () => {
         // Est-ce que le node a déjà été crée ?
         if (newNode.nodes[0].start)
           newNode.nodes.forEach(n => {
+            console.log(n.parent, typeof(n.parent))
             n.parent.nodes = n.parent.nodes.filter(nn => nn != n)
             n.parent = node
             node.nodes.push(n)
@@ -429,7 +434,7 @@ export const useHirondelle = defineStore('hirondelle', () => {
 
       // On assigne au parent
       if (!parent) parent = this
-      node.parent = parent
+      node.parent.value = parent
       parent.nodes.push(node)
       // On retourne le node
       return node
@@ -475,8 +480,12 @@ export const useHirondelle = defineStore('hirondelle', () => {
       connection.fromParamName = () => from.findParamName(fromParam?.id) || fromParam?.name
       connection.toParamName = () => to.findParamName(toParam?.id) || toParam?.name
       connection.remove = () => this.removeConnection(connection)
-      connection.commonAncestor = computed(() => connection.type == "temporary" ? null :
-        connection.from.ancestors.filter(a => connection.to.ancestors.includes(a)).at(-1))
+      connection.commonAncestor = computed(() =>  {
+        if (connection.type == "temporary") return null
+        var fromAncestors = connection.from.ancestors.value || connection.from.ancestors
+        var toAncestors = connection.to.ancestors.value || connection.to.ancestors
+        return fromAncestors.filter(a => toAncestors.includes(a)).at(-1)
+      })
       connection.id = uid()
       this.connections.push(connection)
       connection.updateVars = function () {
@@ -506,7 +515,7 @@ export const useHirondelle = defineStore('hirondelle', () => {
       return connection
     },
     removeConnection(connection) {
-      var val = connection.to.values.input[connection.toParamName()]
+      var val = connection.to.values.input?.[connection.toParamName()]
       // Si on supprime depuis multiple, on utilise la trace
       if (connection.type == "param" && connection.input.multiple)
         val.val = val.val.filter(v => !connection._toVarIds.includes(v.id))

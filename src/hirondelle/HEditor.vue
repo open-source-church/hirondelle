@@ -4,30 +4,37 @@
     @wheel.self.prevent="e => PZ.mouseWheel(e, H.view)"
     @mousemove="e => PZ.onPointerMove(e, H.view)"
     @mousedown.self="e => PZ.onPointerDown(e, H.view)"
-    @mouseup="e => !PZ.onPointerUp(e, H.view) && !e.ctrlKey ? selected = [] : ''"
+    @mouseup="e => !PZ.onPointerUp(e, H.view) && (!e.ctrlKey && !e.shiftKey) ? selected = [] : ''"
     @click.right="selected = []"
     @keyup.self.delete="deleteSelectedNodes"
     @keyup.self.ctrl.c.exact="CB.copy(selected)"
     @keyup.self.ctrl.v.exact="() => selected = CB.paste(parentNode)"
     @keyup.self.shift.a.exact="newNodeDialog"
-    @keyup.self.shift.g.exact="() => graph.newGroup(selected)"
+    @keydown.prevent.self.ctrl.a.exact="selected = parentNode.nodes"
+    @keydown.prevent.self.ctrl.g.exact="() => graph.newGroup(selected)"
     @dblclick.self="newNodeDialog"
   >
     <div class="absolute-top-left h-prevent-select" style="z-index: 10">
-      <q-breadcrumbs>
-        <q-breadcrumbs-el v-for="b in breadcrumbs" :key="b.id" :label="b.type?.title || 'Root'" @click="setParent(b)"/>
-      </q-breadcrumbs>
+      <div v-if="breadcrumbs.length > 1">
+        <template v-for="(b, i) in breadcrumbs" :key="b.id">
+          <q-icon v-if="i" name="arrow_right" size="md"/>
+          <q-btn square :label="b.title || b.type?.title || 'Root'"
+            :class="i < breadcrumbs.length - 1 ? 'bg-primary text-dark' : 'bg-accent text-white'"
+            @click="setParent(b)"
+            :disable="i == breadcrumbs.length - 1"/>
+        </template>
+      </div>
     </div>
     <!-- Background -->
     <div class="h-background no-pointer-events h-prevent-select" :style="styles"></div>
     <!-- Group connectors -->
     <div class="absolute-left items-center row rotate-270 h-prevent-select" v-if="parentNode.parent" style="z-index:20">
       <span class="absolute q-ml-xl text-grey no-pointer-events	" style="min-width: 200px;" > Group Input</span>
-      <HConnector port-type="output" port-class="group" :node="parentNode" />
+      <HConnector port-type="output" port-class="group" :node="parentNode" @click="parentNode.start()" />
     </div>
     <div class="absolute-right items-center row rotate-270 h-prevent-select" v-if="parentNode.parent" style="z-index:20">
       <span class="absolute q-ml-xl text-grey no-pointer-events	" style="min-width: 200px;" > Group Output</span>
-      <HConnector port-type="input" port-class="group" :node="parentNode" />
+      <HConnector port-type="input" port-class="group" :node="parentNode" @click="parentNode.emit()" />
     </div>
     <!-- Nodes -->
     <div v-if="true" id="h-node-container" class="h-node-container h-prevent-select" :style="transformStyle"  >
@@ -35,6 +42,7 @@
         v-touch-pan.prevent.mouse="e => PZ.move(e, selected.includes(n) ? selected : [n], H.view)"
         :class="selected.includes(n) ? 'selected' : ''"
         @click.ctrl.stop="selected = _.xor(selected, [n])"
+        @click.shift.stop="selected = _.xor(selected, [n])"
         @click.exact.stop="selected = [n]"
         @edit="setParent($event)"
         draggable="false"
@@ -45,7 +53,7 @@
       <HConnection v-for="(c, i) in connections_in_group" :key="'connection'+i" :connection="c" />
     </svg>
     <!-- Selection -->
-    <div class="h-selection h-prevent-select" >
+    <div class="h-selection h-prevent-select" :style="transformStyle" >
       <div class="h-selection-area" :style="selectionStyle"></div>
     </div>
     <!-- Context menu -->
@@ -129,21 +137,25 @@ const connections_in_group = computed(() => {
 
 // New node dialog
 const newNodeDialog = () => {
-  var state = { x: H.view.mouse.x, y: H.view.mouse.y }
+  var state = H.view.to({ x: H.view.mouse.x, y: H.view.mouse.y - H.view.dimensions.top })
   state.x -= 150
   state.y -= 20
-  state = H.view.to(state)
   state.open = true
+  if (H.view.mouse.y < H.view.dimensions.top + 10) state = null // Comme ça ça sera centré dans le viewport
+  // state = H.view.to(state)
 
   $q.dialog({ component: HNodeTypes }).onOk((t) => {
     console.log("TYPE", t)
     _graph.value.addNode({ type: t.type, state }, parentNode.value)
   })
 }
+defineExpose({newNodeDialog})
 
 // Graph width
 const getGraphSize = size => {
   H.view.dimensions = size
+  var top = document.getElementById('h-editor')?.getBoundingClientRect().y
+  if (top) H.view.dimensions.top = top
 }
 
 // Context menu
@@ -185,10 +197,10 @@ const selectionStyle = computed(() => {
   if (H.view.selection?.topLeft) {
     var selection = H.view.selection
     return {
-    left: selection.topLeft.x + "px",
-    top: selection.topLeft.y + "px",
-    width: selection.width + "px",
-    height: selection.height + "px",
+      left: selection.topLeft.x + "px",
+      top: selection.topLeft.y + "px",
+      width: selection.width + "px",
+      height: selection.height + "px",
     }
   }
   return {}
@@ -197,8 +209,8 @@ watch(() => H.view.selection, () => {
   if (!H.view.selection?.topLeft) return
   var selection = H.view.selection
   var view = H.view
-  var p1 = H.view.to(selection.topLeft)
-  var p2 = H.view.to(selection.bottomRight)
+  var p1 = selection.topLeft // H.view.to(selection.topLeft)
+  var p2 = selection.bottomRight //H.view.to(selection.bottomRight)
   selected.value = parentNode.value.nodes.filter(n =>
     _.some([
       [n.state.x, n.state.y],
@@ -325,11 +337,11 @@ const isMoving = PZ.isMoving
   }
 
   .h-selection {
-    position: fixed;
+    position: absolute;
     top: 0;
     left: 0;
     .h-selection-area {
-      position: fixed;
+      position: absolute;
       border: 1px solid #00ffdd;
       background-color: #00ffdd10;
     }

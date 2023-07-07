@@ -8,8 +8,9 @@
       :class="'row items-center text-dark q-pa-xs ' + headerClass">
       <q-btn flat dense class="col-auto q-pr-xs" :icon="node.state.open ? 'expand_more' : 'expand_less'" size="sm"
         @click="node.state.open = !node.state.open" />
-      <q-icon v-if="!node.type.active" class="col-auto q-pr-xs" name="warning" size="md" color="negative" >
-        <q-tooltip>'{{ node.type.category }}' n'est pas connecté</q-tooltip>
+      <q-icon v-if="!node.active" class="col-auto q-pr-xs" name="warning" size="md" color="negative" >
+        <q-tooltip v-if="!node.type.isGroup">'{{ node.type.category }}' are not connected</q-tooltip>
+        <q-tooltip v-else>Some sources are not connected</q-tooltip>
       </q-icon>
       <div class="col ellipsis">
         {{ node.title || node.type.title }}
@@ -17,14 +18,13 @@
       </div>
       <q-btn flat dense v-if="node.type.id == 'group'" icon="edit" class="col-auto" @click="$emit('edit', node)"/>
       <q-btn flat dense v-if="node.type.info && node.state.open" icon="info" color="info" class="col-auto">
-        <q-tooltip anchor="top middle" self="bottom middle" class="bg-info text-dark text-body2" >{{ node.type.info }}</q-tooltip>
+        <h-tooltip top class="bg-info text-dark text-body2" >{{ node.type.info }}</h-tooltip>
       </q-btn>
-      <q-btn flat dense v-if="node.type.accepts_output || node.type.action" :disable="node.running || !node.type.active" icon="play_circle" class="col-auto text-positive" @click="node.start()"/>
       <!-- <q-btn flat dense icon="delete" class="col-auto text-negative" @click="node.remove"/> -->
     </q-card-section>
     <!-- Main Ports -->
-    <HConnector v-if="node.type.accepts_input" port-type="input" port-class="flow" :node="node" />
-    <HConnector v-if="node.type.accepts_output" port-type="output" port-class="flow" :node="node" />
+    <HConnector v-if="node.type.accepts_input" port-type="input" port-class="flow" :node="node" @click="node.start()" />
+    <HConnector v-if="node.type.accepts_output" port-type="output" port-class="flow" :node="node" @click="node.emit()" />
     <!-- Group -->
     <q-card-section v-if="node.type.id == 'group' && node.state.open">
       <q-input dense filled v-model="node.title" label="Title"/>

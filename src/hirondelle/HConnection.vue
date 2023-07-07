@@ -56,10 +56,12 @@ const getPortId = (node, type, portClass, param=null, slot=null, signal=null) =>
 const printinfo = () => {
   var c = props.connection
   if (c.type == "temporary") return
+  console.log("ID:", c.id)
   console.log("Connection type:", c.type)
-  console.log("From:", c.from.title || c.from.type.title, c.from.ancestors)
-  console.log("To:", c.to.title || c.to.type.title, c.to.ancestors)
+  console.log("From:", c.from.title || c.from.type.title, c.output?.name, c.from.ancestors)
+  console.log("To:", c.to.title || c.to.type.title, c.input?.name, c.to.ancestors)
   console.log("Common Ancestor", c.commonAncestor)
+  console.log("================")
 
 }
 

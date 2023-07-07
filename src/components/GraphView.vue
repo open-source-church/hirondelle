@@ -1,33 +1,53 @@
 <template>
   <div class="column fit fixed">
     <div class="col-auto row bg-dark" style="z-index:0;">
-      <!-- Triggers -->
-      <q-btn-dropdown flat color="primary" label="Add node">
-        <q-list>
-          <q-item v-for="(item, i) in H.nodeTypesOptions" :key="`addNode-${i}`" :disable="item.header"
-            @click="graph.addNode({ type: item.type }, parent)" clickable >
-            <q-item-section avatar v-if="!item.header">
-              <q-badge v-if="item.type.isTrigger" square class="bg-accent text-white">trigger</q-badge>
-              <q-badge v-if="item.type.isAction" square class="bg-primary text-dark">action</q-badge>
-              <q-badge v-if="item.type.isParam" square class="bg-grey-8 text-white">param</q-badge>
-            </q-item-section>
-            <q-item-section>
-              <q-item-label>{{ item.label }}</q-item-label>
-              <q-item-label caption>{{ item.description }}</q-item-label>
-            </q-item-section>
-          </q-item>
-      </q-list>
-      </q-btn-dropdown>
-      <q-toggle v-model="graph.settings.autoCloseNodes" label="Auto-Close Nodes" />
-      <q-toggle v-model="autoSave" label="Auto-Save" />
+      <q-btn flat icon="help" color="info">
+        <q-popup-proxy breakpoint="99999">
+          <h-help-dialog />
+        </q-popup-proxy>
+      </q-btn>
       <q-space />
-      <q-btn :disable="!selected.length" flat icon="content_copy" color="primary" label="Copy" @click="CB.copy(selected)"  />
-      <q-btn :disable="CB.empty" flat icon="content_paste" color="primary" label="Paste" @click="CB.paste()" />
+      <q-separator vertical />
+      <!-- New node -->
+      <q-btn flat color="primary" icon="add_circle" @click="$refs.editor.newNodeDialog()">
+        <q-icon name="arrow_drop_down" class="q-pl-sm"/>
+        <h-tooltip>New Node</h-tooltip>
+      </q-btn>
+      <q-separator vertical />
+      <!-- Copy / Paste -->
+      <q-btn :disable="!selected.length" flat icon="content_copy" color="primary" label="" @click="CB.copy(selected)">
+        <h-tooltip>Copy</h-tooltip>
+      </q-btn>
+      <q-btn :disable="CB.empty" flat icon="content_paste" color="primary" label="" @click="CB.paste()">
+        <h-tooltip>Paste</h-tooltip>
+      </q-btn>
+      <q-btn :disable="!selected.length > 0" flat icon="group_work" color="primary"
+        @click="graph.newGroup(selected)">
+        <h-tooltip>Create group with selected nodes</h-tooltip>
+      </q-btn>
+      <q-separator vertical />
+      <q-btn flat icon="unfold_less" :color="graph.settings.autoCloseNodes ? 'primary' : ''"
+        @click="graph.settings.autoCloseNodes = !graph.settings.autoCloseNodes">
+        <h-tooltip>Fold and unfold nodes when mouse is over.
+          <q-chip v-if="graph.settings.autoCloseNodes" class="q-py-xs text-caption bg-accent">Active</q-chip>
+          <q-chip v-else class="q-py-xs text-caption bg-grey text-black">Inactive</q-chip>
+        </h-tooltip>
+      </q-btn>
+      <q-separator vertical />
+      <!-- Save and autosave -->
+      <q-btn-group >
+        <q-btn flat icon="save" color="primary" :disable="!graphChanged" @click="_save"/>
+        <q-btn flat icon="autorenew" :color="autoSave ? 'primary' : ''" @click="autoSave = !autoSave">
+          <h-tooltip>Auto save graph on change.
+            <q-chip v-if="autoSave" class="q-py-xs text-caption bg-accent">Active</q-chip>
+            <q-chip v-else class="q-py-xs text-caption bg-grey text-black">Inactive</q-chip>
+          </h-tooltip>
+        </q-btn>
+      </q-btn-group>
       <q-space />
-      <q-btn v-if="selected.length > 0" flat icon="group_work" color="primary" label="Create Group" @click="graph.newGroup(selected)"/>
     </div>
     <div class="col fit" style="min-width: 100px; min-height:100px;" >
-      <HEditor :graph="graph" @selected="selected=$event" @parentChanged="parent=$event" />
+      <HEditor ref="editor" :graph="graph" @selected="selected=$event" @parentChanged="parent=$event" />
     </div>
   </div>
 </template>
@@ -71,14 +91,17 @@ if (autoLoad) {
 const _save = () => {
   console.log("Saving graph")
   S.set("graph.state", graph.save())
+  graphChanged.value = false
 }
 const save = _.throttle(_save, 2000, { leading: true })
 
-const graph_changed = computed(() => ({
+const graphState = computed(() => ({
   nodeState: graph.flatNodes().map(n => [_.map(n.values.input, v => v.val), n.state.x, n.state.y])
 }))
+const graphChanged = ref(false)
 
-watch(graph_changed, () => {
+watch(graphState, () => {
+  graphChanged.value = true
   if (autoSave.value) save()
 }, { immediate: true })
 

@@ -48,10 +48,10 @@ export const useMovePanZoom = defineStore('movePanZoom', () => {
       var height = Math.abs(pointersStart[0].pageY - event.pageY)
 
       view.selection = {
-        topLeft: { x: left, y: top },
-        bottomRight: {x: right, y: bottom},
-        width,
-        height
+        topLeft: view.to({ x: left, y: top - view.dimensions.top}),
+        bottomRight: view.to({x: right, y: bottom - view.dimensions.top}),
+        width: width / view.scaling,
+        height: height / view.scaling
       }
       return
     } else if (selecting) {
@@ -82,7 +82,7 @@ export const useMovePanZoom = defineStore('movePanZoom', () => {
   const distance = (event1, event2) => Math.sqrt((event1.pageX - event2.pageX)**2 + (event1.pageY - event2.pageY)**2 )
 
   const onPointerDown = (event, view) => {
-    if (event.ctrlKey) selecting = true
+    if (event.ctrlKey || event.shiftKey) selecting = true
     pointersStart.push(event)
     pointersLast.push(event)
     viewState = _.cloneDeep(view)
