@@ -4,7 +4,7 @@
     @mouseenter="node.graph.settings.autoCloseNodes ? node.state.open = true : ''"
     @mouseleave="node.graph.settings.autoCloseNodes ? node.state.open = false : ''" :id="node.id">
     <!-- Title -->
-    <q-card-section
+    <q-card-section style="min-height: 40px;"
       :class="'row items-center text-dark q-pa-xs ' + headerClass">
       <q-btn flat dense class="col-auto q-pr-xs" :icon="node.state.open ? 'expand_more' : 'expand_less'" size="sm"
         @click="node.state.open = !node.state.open" />

@@ -7,7 +7,7 @@
       :data-port-open="opt.multiple || sources.length == 0"
       @touchstart.stop
       @mousedown.stop="triggerConnection"
-      :id="id"
+      :id="id" style="z-index:-10"
   >
   <!-- v-if="param?.type" -->
     <q-tooltip  :class="`bg-${H.varTypes[param?.type]?.color}-2 text-dark`">
@@ -90,11 +90,11 @@ const opt = computed(() => {
     opt.multiple = true
     if (props.portType == "input") {
       opt.classes += "absolute-top-left"
-      opt.style = "left: -17px; top: 4px;"
+      opt.style = "left: -18px; top: 4px;"
     }
     else if (props.portType == "output" && props.portClass == "flow") {
       opt.classes += "absolute-top-right"
-      opt.style = "right: -16px; top: 4px;"
+      opt.style = "right: -18px; top: 4px;"
     }
   }
   // Group

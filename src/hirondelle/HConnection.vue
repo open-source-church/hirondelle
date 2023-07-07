@@ -81,11 +81,11 @@ const d = computed(() => {
     // n2 = addPos(posTo, { x: 0, y: 25})
 
     // Groups
-    if (c.from.type.isGroup && c.to.parent == c.from) {
+    if (c.from.type.isGroup && c.to.parent.id == c.from.id) {
       n1 = H.view.to({ x:20, y: H.view.dimensions.height / 2})
       if (type == "clone") type = "param"
     }
-    if (c.to.type.isGroup && c.to == c.from.parent) {
+    if (c.to.type.isGroup && c.to.id == c.from.parent.id) {
       n2 = H.view.to({ x: H.view.dimensions.width - 20, y: H.view.dimensions.height / 2})
       if (type == "clone") type = "param"
     }
@@ -121,7 +121,7 @@ const d = computed(() => {
     if (!n1) {
       var idFrom = getPortId(c.from, "output", type, c.output, null, c.signal)
       n1 = c.graph._connectors[idFrom]
-      if(!n1) {
+      if(!n1 || !c.from.state?.open) {
         // Connect to main
         var idFrom = getPortId(c.from, "output", "flow")
         n1 = c.graph._connectors[idFrom]
@@ -131,7 +131,7 @@ const d = computed(() => {
     if (!n2) {
       var idTo = getPortId(c.to, "input", type, c.input, c.slot)
       n2 = c.graph._connectors[idTo]
-      if(!n2) {
+      if(!n2 || !c.to.state?.open) {
         // Connect to main
         var idTo = getPortId(c.to, "input", "flow")
         n2 = c.graph._connectors[idTo]
