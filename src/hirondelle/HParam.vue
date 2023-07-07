@@ -89,7 +89,7 @@
       :label="name" :clearable="param.clearable" :type="param.array ? 'checkbox' : 'radio'"
       :option-label="param.optionLabel || 'label'" :option-value="param.optionValue || 'value'" emit-value map-options
       :model-value="modelValue" @update:model-value="update" inline/>
-      <q-select v-if="param.options" options-dense :disable="disable" :options="param.options"
+      <q-select v-else-if="param.options" options-dense :disable="disable" :options="param.options"
       :label="name" dense filled :clearable="param.clearable" :multiple="param.multiple"
       :option-label="param.optionLabel || 'label'" :option-value="param.optionValue || 'value'" emit-value map-options
       :model-value="modelValue" @update:model-value="update"/>

@@ -249,7 +249,8 @@ const outputs = computed(() => {
 
 
 const updatePortPositions = (val) => {
-  if (node.value._state?.width) return
+  // if (node.value._state?.width) return
+  if (!val.width || val.height == node.value._state.height) return // node is hidden or has not changed
   node.value._state.width = val.width
   node.value._state.height = val.height
 }

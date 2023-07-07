@@ -235,7 +235,7 @@ const _updatePortPositions = async () => {
   var top = document.getElementById('h-editor')?.getBoundingClientRect()?.y
   if (!top) return
   var el = document.querySelectorAll('[data-port-type]')
-  _graph.value._connectors = {}
+  // _graph.value._connectors = {}
   if (!_graph.value._connectors) _graph.value._connectors = {}
   el.forEach(e => {
     var portId = e.getAttribute("id")

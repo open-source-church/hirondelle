@@ -142,6 +142,7 @@ const d = computed(() => {
     n1 = posFrom
     n2 = posTo
   }
+
   n1 = n1 || {x: posFrom.x + 300, y: posFrom.y + 25}
   n2 = n2 || {x: posTo.x, y: posTo.y + 25}
 

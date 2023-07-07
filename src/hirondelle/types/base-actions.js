@@ -124,6 +124,8 @@ H.registerNodeType({
     values.input.vars.val.forEach(v => {
       if (!(v.name in node.state.filter)) node.state.filter[v.name] = {}
     })
+    // On cache l'option logique s'il n'y a pas assez de variables pour que ça ait du sens
+    node.inputs.value.logic.hidden = values.input.vars.val.length < 2
     // On test
     if (values.input.logic.val == "and") {
       var f = _.every
