@@ -164,7 +164,7 @@
       </div>
       <div class="col-auto column text-caption">
         <span>FPS: {{ _.round(obs.data.activeFps, 2) }}</span>
-        <span>CPU: {{ _.round(obs.data.cpuUsage, 1) }}%</span>
+        <span style="min-width: 80px">CPU: {{ _.round(obs.data.cpuUsage, 1) }}%</span>
       </div>
     </div>
     <!-- SCENES -->
@@ -225,12 +225,12 @@
       </template>
       <template v-else >
         <q-btn v-for="s in scenesFiltered" :key="s.sceneIndex" size="xl"
-        :color="s.program ? 'green' : s.preview ? 'blue' : ''"
+        class="q-ma-sm"
+        :color="s.program ? 'green' : s.preview ? 'blue' : 'grey-9'"
         @click="obs.setPreviewScene(s.sceneName)"
         @dblclick="obs.setProgramScene(s.sceneName)"
         :icon="scenesIcon[s.sceneName] || 'image'" />
       </template>
-
     </div>
 
     <!-- Screenshots -->
@@ -254,6 +254,35 @@
     </div>
     <div v-else class="col-12 row justify-around">
       <q-img class="col-xs-12 col-md-12" :src="obs.program_img" no-transition />
+    </div>
+
+    <!-- Custom actions -->
+    <div class="col-12 text-center q-mt-xl" v-if="H.graph.nodes.length">
+      <q-btn-dropdown icon="add_circle" flat color="secondary" class="float-left">
+        <template v-slot:label>
+          <h-tooltip>Add custom action from node editor</h-tooltip>
+        </template>
+        <q-list dense>
+          <q-item>
+            <q-input dense v-model="filterActions" placeholder="Search" />
+          </q-item>
+          <q-item v-for="(action, i) in actionsList" :key="`${i}:${action.name}`" clickable
+            @click="actions.push(action)">
+            <q-item-section>
+              <q-item-label>
+                {{ getNodeTitle(action.nodeId) }}
+                <span v-if="action.slot || action.signal"> > {{ action.slot || action.signal }}</span>
+              </q-item-label>
+            </q-item-section>
+            <q-item-section side>
+              <q-toggle :model-value="actions.find(a => a.nodeId == action.nodeId && a.slot == action.slot && a.signal == action.signal) != undefined"
+                @update:model-value="val => val ? actions.push(action) : actions = actions.filter(a => a.nodeId != action.nodeId || a.slot != action.slot || a.signal != action.signal)"/>
+            </q-item-section>
+          </q-item>
+        </q-list>
+      </q-btn-dropdown>
+      <q-btn v-for="(action, i) in actions" :key="`${i}:${action.name}`" :label="action.name"
+        @click="runAction(action)" class="q-ma-sm bg-primary text-dark"/>
     </div>
 
   </div>
@@ -312,8 +341,46 @@ watch(swapScenes, () => S.set("obs.scenes.swap", swapScenes.value))
 
 const filter_scenes = ref("")
 
+// Custom actions
+const actions = ref(S.get("obs.actions") || [])
+const filterActions = ref("")
+const actionsList = computed(() => {
+  var _actions = []
+  H.graph.flatNodes()
+  .filter(n => (n.title || n.type.title).includes(filterActions.value))
+  .sort((n1, n2) => (actions.value.find(a => a.nodeId == n2.id) == undefined ? -1 : 1) - (actions.value.find(a => a.nodeId == n1.id) == undefined ? -1 : 1))
+  .forEach(n => {
+    var title = n.title || n.type.title
+    if (n.type.accepts_input && n.type.action) _actions.push({
+      name: title,
+      type: "slot",
+      nodeId: n.id
+    })
+    _.forEach(n.type.slots, (s, name) => _actions.push({
+      name: `${title} > ${name}`,
+      type: "slot",
+      slot: name,
+      nodeId: n.id
+    }))
+    _.forEach(n.type.signals, (s, name) => _actions.push({
+      name: `${title} > ${name}`,
+      type: "signal",
+      signal: name,
+      nodeId: n.id
+    }))
+  })
+  return _actions
+})
+const getNodeTitle = nodeId => H.graph.findNode(nodeId).title || H.graph.findNode(nodeId).type.title
+const runAction = action => {
+  var node = H.graph.findNode(action.nodeId)
+  if (action.slot) node.start(action.slot)
+  else if (action.signal) node.emit(action.signal)
+  else node.start()
+}
+watch(actions, () => S.set("obs.actions", actions.value))
 
-// Actions
+// Peer
 const connected = computed(() => peer.connected)
 
 </script>

@@ -245,7 +245,6 @@ export const useOBS = defineStore('obs', () => {
   watch(() => data.value.currentPreviewSceneName, async () => {
     if (connected.value)
       currentSceneTransitions.value = await obsWS.call("GetSceneTransitionList")
-      console.log(currentSceneTransitions.value)
   })
   const TriggerStudioModeTransition = async (swap) => {
     var sceneName = data.value.programScene
