@@ -18,9 +18,9 @@ export const useOBS = defineStore('obs', () => {
 
   const preview_img = ref()
   const program_img = ref()
-  const preview = ref(S.get("obs.preview"))
+  const preview = ref(S.get("obs.preview.enabled"))
   watch(preview, (val) => {
-    S.set("obs.preview", val)
+    S.set("obs.preview.enabled", val)
     getScreenshot()
   })
 
@@ -122,15 +122,19 @@ export const useOBS = defineStore('obs', () => {
     loading.value = false
   }
 
+  // On connect
   watch(connected, async () => {
-    if (connected.value) getInfo()
+    if (!connected.value) return
+    await getInfo()
+    await getStats()
+    _.assign(_data.value, await obs_ws.call("GetVersion"))
   })
 
   const data = computed(() => {
 
     if (!connected.value) return {}
 
-    var d = _.cloneDeep(_data.value)
+    var d = _data.value
 
     // Scenes
     if(d.scenes && d.scenes.length) {
@@ -151,29 +155,50 @@ export const useOBS = defineStore('obs', () => {
     // Inputs
     if (!d.inputs) d.inputs = []
 
+    // Stats
+    // if (d.stats)
+
     return d
   })
 
+  const _screenshotOptions = {
+    imageWidth: 600,
+    imageHeight: 600 / data.value.ratio,
+    imageFormat: "jpg",
+    imageCompressionQuality: 40,
+    imagePerSecond: 24
+  }
+  const screenshotOptions = ref( S.get("obs.preview.options") || _.cloneDeep(_screenshotOptions))
+  const restaureScreenshotOptions = () => screenshotOptions.value = _.cloneDeep(_screenshotOptions)
   const getScreenshot = async () => {
     if (!connected.value) return
 
-    var opt = {
-      imageWidth: 600,
-      imageHeight: 600 / data.value.ratio,
-      imageFormat: "jpg",
-      imageCompressionQuality: 50
-    }
+    var opt = screenshotOptions.value
     if (data.value.studioModeEnabled) {
       var r = await obs_ws.call("GetSourceScreenshot", {
-        sourceName: data.value.previewScene, ...opt
+        sourceName: data.value.previewScene, ...opt,
+        imageHeight: opt.imageWidth / data.value.ratio
       })
-      preview_img.value = r.imageData
+      if (r.imageData)
+        preview_img.value = r.imageData
     }
     var r = await obs_ws.call("GetSourceScreenshot", {
-      sourceName: data.value.programScene, ...opt
+      sourceName: data.value.programScene, ...opt,
+      imageHeight: opt.imageWidth / data.value.ratio
     })
     program_img.value = r.imageData
-    if (preview.value) setTimeout(getScreenshot, 50)
+    if (preview.value) setTimeout(getScreenshot, 1000 / opt.imagePerSecond)
+  }
+  watch(screenshotOptions, () => {
+    S.set("obs.preview.options", screenshotOptions.value)
+    getScreenshot()
+  }, { deep: true})
+
+  const getStats = async () => {
+    if (!connected.value) return
+    var r = await obs_ws.call("GetStats")
+    _.assign(data.value, r)
+    setTimeout(getStats, 2000)
   }
 
   const setPreviewScene = async (name) => {
@@ -272,7 +297,7 @@ export const useOBS = defineStore('obs', () => {
     {
       name: "Stream State Changed", obsname: "StreamStateChanged", description: "The state of the stream output has changed.",
       params: [
-        { name: "outputActive", description: "Whether the output is active" },
+        { name: "outputActive", type:"boolean", description: "Whether the output is active" },
         { name: "outputState", description: "The specific state of the output" },
       ]
     },
@@ -294,7 +319,7 @@ export const useOBS = defineStore('obs', () => {
       type: "trigger",
       category: "OBS",
       active: connected,
-      outputs: Object.fromEntries(e.params.map(e => [e.name, { type: "string", description: e.description, options: e.options }])),
+      outputs: Object.fromEntries(e.params.map(e => [e.name, { type: e.type || "string", description: e.description, options: e.options }])),
     })
     obs_ws.on(e.obsname, (p) => H.graph.startNodeType(`OBS:${e.obsname}`, p))
   })
@@ -329,6 +354,23 @@ export const useOBS = defineStore('obs', () => {
       if (values.input.sceneName.val)
         obs_ws.call("SetCurrentPreviewScene", { sceneName: values.input.sceneName.val })
       return {}
+    }
+  })
+
+  H.registerNodeType({
+    id: "OBS:SetStreamState",
+    type: "action",
+    title: "Start Streaming",
+    category: "OBS",
+    active: connected,
+    accepts_input: false,
+    accepts_output: false,
+    slots: {
+      start: async () => await obs_ws.call("StartStream"),
+      stop: async () => await obs_ws.call("StopStream"),
+    },
+    action () {
+
     }
   })
   const peer_connected = computed(() => peer.connected)
@@ -572,7 +614,7 @@ export const useOBS = defineStore('obs', () => {
     connect, disconnect, connected,
     setPreviewScene, setProgramScene, setStudioMode, setProfile, setSceneCollection,
     createOSCBotBrowserSource, removeOSCBotBrowserSource, OSCBotBrowserKeepOnAllScenes,
-    preview,
+    preview, screenshotOptions, restaureScreenshotOptions,
     preview_img, program_img,
     data,
   }

@@ -12,19 +12,93 @@
       <p>Aucune de ces infos ne sortent de votre navigateur, la connection se fait directement avec OBS dans votre réseau local.</p>
     </q-banner>
   </div>
-  <div class="row" v-else>
-    <div class="col-12 row q-gutter-md items-center">
-      <q-btn :flat="!obs.preview" label="Preview" color="accent" @click="obs.preview = !obs.preview"/>
+  <div class="row" v-else >
+    <div class="col-12 row q-gutter-sm items-center">
+      <q-btn-dropdown split :flat="!obs.preview" icon="preview" color="accent" @click="obs.preview = !obs.preview">
+      <template v-slot:label>
+        <h-tooltip>Realtime preview</h-tooltip>
+      </template>
+      <q-list>
+        <q-item>
+          <q-item-section side><q-icon name="preview" /></q-item-section>
+          <q-item-section>Preview</q-item-section>
+          <q-item-section side><q-toggle dense v-model="obs.preview"/></q-item-section>
+        </q-item>
+        <q-item>
+          <q-item-section side><q-icon name="hd" /></q-item-section>
+          <q-item-section>
+            <q-item-label>
+              Resolution:
+              {{ `${obs.screenshotOptions.imageWidth}×${_.round(obs.screenshotOptions.imageWidth / obs.data.ratio)}` }}
+            </q-item-label>
+            <q-item-label>
+              <q-slider dense :step="50" :min="obs.data.baseWidth * .05" :max="obs.data.baseWidth" v-model="obs.screenshotOptions.imageWidth"/>
+            </q-item-label>
+          </q-item-section>
+        </q-item>
+        <q-item>
+          <q-item-section side><q-icon name="deblur" /></q-item-section>
+          <q-item-section>
+            <q-item-label> Quality: {{ obs.screenshotOptions.imageCompressionQuality }} </q-item-label>
+            <q-item-label>
+              <q-slider dense :step="5" :min="0" :max="100" v-model="obs.screenshotOptions.imageCompressionQuality"/>
+            </q-item-label>
+          </q-item-section>
+        </q-item>
+        <q-item>
+          <q-item-section side><q-icon name="30fps_select" /></q-item-section>
+          <q-item-section>
+            <q-item-label>
+              FPS: {{ `${obs.screenshotOptions.imagePerSecond}` }}
+            </q-item-label>
+            <q-item-label>
+              <q-slider dense :step="1" :min="1" :max="24" v-model="obs.screenshotOptions.imagePerSecond"/>
+            </q-item-label>
+          </q-item-section>
+        </q-item>
+        <q-item>
+          <q-item-section side><q-icon name="image" /></q-item-section>
+          <q-item-section>
+            <q-select dense filled v-model="obs.screenshotOptions.imageFormat" :options="obs.data.supportedImageFormats" />
+          </q-item-section>
+        </q-item>
+        <q-item>
+          <q-item-section side><q-icon name="weight" /></q-item-section>
+          <q-item-section>
+            ~{{ _.round(obs.preview_img.length *.75 / 1024, 1) }} Ko
+          </q-item-section>
+        </q-item>
+        <q-item clickable @click="obs.restaureScreenshotOptions">
+          <q-item-section side><q-icon name="restart_alt" /></q-item-section>
+          <q-item-section>
+            Restore defaults
+          </q-item-section>
+        </q-item>
+      </q-list>
+      </q-btn-dropdown>
       <q-btn :flat="!obs.data.studioModeEnabled" label="Studio" color="secondary"
         :text-color="obs.data.studioModeEnabled ? 'dark' : 'secondary'"
         @click="obs.setStudioMode(!obs.data.studioModeEnabled)"/>
+      <q-separator vertical />
+      <q-btn class="col-auto" icon="sym_o_screen_record" @click="obs.disconnect()" color="negative" >
+        <h-tooltip>Start recording</h-tooltip>
+      </q-btn>
+      <q-btn class="col-auto" icon="live_tv" @click="obs.disconnect()" color="negative" >
+        <h-tooltip>Start streaming</h-tooltip>
+      </q-btn>
+      <q-separator vertical />
       <q-select filled dense class="col" :options="obs.data.profiles" label="Profiles"
       :model-value="obs.data.currentProfileName" @update:model-value="value => obs.setProfile(value)" />
       <q-select filled dense class="col" :options="obs.data.sceneCollections" label="Collections"
       :model-value="obs.data.currentSceneCollectionName" @update:model-value="value => obs.setSceneCollection(value)" />
+      <q-separator vertical />
       <q-btn class="col-auto" icon="power_off" @click="obs.disconnect()" color="negative" />
+      <q-separator vertical />
+      <div class="col column">
+        <span class="text-caption">FPS: {{ _.round(obs.data.activeFps, 2) }}</span>
+        <span class="text-caption">CPU: {{ _.round(obs.data.cpuUsage, 1) }}%</span>
+      </div>
     </div>
-
     <!-- SCENES -->
     <div class="col-12 q-my-md text-center" v-if="obs.connected">
       <q-btn flat icon="settings" color="primary" class="float-right">
@@ -96,8 +170,11 @@
     </div>
 
     <!-- Screenshots -->
-    <div class="col-12 row" >
-      <q-img class="col-xs-12 col-md-6" :src="obs.preview_img" no-transition v-if="obs.data.studioModeEnabled" />
+    <div v-if="obs.data.studioModeEnabled" class="col-12 row">
+      <q-img class="col-xs-12 col-md-6" :src="obs.preview_img" no-transition />
+      <q-img class="col-xs-12 col-md-6" :src="obs.program_img" no-transition />
+    </div>
+    <div v-else class="col-12 row justify-around">
       <q-img class="col-xs-12 col-md-6" :src="obs.program_img" no-transition />
     </div>
 
