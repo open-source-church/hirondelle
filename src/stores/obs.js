@@ -159,6 +159,8 @@ export const useOBS = defineStore('obs', () => {
 
     // Inputs
     if (!d.inputs) d.inputs = []
+    if (!d.record) d.record = {}
+    if (!d.stream) d.stream = {}
 
     // Stats
     // if (d.stats)

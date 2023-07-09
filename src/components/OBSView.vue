@@ -158,7 +158,7 @@
       </q-btn-dropdown>
       <q-separator vertical />
       <!-- Infos -->
-      <div class="col-auto column text-caption">
+      <div class="col-auto column text-caption" v-if="!_.isEmpty(obs.data.record) && !_.isEmpty(obs.data.stream)">
         <span :class="obs.data.record.outputActive ? 'text-red' : ''">REC: {{ obs.data.record.outputTimecode.substring(0,8) }}</span>
         <span :class="obs.data.stream.outputActive ? 'text-red' : ''">LIVE: {{ obs.data.stream.outputTimecode.substring(0,8) }}</span>
       </div>

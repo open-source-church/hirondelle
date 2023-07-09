@@ -1,24 +1,32 @@
 <template>
-  <q-page class="col column no-wrap">
-    <q-tabs inline-label class="bg-primary text-black" v-model="tab">
-      <q-tab name="obs" label="OBS" icon="tv">
+  <q-page class="column">
+    <q-tabs :class="tab == 'home' ? 'bg-transparent text-secondary' : 'bg-primary text-dark'"
+      inline-label v-model="tab" >
+      <q-tab name="home" :label="showLabel ? 'Hirondelle' : ''" icon="img:icon.png" v-if="tab != 'home'"/>
+      <q-space />
+      <q-tab name="obs" :label="showLabel ? 'OBS' : ''" icon="tv">
         <q-badge floating :color="obs.connected ? 'green' : 'red'" />
       </q-tab>
-      <q-tab name="twitch" label="Twitch" icon="stream" >
+      <q-tab name="twitch" :label="showLabel ? 'Twitch' : ''" icon="stream" >
         <q-badge floating :color="twitch.chat_connected ? 'green' : 'red'" />
       </q-tab>
-      <q-tab name="graph" label="Node editor" icon="account_tree" />
-      <q-tab name="settings" label="Options" icon="settings" />
+      <q-tab name="graph" :label="showLabel ? 'Node editor' : ''" icon="account_tree" />
+      <q-tab name="settings" :label="showLabel ? 'Settings' : ''" icon="settings" />
+      <q-space />
+      <div style="min-width: 100px" v-if="tab != 'home'" ></div>
     </q-tabs>
 
-    <q-tab-panels v-model="tab" animated class="col" keep-alive>
+    <q-tab-panels v-model="tab" animated keep-alive>
+      <q-tab-panel name="home" class="q-pa-none no-scroll	" >
+        <home-view />
+      </q-tab-panel>
       <q-tab-panel name="obs">
         <obs-view />
       </q-tab-panel>
       <q-tab-panel name="twitch">
         <twitch-view />
       </q-tab-panel>
-      <q-tab-panel class="q-pa-none" name="graph">
+      <q-tab-panel name="graph" class="q-pa-none" >
         <graph-view />
       </q-tab-panel>
       <q-tab-panel name="settings">
@@ -43,14 +51,18 @@ import { useOBS } from 'stores/obs'
 import { useQuasar, copyToClipboard } from 'quasar'
 import { useTwitch } from 'stores/twitch'
 import _ from 'lodash'
+import { useSettings } from 'src/stores/settings'
 
 const obs = useOBS()
 const $q = useQuasar()
+const S = useSettings()
 const twitch = useTwitch()
 
 // Tabs
-const tab = ref("graph")
+const tab = ref(S.get("tab") || "home")
+const showLabel = computed(() => $q.screen.gt.xs)
 
+watch(tab, () => S.set("tab", tab.value))
 
 </script>
 

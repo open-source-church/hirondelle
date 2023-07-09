@@ -19,15 +19,6 @@
         </q-card-section>
       </q-card>
     </div>
-    <div class="col-auto row items-center text-center">
-      <div class="col column q-mt-xl q-pa-xl items-center q-gutter-md">
-        <a href="https://www.open-source.church">
-          <q-img src="https://www.open-source.church/images/logo/logo.webp" width="100px" />
-        </a>
-        <p>Made by <a href="https://www.open-source.church" target="_blank">Open Source Church</a>.</p>
-        <p class="text-caption">Fork me on <a href="https://github.com/open-source-church/hirondelle" target="_blank">github</a>.</p>
-      </div>
-    </div>
   </div>
 </template>
 

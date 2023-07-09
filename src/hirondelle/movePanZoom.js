@@ -105,12 +105,13 @@ export const useMovePanZoom = defineStore('movePanZoom', () => {
   // Moving objects
   var startingPos
   var movingObject
+  var snap = 1
   const _move = (event, objs) => {
     if (!objs.length) return
     if (event.isFirst) startingPos = objs.map(obj => _.cloneDeep(obj.state))
     objs.forEach((obj, i) => {
-      obj.state.x = ~~(startingPos[i].x + event.offset.x / H.view.scaling)
-      obj.state.y = ~~(startingPos[i].y + event.offset.y / H.view.scaling)
+      obj.state.x = ~~((startingPos[i].x + event.offset.x / H.view.scaling) / snap) * snap
+      obj.state.y = ~~((startingPos[i].y + event.offset.y / H.view.scaling) / snap) * snap
     })
   }
   const move = _.throttle(_move, throttleDelay)
