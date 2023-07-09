@@ -13,78 +13,86 @@
     </q-banner>
   </div>
   <div class="row" v-else >
+    <!-- Toolbar -->
     <div class="col-12 row q-gutter-sm items-center">
+      <!-- Preview and settings -->
       <q-btn-dropdown split :flat="!obs.preview" icon="preview" color="accent" @click="obs.preview = !obs.preview">
-      <template v-slot:label>
-        <h-tooltip>Realtime preview</h-tooltip>
-      </template>
-      <q-list>
-        <q-item>
-          <q-item-section side><q-icon name="preview" /></q-item-section>
-          <q-item-section>Preview</q-item-section>
-          <q-item-section side><q-toggle dense v-model="obs.preview"/></q-item-section>
-        </q-item>
-        <q-item>
-          <q-item-section side><q-icon name="hd" /></q-item-section>
-          <q-item-section>
-            <q-item-label>
-              Resolution:
-              {{ `${obs.screenshotOptions.imageWidth}×${_.round(obs.screenshotOptions.imageWidth / obs.data.ratio)}` }}
-            </q-item-label>
-            <q-item-label>
-              <q-slider dense :step="50" :min="obs.data.baseWidth * .05" :max="obs.data.baseWidth" v-model="obs.screenshotOptions.imageWidth"/>
-            </q-item-label>
-          </q-item-section>
-        </q-item>
-        <q-item>
-          <q-item-section side><q-icon name="deblur" /></q-item-section>
-          <q-item-section>
-            <q-item-label> Quality: {{ obs.screenshotOptions.imageCompressionQuality }} </q-item-label>
-            <q-item-label>
-              <q-slider dense :step="5" :min="0" :max="100" v-model="obs.screenshotOptions.imageCompressionQuality"/>
-            </q-item-label>
-          </q-item-section>
-        </q-item>
-        <q-item>
-          <q-item-section side><q-icon name="30fps_select" /></q-item-section>
-          <q-item-section>
-            <q-item-label>
-              FPS: {{ `${obs.screenshotOptions.imagePerSecond}` }}
-            </q-item-label>
-            <q-item-label>
-              <q-slider dense :step="1" :min="1" :max="24" v-model="obs.screenshotOptions.imagePerSecond"/>
-            </q-item-label>
-          </q-item-section>
-        </q-item>
-        <q-item>
-          <q-item-section side><q-icon name="image" /></q-item-section>
-          <q-item-section>
-            <q-select dense filled v-model="obs.screenshotOptions.imageFormat" :options="obs.data.supportedImageFormats" />
-          </q-item-section>
-        </q-item>
-        <q-item>
-          <q-item-section side><q-icon name="weight" /></q-item-section>
-          <q-item-section>
-            ~{{ _.round(obs.preview_img.length *.75 / 1024, 1) }} Ko
-          </q-item-section>
-        </q-item>
-        <q-item clickable @click="obs.restaureScreenshotOptions">
-          <q-item-section side><q-icon name="restart_alt" /></q-item-section>
-          <q-item-section>
-            Restore defaults
-          </q-item-section>
-        </q-item>
-      </q-list>
+        <template v-slot:label>
+          <h-tooltip>Realtime preview</h-tooltip>
+        </template>
+        <q-list>
+          <q-item>
+            <q-item-section side><q-icon name="preview" /></q-item-section>
+            <q-item-section>Preview</q-item-section>
+            <q-item-section side><q-toggle dense v-model="obs.preview"/></q-item-section>
+          </q-item>
+          <q-item>
+            <q-item-section side><q-icon name="hd" /></q-item-section>
+            <q-item-section>
+              <q-item-label>
+                Resolution:
+                {{ `${obs.screenshotOptions.imageWidth}×${_.round(obs.screenshotOptions.imageWidth / obs.data.ratio)}` }}
+              </q-item-label>
+              <q-item-label>
+                <q-slider dense :step="50" :min="obs.data.baseWidth * .05" :max="obs.data.baseWidth" v-model="obs.screenshotOptions.imageWidth"/>
+              </q-item-label>
+            </q-item-section>
+          </q-item>
+          <q-item>
+            <q-item-section side><q-icon name="deblur" /></q-item-section>
+            <q-item-section>
+              <q-item-label> Quality: {{ obs.screenshotOptions.imageCompressionQuality }} </q-item-label>
+              <q-item-label>
+                <q-slider dense :step="5" :min="0" :max="100" v-model="obs.screenshotOptions.imageCompressionQuality"/>
+              </q-item-label>
+            </q-item-section>
+          </q-item>
+          <q-item>
+            <q-item-section side><q-icon name="30fps_select" /></q-item-section>
+            <q-item-section>
+              <q-item-label>
+                FPS: {{ `${obs.screenshotOptions.imagePerSecond}` }}
+              </q-item-label>
+              <q-item-label>
+                <q-slider dense :step="1" :min="1" :max="24" v-model="obs.screenshotOptions.imagePerSecond"/>
+              </q-item-label>
+            </q-item-section>
+          </q-item>
+          <q-item>
+            <q-item-section side><q-icon name="image" /></q-item-section>
+            <q-item-section>
+              <q-select dense filled v-model="obs.screenshotOptions.imageFormat" :options="obs.data.supportedImageFormats" />
+            </q-item-section>
+          </q-item>
+          <q-item>
+            <q-item-section side><q-icon name="weight" /></q-item-section>
+            <q-item-section>
+              ~{{ _.round(obs.preview_img.length *.75 / 1024, 1) }} Ko
+            </q-item-section>
+          </q-item>
+          <q-item clickable @click="obs.restaureScreenshotOptions">
+            <q-item-section side><q-icon name="restart_alt" /></q-item-section>
+            <q-item-section>
+              Restore defaults
+            </q-item-section>
+          </q-item>
+        </q-list>
       </q-btn-dropdown>
-      <q-btn :flat="!obs.data.studioModeEnabled" label="Studio" color="secondary"
+      <q-btn :flat="!obs.data.studioModeEnabled" icon="sym_o_splitscreen_right" color="secondary"
         :text-color="obs.data.studioModeEnabled ? 'dark' : 'secondary'"
-        @click="obs.setStudioMode(!obs.data.studioModeEnabled)"/>
-      <q-separator vertical />
-      <q-btn class="col-auto" icon="sym_o_screen_record" @click="obs.disconnect()" color="negative" >
-        <h-tooltip>Start recording</h-tooltip>
+        @click="obs.setStudioMode(!obs.data.studioModeEnabled)">
+        <h-tooltip>Studio Mode</h-tooltip>
       </q-btn>
-      <q-btn class="col-auto" icon="live_tv" @click="obs.disconnect()" color="negative" >
-        <h-tooltip>Start streaming</h-tooltip>
+      <q-separator vertical />
+      <q-btn :flat="!obs.data.record.outputActive" class="col-auto" icon="sym_o_screen_record" color="negative"
+        @click="obs.setRecordingState(!obs.data.record.outputActive)"  >
+        <h-tooltip v-if="obs.data.record.outputActive">Stop recording</h-tooltip>
+        <h-tooltip v-else>Start recording</h-tooltip>
+      </q-btn>
+      <q-btn :flat="!obs.data.stream.outputActive" class="col-auto" icon="live_tv"
+        @click="obs.setStreamState(!obs.data.stream.outputActive)" color="negative" >
+        <h-tooltip v-if="obs.data.stream.outputActive">Stop streaming</h-tooltip>
+        <h-tooltip v-else>Start streaming</h-tooltip>
       </q-btn>
       <q-separator vertical />
       <q-select filled dense class="col" :options="obs.data.profiles" label="Profiles"
@@ -94,9 +102,13 @@
       <q-separator vertical />
       <q-btn class="col-auto" icon="power_off" @click="obs.disconnect()" color="negative" />
       <q-separator vertical />
-      <div class="col column">
-        <span class="text-caption">FPS: {{ _.round(obs.data.activeFps, 2) }}</span>
-        <span class="text-caption">CPU: {{ _.round(obs.data.cpuUsage, 1) }}%</span>
+      <div class="col-auto column text-caption">
+        <span :class="obs.data.record.outputActive ? 'text-red' : ''">REC: {{ obs.data.record.outputTimecode.substring(0,8) }}</span>
+        <span :class="obs.data.stream.outputActive ? 'text-red' : ''">LIVE: {{ obs.data.stream.outputTimecode.substring(0,8) }}</span>
+      </div>
+      <div class="col-auto column text-caption">
+        <span>FPS: {{ _.round(obs.data.activeFps, 2) }}</span>
+        <span>CPU: {{ _.round(obs.data.cpuUsage, 1) }}%</span>
       </div>
     </div>
     <!-- SCENES -->

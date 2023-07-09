@@ -5,12 +5,14 @@ import _ from 'lodash'
 import { useSettings } from './settings'
 import { useHirondelle } from 'src/hirondelle/hirondelle.js'
 import { usePeer } from './peer'
+import { useQuasar } from 'quasar'
 
 export const useOBS = defineStore('obs', () => {
 
   const S = useSettings()
   const H = useHirondelle()
   const peer = usePeer()
+  const $q = useQuasar()
 
   const obs_ws = new OBSWebSocket()
   const connected = ref(false)
@@ -198,7 +200,13 @@ export const useOBS = defineStore('obs', () => {
     if (!connected.value) return
     var r = await obs_ws.call("GetStats")
     _.assign(data.value, r)
-    setTimeout(getStats, 2000)
+    var r = await obs_ws.call("GetRecordStatus")
+    if (!data.value.record) data.value.record = {}
+    _.assign(data.value.record, r)
+    var r = await obs_ws.call("GetStreamStatus")
+    if (!data.value.stream) data.value.stream = {}
+    _.assign(data.value.stream, r)
+    setTimeout(getStats, 1000)
   }
 
   const setPreviewScene = async (name) => {
@@ -217,6 +225,20 @@ export const useOBS = defineStore('obs', () => {
   }
   const setSceneCollection = async (val) => {
     obs_ws.call("SetCurrentSceneCollection", { sceneCollectionName: val })
+  }
+  const setRecordingState = async (val) => {
+    if (val)
+      await obs_ws.call("StartRecord")
+    else {
+      var r = await obs_ws.call("StopRecord")
+      $q.notify(`Recording saved to '${r.outputPath}'.`)
+    }
+  }
+  const setStreamState = async (val) => {
+    if (val)
+      await obs_ws.call("StartStream")
+    else
+      await obs_ws.call("StopStream")
   }
 
   const createOSCBotBrowserSource = async (url) => {
@@ -615,6 +637,7 @@ export const useOBS = defineStore('obs', () => {
     setPreviewScene, setProgramScene, setStudioMode, setProfile, setSceneCollection,
     createOSCBotBrowserSource, removeOSCBotBrowserSource, OSCBotBrowserKeepOnAllScenes,
     preview, screenshotOptions, restaureScreenshotOptions,
+    setRecordingState, setStreamState,
     preview_img, program_img,
     data,
   }
