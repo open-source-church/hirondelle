@@ -86,15 +86,15 @@
       </q-btn>
       <q-separator vertical />
       <!-- Start recording -->
-      <q-btn :flat="!obs.data.record.outputActive" class="col-auto" icon="sym_o_screen_record" color="negative"
-        @click="obs.setRecordingState(!obs.data.record.outputActive)"  >
-        <h-tooltip v-if="obs.data.record.outputActive">Stop recording</h-tooltip>
+      <q-btn :flat="!obs.data.record?.outputActive" class="col-auto" icon="sym_o_screen_record" color="negative"
+        @click="obs.setRecordingState(!obs.data.record?.outputActive)"  >
+        <h-tooltip v-if="obs.data.record?.outputActive">Stop recording</h-tooltip>
         <h-tooltip v-else>Start recording</h-tooltip>
       </q-btn>
       <!-- Start streaming -->
-      <q-btn :flat="!obs.data.stream.outputActive" class="col-auto" icon="live_tv"
-        @click="obs.setStreamState(!obs.data.stream.outputActive)" color="negative" >
-        <h-tooltip v-if="obs.data.stream.outputActive">Stop streaming</h-tooltip>
+      <q-btn :flat="!obs.data.stream?.outputActive" class="col-auto" icon="live_tv"
+        @click="obs.setStreamState(!obs.data.stream?.outputActive)" color="negative" >
+        <h-tooltip v-if="obs.data.stream?.outputActive">Stop streaming</h-tooltip>
         <h-tooltip v-else>Start streaming</h-tooltip>
       </q-btn>
       <q-separator vertical />
