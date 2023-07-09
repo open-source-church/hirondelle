@@ -2,7 +2,9 @@
   <div class="h-node" :data-node-id="node.id" v-show="visible"
     :style="`left:${node.state?.x}px; top: ${node.state?.y}px;`"
     @mouseenter="node.graph.settings.autoCloseNodes ? node.state.open = true : ''"
-    @mouseleave="node.graph.settings.autoCloseNodes ? node.state.open = false : ''" :id="node.id">
+    @mouseleave="node.graph.settings.autoCloseNodes ? node.state.open = false : ''" :id="node.id"
+    @dblclick="node.type.isGroup ? $emit('edit', node) : null"
+    >
     <!-- Title -->
     <q-card-section style="min-height: 40px;"
       :class="'row items-center text-dark q-pa-xs ' + headerClass">

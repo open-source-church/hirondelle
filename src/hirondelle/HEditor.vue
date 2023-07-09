@@ -2,10 +2,9 @@
   <div
     class="h-editor" tabindex="0" id="h-editor"
     @wheel.self.prevent="e => PZ.mouseWheel(e, H.view)"
-    @mousemove="e => PZ.onPointerMove(e, H.view)"
-    @mousedown.self="e => PZ.onPointerDown(e, H.view)"
-    @mouseup="e => !PZ.onPointerUp(e, H.view) && (!e.ctrlKey && !e.shiftKey) ? selected = [] : ''"
-    @click.right="selected = []"
+    @mousemove.left="e => PZ.onPointerMove(e, H.view)"
+    @mousedown.left.self="e => PZ.onPointerDown(e, H.view)"
+    @mouseup.left="e => !PZ.onPointerUp(e, H.view) && (!e.ctrlKey && !e.shiftKey) ? selected = [] : ''"
     @keyup.self.delete="deleteSelectedNodes"
     @keyup.self.ctrl.c.exact="CB.copy(selected)"
     @keyup.self.ctrl.v.exact="() => selected = CB.paste(parentNode)"
@@ -41,9 +40,10 @@
       <HNode v-for="n in parentNode.nodes" :key="n.id" :node="n"
         v-touch-pan.prevent.mouse="e => PZ.move(e, selected.includes(n) ? selected : [n], H.view)"
         :class="selected.includes(n) ? 'selected' : ''"
-        @click.ctrl.stop="selected = _.xor(selected, [n])"
-        @click.shift.stop="selected = _.xor(selected, [n])"
-        @click.exact.stop="selected = [n]"
+        @click.left.ctrl="selected = _.xor(selected, [n])"
+        @click.left.shift="selected = _.xor(selected, [n])"
+        @click.left.exact.stop="selected = [n]"
+        @mousedown.right.exact.stop="selected = [n]"
         @edit="setParent($event)"
         draggable="false"
         />
@@ -54,7 +54,8 @@
     </svg>
     <!-- Selection -->
     <div class="h-selection h-prevent-select" :style="transformStyle" >
-      <div class="h-selection-area" :style="selectionStyle"></div>
+      <div class="h-selection-area" :style="selectionStyle" v-if="H.view.selection?.topLeft">
+      </div>
     </div>
     <!-- Context menu -->
     <q-menu
@@ -163,17 +164,35 @@ const getGraphSize = size => {
 const nodeTypesCategories = computed(() => _.uniq(H.nodeTypes.map(t => t.category)).filter(c => c))
 const contextMenu = computed(() => {
   var menu = []
-  // New Triggers
-  menu.push({
-    title: "New…",
-    items: nodeTypesCategories.value.map(cat => ({
-      title: cat,
-      items: H.nodeTypes.filter(t => t.category == cat).map(t => ({
-        title: t.title,
-        type: t
+  if (selected.value.length==1) {
+    // Edit node name
+    menu.push({
+      title: "Edit node name",
+      action: "editNodeTitle",
+      node: selected.value[0]
+    })
+    // Clear custom name
+    if (selected.value[0].title)
+    menu.push({
+      title: "Clear custom name",
+      action: "clearNodeTitle",
+      node: selected.value[0]
+    })
+  }
+  else {
+    // New Triggers
+    menu.push({
+      title: "New…",
+      items: nodeTypesCategories.value.map(cat => ({
+        title: cat,
+        items: H.nodeTypes.filter(t => t.category == cat).map(t => ({
+          title: t.title,
+          type: t,
+          action: "addNode"
+        }))
       }))
-    }))
-  })
+    })
+  }
 
   // New Actions
   // New Transforms
