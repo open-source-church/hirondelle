@@ -98,8 +98,11 @@ export const useOBS = defineStore('obs', () => {
         // Si c'est la scene en cours, on ajoute
         if (s.sceneName == d.currentPreviewSceneName || s.sceneName == d.currentProgramSceneName) {
           if (!item) {
-            var { sceneItemId } = await obsWS.call("CreateSceneItem", { sceneName: s.sceneName, sourceName: OSCBotBrowserName })
-            await obsWS.call("SetSceneItemLocked", { sceneName: s.sceneName, sceneItemId, sceneItemLocked: true })
+            try {
+              console.log({ sceneName: s.sceneName, sourceName: OSCBotBrowserName })
+              var { sceneItemId } = await obsWS.call("CreateSceneItem", { sceneName: s.sceneName, sourceName: OSCBotBrowserName })
+              await obsWS.call("SetSceneItemLocked", { sceneName: s.sceneName, sceneItemId, sceneItemLocked: true })
+            } catch (err) {console.error(err)}
           }
         }
       }
@@ -130,13 +133,6 @@ export const useOBS = defineStore('obs', () => {
     await getInfo()
     await getStats()
     _.assign(_data.value, await obsWS.call("GetVersion"))
-    console.log(await obsWS.call("GetSpecialInputs"))
-    var list = await obsWS.call("GetInputList")
-    console.log(list)
-    var l1 = list.inputs.at(0)
-    console.log(await obsWS.call("GetInputPropertiesListPropertyItems", { inputName: l1.inputName}))
-
-    // console.log(await obsWS.call("GetInputList", { inputName: data.value.previewScene }))
   })
 
   const data = computed(() => {
