@@ -76,14 +76,14 @@ const graph = H.graph
 const selected = ref([])
 const parent = ref()
 
-var autoLoad = true
 var autoSave = ref(true)
+var autoLoad = true
 
 // Loading and saving
 if (autoLoad) {
   var state = S.get("graph.state")
   if (state) {
-    graph.load(state)
+    H.graph.load(state)
   }
 }
 

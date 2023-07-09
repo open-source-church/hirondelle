@@ -284,7 +284,6 @@
       <q-btn v-for="(action, i) in actions" :key="`${i}:${action.name}`" :label="action.name"
         @click="runAction(action)" class="q-ma-sm bg-primary text-dark"/>
     </div>
-
   </div>
 </template>
 
@@ -378,7 +377,10 @@ const runAction = action => {
   else if (action.signal) node.emit(action.signal)
   else node.start()
 }
-watch(actions, () => S.set("obs.actions", actions.value))
+watch(actions, () => {
+  S.set("obs.actions", actions.value)
+  console.log(actions.value, S.get("obs.actions"))
+})
 
 // Peer
 const connected = computed(() => peer.connected)

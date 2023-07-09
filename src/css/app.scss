@@ -22,7 +22,7 @@ body {
 }
 
 .q-page {
-  a {
+  a:not(.q-tab, .q-btn) {
     color: $primary;
     text-decoration: none;
     font-weight: bold;
