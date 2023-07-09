@@ -14,7 +14,7 @@ export const useOBS = defineStore('obs', () => {
   const peer = usePeer()
   const $q = useQuasar()
 
-  const obs_ws = new OBSWebSocket()
+  const obsWS = new OBSWebSocket()
   const connected = ref(false)
   const loading = ref(false)
 
@@ -36,7 +36,7 @@ export const useOBS = defineStore('obs', () => {
     var url = `${protocol}://${ip}:${port}`
     disconnect()
     try {
-      var r = await obs_ws.connect(url, password)
+      var r = await obsWS.connect(url, password)
       console.log(`Connecté à websocket version ${r.obsWebSocketVersion} (avec RCP ${r.rpcVersion})`)
       connected.value = true
       S.set("obs.ip", ip)
@@ -56,13 +56,13 @@ export const useOBS = defineStore('obs', () => {
       connect(S.get("obs.ip"), S.get("obs.port"), S.get("obs.password"))
   })
 
-  obs_ws.on("ConnectionClosed", (v) => {
+  obsWS.on("ConnectionClosed", (v) => {
     console.log("ConnectionClosed", v)
     connected.value = false
   })
 
   const disconnect = async () => {
-    await obs_ws.disconnect()
+    await obsWS.disconnect()
     connected.value = false
   }
 
@@ -81,7 +81,7 @@ export const useOBS = defineStore('obs', () => {
       "GetInputKindList"
     ]
     for (const q of requests) {
-      var r = await obs_ws.call(q)
+      var r = await obsWS.call(q)
       d = { ...d, ...r}
     }
 
@@ -93,13 +93,13 @@ export const useOBS = defineStore('obs', () => {
       // On rajoute le bot sur la scene
       for (const s of d.scenes) {
         // On recherche le bot sur la scene, et on récupère son item
-        r = await obs_ws.call("GetSceneItemList", { sceneName: s.sceneName})
+        r = await obsWS.call("GetSceneItemList", { sceneName: s.sceneName})
         var item = r.sceneItems.find(i => i.sourceName == OSCBotBrowserName)
         // Si c'est la scene en cours, on ajoute
         if (s.sceneName == d.currentPreviewSceneName || s.sceneName == d.currentProgramSceneName) {
           if (!item) {
-            var { sceneItemId } = await obs_ws.call("CreateSceneItem", { sceneName: s.sceneName, sourceName: OSCBotBrowserName })
-            await obs_ws.call("SetSceneItemLocked", { sceneName: s.sceneName, sceneItemId, sceneItemLocked: true })
+            var { sceneItemId } = await obsWS.call("CreateSceneItem", { sceneName: s.sceneName, sourceName: OSCBotBrowserName })
+            await obsWS.call("SetSceneItemLocked", { sceneName: s.sceneName, sceneItemId, sceneItemLocked: true })
           }
         }
       }
@@ -107,12 +107,12 @@ export const useOBS = defineStore('obs', () => {
       // On doit faire ça après coup, sinon suivant comment ça supprime la source, et c'est triste
       for (const s of d.scenes) {
         // On recherche le bot sur la scene, et on récupère son item
-        r = await obs_ws.call("GetSceneItemList", { sceneName: s.sceneName})
+        r = await obsWS.call("GetSceneItemList", { sceneName: s.sceneName})
         var item = r.sceneItems.find(i => i.sourceName == OSCBotBrowserName)
         // Si c'est pas la scene en cours, on ajoute
         if (s.sceneName != d.currentPreviewSceneName && s.sceneName != d.currentProgramSceneName) {
           if (item)
-            await obs_ws.call("RemoveSceneItem", { sceneName: s.sceneName, sceneItemId: item.sceneItemId})
+            await obsWS.call("RemoveSceneItem", { sceneName: s.sceneName, sceneItemId: item.sceneItemId})
         }
       }
     }
@@ -129,7 +129,7 @@ export const useOBS = defineStore('obs', () => {
     if (!connected.value) return
     await getInfo()
     await getStats()
-    _.assign(_data.value, await obs_ws.call("GetVersion"))
+    _.assign(_data.value, await obsWS.call("GetVersion"))
   })
 
   const data = computed(() => {
@@ -177,14 +177,14 @@ export const useOBS = defineStore('obs', () => {
 
     var opt = screenshotOptions.value
     if (data.value.studioModeEnabled) {
-      var r = await obs_ws.call("GetSourceScreenshot", {
+      var r = await obsWS.call("GetSourceScreenshot", {
         sourceName: data.value.previewScene, ...opt,
         imageHeight: opt.imageWidth / data.value.ratio
       })
       if (r.imageData)
         preview_img.value = r.imageData
     }
-    var r = await obs_ws.call("GetSourceScreenshot", {
+    var r = await obsWS.call("GetSourceScreenshot", {
       sourceName: data.value.programScene, ...opt,
       imageHeight: opt.imageWidth / data.value.ratio
     })
@@ -198,12 +198,12 @@ export const useOBS = defineStore('obs', () => {
 
   const getStats = async () => {
     if (!connected.value) return
-    var r = await obs_ws.call("GetStats")
+    var r = await obsWS.call("GetStats")
     _.assign(data.value, r)
-    var r = await obs_ws.call("GetRecordStatus")
+    var r = await obsWS.call("GetRecordStatus")
     if (!data.value.record) data.value.record = {}
     _.assign(data.value.record, r)
-    var r = await obs_ws.call("GetStreamStatus")
+    var r = await obsWS.call("GetStreamStatus")
     if (!data.value.stream) data.value.stream = {}
     _.assign(data.value.stream, r)
     setTimeout(getStats, 1000)
@@ -211,38 +211,50 @@ export const useOBS = defineStore('obs', () => {
 
   const setPreviewScene = async (name) => {
     if (!data.value.studioModeEnabled) return setProgramScene(name)
-    obs_ws.call("SetCurrentPreviewScene", { sceneName: name })
+    obsWS.call("SetCurrentPreviewScene", { sceneName: name })
   }
 
   const setProgramScene = async (name) => {
-    obs_ws.call("SetCurrentProgramScene", { sceneName: name })
+    obsWS.call("SetCurrentProgramScene", { sceneName: name })
   }
   const setStudioMode = async (val = true) => {
-    obs_ws.call("SetStudioModeEnabled", { studioModeEnabled: val })
+    obsWS.call("SetStudioModeEnabled", { studioModeEnabled: val })
   }
   const setProfile = async (val) => {
-    obs_ws.call("SetCurrentProfile", { profileName: val })
+    obsWS.call("SetCurrentProfile", { profileName: val })
   }
   const setSceneCollection = async (val) => {
-    obs_ws.call("SetCurrentSceneCollection", { sceneCollectionName: val })
+    obsWS.call("SetCurrentSceneCollection", { sceneCollectionName: val })
   }
   const setRecordingState = async (val) => {
     if (val)
-      await obs_ws.call("StartRecord")
+      await obsWS.call("StartRecord")
     else {
-      var r = await obs_ws.call("StopRecord")
+      var r = await obsWS.call("StopRecord")
       $q.notify(`Recording saved to '${r.outputPath}'.`)
     }
   }
   const setStreamState = async (val) => {
     if (val)
-      await obs_ws.call("StartStream")
+      await obsWS.call("StartStream")
     else
-      await obs_ws.call("StopStream")
+      await obsWS.call("StopStream")
+  }
+  // Scenes transitions
+  const currentSceneTransitions = ref([])
+  watch(() => data.value.currentPreviewSceneName, async () => {
+    if (connected.value)
+      currentSceneTransitions.value = await obsWS.call("GetSceneTransitionList")
+      console.log(currentSceneTransitions.value)
+  })
+  const TriggerStudioModeTransition = async (swap) => {
+    var sceneName = data.value.programScene
+    await obsWS.call("TriggerStudioModeTransition")
+    if (swap) obsWS.call("SetCurrentPreviewScene", { sceneName })
   }
 
   const createOSCBotBrowserSource = async (url) => {
-    var r = await obs_ws.call("CreateInput", {
+    var r = await obsWS.call("CreateInput", {
       sceneName: data.value.programScene,
       inputName: OSCBotBrowserName,
       inputKind: "browser_source",
@@ -263,7 +275,7 @@ export const useOBS = defineStore('obs', () => {
   const removeOSCBotBrowserSource = async () => {
     // loading.value = true
     try {
-      var r = await obs_ws.call("RemoveInput", {
+      var r = await obsWS.call("RemoveInput", {
         inputName: OSCBotBrowserName,
       })
     } catch {
@@ -271,10 +283,12 @@ export const useOBS = defineStore('obs', () => {
     }
     // Remove from program
     if (data.value.programScene) {
-      r = await obs_ws.call("GetSceneItemList", { sceneName: data.value.programScene})
+      r = await obsWS.call("GetSceneItemList", { sceneName: data.value.programScene})
       var item = r.sceneItems.find(i => i.sourceName == OSCBotBrowserName)
       if (item) {
-        await obs_ws.call("RemoveSceneItem", { sceneName: data.value.programScene, sceneItemId: item.sceneItemId })
+        try {
+          await obsWS.call("RemoveSceneItem", { sceneName: data.value.programScene, sceneItemId: item.sceneItemId })
+        } catch {}
         // Sais pas pourquoi, mais ça supprime pas complètement la source (qui est utilisée dans program)
         // Mais si on recall ici, ça fonctionne. Sympa.
         await removeOSCBotBrowserSource()
@@ -300,7 +314,7 @@ export const useOBS = defineStore('obs', () => {
     "CurrentSceneCollectionChanged",
     "SceneCollectionListChanged"
   ]
-  obs_update_info.forEach(e => obs_ws.on(e, getInfo))
+  obs_update_info.forEach(e => obsWS.on(e, getInfo))
 
   // Register events
   var events_lists_to_watch = [
@@ -343,7 +357,7 @@ export const useOBS = defineStore('obs', () => {
       active: connected,
       outputs: Object.fromEntries(e.params.map(e => [e.name, { type: e.type || "string", description: e.description, options: e.options }])),
     })
-    obs_ws.on(e.obsname, (p) => H.graph.startNodeType(`OBS:${e.obsname}`, p))
+    obsWS.on(e.obsname, (p) => H.graph.startNodeType(`OBS:${e.obsname}`, p))
   })
 
   // Actions
@@ -360,7 +374,7 @@ export const useOBS = defineStore('obs', () => {
     action: (values) => {
       console.log("SETTING SCENE NAME", values)
       if (values.input.sceneName.val)
-        obs_ws.call("SetCurrentProgramScene", { sceneName: values.input.sceneName.val })
+        obsWS.call("SetCurrentProgramScene", { sceneName: values.input.sceneName.val })
       return {}
     }
   })
@@ -374,7 +388,7 @@ export const useOBS = defineStore('obs', () => {
     inputs: { sceneName: { type: "string", options: () => scene_names } },
     action: (values) => {
       if (values.input.sceneName.val)
-        obs_ws.call("SetCurrentPreviewScene", { sceneName: values.input.sceneName.val })
+        obsWS.call("SetCurrentPreviewScene", { sceneName: values.input.sceneName.val })
       return {}
     }
   })
@@ -388,8 +402,8 @@ export const useOBS = defineStore('obs', () => {
     accepts_input: false,
     accepts_output: false,
     slots: {
-      start: async () => await obs_ws.call("StartStream"),
-      stop: async () => await obs_ws.call("StopStream"),
+      start: async () => await obsWS.call("StartStream"),
+      stop: async () => await obsWS.call("StopStream"),
     },
     action () {
 
@@ -562,7 +576,7 @@ export const useOBS = defineStore('obs', () => {
 
   // Get scene item rect
   const getSceneItemRecs = async (sceneName) => {
-    var r = await obs_ws.call("GetSceneItemList", { sceneName })
+    var r = await obsWS.call("GetSceneItemList", { sceneName })
     return r.sceneItems.map(i => ({
       id: i.sceneItemId,
       name: i.sourceName,
@@ -599,7 +613,7 @@ export const useOBS = defineStore('obs', () => {
     },
   })
   // FIXME: trigger pas :(
-  obs_ws.on("SceneItemTransformChanged", (p) => {
+  obsWS.on("SceneItemTransformChanged", (p) => {
     console.log("SCENE ITEM TRANSFORMED")
     H.graph.updateValuesFoNodeTypes("OBS:GetSceneItemRect")
   })
@@ -638,7 +652,8 @@ export const useOBS = defineStore('obs', () => {
     createOSCBotBrowserSource, removeOSCBotBrowserSource, OSCBotBrowserKeepOnAllScenes,
     preview, screenshotOptions, restaureScreenshotOptions,
     setRecordingState, setStreamState,
+    TriggerStudioModeTransition, currentSceneTransitions,
     preview_img, program_img,
-    data,
+    data, obsWS
   }
 })
