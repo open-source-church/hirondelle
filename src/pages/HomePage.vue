@@ -10,7 +10,7 @@
             <span v-if="$q.screen.lt.sm" class="gradiant text-h2">Hirondelle</span>
             <span v-else class="gradiant text-h1">Hirondelle</span>
           </div>
-          <div class="text-h5 q-px-md">Control OBS and create graphic bot commands for twitch.</div>
+          <div class="text-h5 q-px-md">Control OBS and create bot for twitch graphically.</div>
         </div>
       </div>
 
@@ -96,7 +96,11 @@
               </div>
               <div class="col-12 col-sm-4 q-pl-lg row col justify-center">
                 <div class="bg-black q-pa-md text-cream" style="border-radius: 1em;">
-                <div class="text-h3">Create <span class="gradiant">awesome</span> actions</div>
+                  <div class="text-h3">Create <span class="gradiant">awesome</span> actions</div>
+                  <div class="text-subtitle1" v-html="marked(`
+  - Add nodes that represents events or actions
+  - Connects them by drag n drop
+                  `)"></div>
                 </div>
               </div>
             </div>

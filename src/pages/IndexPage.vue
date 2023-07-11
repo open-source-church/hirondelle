@@ -4,10 +4,10 @@
       <q-btn flat to="/" :label="showLabel ? 'Hirondelle' : ''" icon="img:icon.png" />
       <q-space />
       <q-tabs shrink stretch inline-label >
-        <q-route-tab to="obs" :label="showLabel ? 'OBS' : ''" icon="tv">
+        <q-route-tab to="obs" :label="showLabel ? 'OBS' : ''" icon="img:icons/obs.png">
           <q-badge floating :color="obs.connected ? 'green' : 'red'" />
         </q-route-tab>
-        <q-route-tab to="twitch" :label="showLabel ? 'Twitch' : ''" icon="stream" >
+        <q-route-tab to="twitch" :label="showLabel ? 'Twitch' : ''" icon="img:icons/twitch.png" >
           <q-badge floating :color="twitch.chat_connected ? 'green' : 'red'" />
         </q-route-tab>
         <q-route-tab to="graph" :label="showLabel ? 'Node editor' : ''" icon="account_tree" />

@@ -1,14 +1,19 @@
 <template>
-  <div class="row q-gutter-md q-pa-xl" v-if="!obs.connected" @keyup.enter="obs.connect(ip, port, password)" >
-    <q-input dense filled class="col" v-model="ip" label="IP" />
-    <q-input dense filled class="col" v-model="port" label="port" />
+  <div class="row q-pa-sm q-pa-md-xl" style="max-width: 900px; margin: auto;"
+    v-if="!obs.connected" @keyup.enter="obs.connect(ip, port, password)" >
+    <div class="col-12 text-h2 items-center row q-mb-md">
+      <q-icon name="img:icons/obs.png" class="q-mr-md"/>
+      OBS
+    </div>
+    <q-input dense filled class="col-6" v-model="ip" label="IP" />
+    <q-input dense filled class="col-6 q-pl-md" v-model="port" label="port" />
 
-    <q-input dense filled class="col-12" v-model="password" type="password" label = "password" />
-    <q-btn  class="col-12 q-mt-md" icon="power" @click="obs.connect(ip, port, password)" label="Connect" color="primary" text-color="dark"/>
+    <q-input dense filled class="col-12 q-pt-md" v-model="password" type="password" label = "password" />
+    <q-btn class="col-12 q-mt-md" icon="power" @click="obs.connect(ip, port, password)" label="Connect" color="primary" text-color="dark"/>
 
     <q-banner class="text-info">
       <template v-slot:avatar > <q-icon name="info"  /> </template>
-      <p>Start Websocket server in OBS: <b>Tools > Websocker server settings > Show connect info</b> and fill info shere.</p>
+      <p>Start Websocket server in OBS: <b>Tools > Websocker server settings > Show connect info</b> and fill infos here.</p>
       <p>None of those data leave your browser, connection is made between Hirondelle and OBS directly on your local network.</p>
     </q-banner>
   </div>
