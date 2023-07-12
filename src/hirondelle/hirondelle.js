@@ -615,9 +615,15 @@ export const useHirondelle = defineStore('hirondelle', () => {
       obj.settings = this.settings
       return obj
     },
-    async load(obj)  {
-      console.log("LOADING", obj)
+    async load(obj, replace=false)  {
+      console.log("LOADING", obj, replace)
       this._loading = true
+
+      if (replace) {
+        this.nodes = []
+        this.connections = []
+      }
+
       if (obj.nodes)
         obj.nodes.forEach(n => this.addNode(_.cloneDeep(n)))
 
@@ -629,7 +635,6 @@ export const useHirondelle = defineStore('hirondelle', () => {
         var unfound_connections = obj.connections.filter(c => !this.addConnection(c))
         if (unfound_connections) setTimeout(() => unfound_connections.forEach(c => this.addConnection(c)), 100)
       }
-
 
       if (obj.view) {
         view.value.scaling = obj.view.scaling

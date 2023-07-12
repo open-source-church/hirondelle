@@ -45,6 +45,9 @@ import { useTwitch } from 'stores/twitch'
 import _ from 'lodash'
 import { useSettings } from 'src/stores/settings'
 import { useHirondelle } from 'src/hirondelle/hirondelle'
+// Nodes types
+import "src/hirondelle/types/variables.js"
+import "src/hirondelle/types/base-actions.js"
 
 const obs = useOBS()
 const $q = useQuasar()

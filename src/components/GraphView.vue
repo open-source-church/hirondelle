@@ -62,9 +62,6 @@ import { useSettings } from 'stores/settings'
 import HEditor from "src/hirondelle/HEditor.vue"
 import { useHirondelle } from "src/hirondelle/hirondelle.js"
 import { useClipboard } from "src/hirondelle/utils/clipboard.js"
-// Importing types
-import "src/hirondelle/types/variables.js"
-import "src/hirondelle/types/base-actions.js"
 
 const $q = useQuasar()
 const S = useSettings()
@@ -96,13 +93,14 @@ const _save = () => {
 const save = _.throttle(_save, 2000, { leading: true })
 
 const graphState = computed(() => ({
-  nodeState: graph.flatNodes().map(n => [_.map(n.values.input, v => v.val), n.state.x, n.state.y])
+  nodeState: graph.flatNodes().map(n => [_.map(n.values.input, v => v.val), n.state.x, n.state.y]),
+  connections: graph.connections.length
 }))
 const graphChanged = ref(false)
 
 watch(graphState, () => {
   graphChanged.value = true
-  if (autoSave.value) save()
+  if (!graph._loading && autoSave.value) save()
 }, { immediate: true })
 
 </script>

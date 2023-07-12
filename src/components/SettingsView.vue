@@ -20,12 +20,45 @@
       </q-card>
     </div>
   </div>
+  <div class="column q-mt-md">
+    <div class="col-3 row q-gutter-md">
+      <q-card class="col-auto">
+        <q-card-section class="bg-primary text-dark">
+          Backups
+          <q-btn flat icon="add_circle" class="absolute-right" @click="S.B.createBackup()"/>
+        </q-card-section>
+        <q-card-section class="column q-gutter-md">
+          <q-list separator>
+            <q-item v-for="b in backups" :key="b.date" >
+              <q-item-section>
+                <q-item-label class="cursor-pointer">
+                  {{ b.name || date.formatDate(b.date, "YYYY-MM-DD HH:mm:ss") }}
+                  <q-popup-edit :model-value="b.name" auto-save v-slot="scope"
+                    @update:model-value="val => S.B.renameBackup(b.date, val)">
+                    <q-input label="Backup name" v-model="scope.value" dense autofocus counter @keyup.enter="scope.set" />
+                  </q-popup-edit>
+                </q-item-label>
+                <q-item-label caption>{{ b.nodes }} nodes · {{ b.connections }} connections</q-item-label>
+                <q-item-label caption>Il y a {{ date.getDateDiff(now, b.date, "minutes") }} minutes</q-item-label>
+              </q-item-section>
+              <q-item-section side>
+                <div>
+                  <q-btn flat dense round icon="delete" color="negative" @click="S.B.removeBackup(b.date)"/>
+                  <q-btn flat dense round icon="publish" color="positive" @click="restoreBackup(b)"/>
+                </div>
+              </q-item-section>
+            </q-item>
+          </q-list>
+        </q-card-section>
+      </q-card>
+    </div>
+  </div>
 </template>
 
 <script setup>
 
 import { ref, computed, reactive, watch, onMounted } from 'vue'
-import { useQuasar, copyToClipboard } from 'quasar'
+import { useQuasar, copyToClipboard, date } from 'quasar'
 import _ from 'lodash'
 import { useSettings } from 'stores/settings'
 // Node
@@ -60,9 +93,18 @@ const exportSettings = () => {
 const import_opt = ref("")
 const importSettings = () => {
   var obj = JSON.parse(import_opt.value)
-  console.log(obj)
-  if(obj.graph.state) H.graph.load(obj.graph.state)
+  if(obj.graph.state) {
+    H.graph.load(obj.graph.state, true)
+  }
   $q.notify("Settings chargés")
+}
+
+const now = Date.now()
+const backups = computed(() => _.sortBy(S.backups, "date").reverse())
+
+const restoreBackup = backup => {
+  console.log(`Restoring backup: ${backup.name || backup.date}`)
+  H.graph.load(backup.data.graph.state, true)
 }
 
 </script>
