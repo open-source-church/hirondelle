@@ -15,7 +15,7 @@
     <!-- Message boxes -->
     <div v-for="(t, i) in messageBoxes" :key="'tb-'+i"
       :transition-style="t.transition" class="fixed row items-center justify-around text-center"
-      :style="`background-color: ${t.background}; left:${t.rect.x}px; top: ${t.rect.y}px; width: ${t.rect.width}px; height:${t.rect.height}px; ${t.style}`">
+      :style="`overflow:hidden; background-color: ${t.background}; left:${t.rect.x}px; top: ${t.rect.y}px; width: ${t.rect.width}px; height:${t.rect.height}px; ${t.style}`">
       {{ t.message }}
     </div>
 
@@ -117,6 +117,16 @@ const playSound = (opt) => {
   sound.play()
 }
 
+const synth = window.speechSynthesis
+const readText = (opt) => {
+  const utterThis = new SpeechSynthesisUtterance(opt.text)
+  utterThis.pitch = opt.pitch
+  utterThis.rate = opt.rate
+  utterThis.volume = opt.volume
+  utterThis.voice = synth.getVoices().find(v => opt.voice.includes(v.name) )
+  synth.speak(utterThis)
+}
+
 const test = () => {
   var obj = {
     action: "confettis",
@@ -139,6 +149,7 @@ const onMessage = (data) => {
   else if (data?.action == "progressBar") progressBar(data)
   else if (data?.action == "playSound") playSound(data)
   else if (data?.action == "showImage") showImage(data)
+  else if (data?.action == "readText") readText(data)
   else test(data)
 }
 

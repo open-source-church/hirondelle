@@ -78,7 +78,13 @@
   <template v-else-if="param.type == 'number' && param.slider">
     <div class="row">
       <div class="col-12">{{ param.displayName || name }}</div>
-      <q-slider v-if="param.slider" class="col-12" :min="param.slider.min" :max="param.slider.max" :color="param.slider.color"
+      <q-slider v-if="param.slider" class="col-12"
+        :min="param.slider.min"
+        :max="param.slider.max"
+        :color="param.slider.color"
+        :step="param.slider.step == undefined ? 1 : param.slider.step"
+        :label="param.slider.label"
+        label-text-color="dark"
         :model-value="modelValue" @update:model-value="update" />
     </div>
   </template>

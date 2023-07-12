@@ -613,7 +613,6 @@ export const useOBS = defineStore('obs', () => {
         node.inputs.value["sceneItemId"].options = sceneItems
       var rect = sceneItems.find(i => i.id == values.input.sceneItemId.val)?.rect
       if (rect && !_.isEqual(rect, values.output.rect.val)) values.output.rect.val = rect
-      console.log("After:", values)
     },
   })
   // FIXME: trigger pas :(
@@ -650,6 +649,48 @@ export const useOBS = defineStore('obs', () => {
     accepts_output: false,
     accepts_input: true,
   })
+
+  const synth = window.speechSynthesis
+  H.registerNodeType({
+    id: "OBSSource:speechSynthesis",
+    type: "action",
+    title: "TTS: Read text",
+    category: "OBSSource",
+    active: peer_connected,
+    inputs: {
+      text: { type: "string" },
+      voice: { type: "string", options: () => synth.getVoices().map(v => `${v.name} (${v.lang})`) },
+      volume: { type: "number", default: 1, slider: {min: 0, max: 1, step: 0.1} },
+      rate: { type: "number", default: 1, slider: {min: 0.1, max: 2, step: 0.1, label: true } },
+      pitch: { type: "number", default: 1,  slider: {min: 0.1, max: 2, step: 0.1, label: true } },
+    },
+    signals: {
+      done: null
+    },
+    action: function (values, node) {
+      var text = values.input.text.val.substring(0, 200)
+      const utterThis = new SpeechSynthesisUtterance(text)
+      utterThis.pitch = values.input.pitch.val
+      utterThis.rate = values.input.rate.val
+      utterThis.volume = values.input.volume.val
+      utterThis.voice = synth.getVoices().find(v => `${v.name} (${v.lang})` == values.input.voice.val )
+      utterThis.onend = e => node.emit("done")
+      window.speechSynthesis.speak(utterThis)
+      // if (!peer_connected.value) return
+      // var d = {
+      //   action: "readText",
+      //   text: text,
+      //   rate: values.input.rate.val,
+      //   pitch: values.input.pitch.val,
+      //   volume: values.input.volume.val,
+      //   voice: values.input.voice.val
+      // }
+      // peer.send(d)
+    },
+    accepts_output: false,
+    accepts_input: true,
+  })
+
   return {
     connect, disconnect, connected,
     setPreviewScene, setProgramScene, setStudioMode, setProfile, setSceneCollection,

@@ -82,7 +82,7 @@
                   <div class="text-h3">Interracts with <span class="gradiant">twitch</span> and <span class="gradiant">OBS</span></div>
                   <div class="text-subtitle1" v-html="marked(`
   - Reacts to subs, follows, messages, channel point redemptions, etc.
-  - Send messages, announcements, play sounds, etc.
+  - Send messages, announcements, play sounds, read messages, etc.
   - Change scenes, toggles items, etc.
                   `)"></div>
                 </div>
@@ -261,7 +261,7 @@ const actions = [
       },
       {
         name: "Special Hirondelle actions",
-        items: ["Confettis", "Message box", "Progress bar", "Play sound", "Show image"]
+        items: ["Confettis", "Message box", "Progress bar", "Play sound", "Show image", "Read message (TTS)"]
       },
     ]
   },
