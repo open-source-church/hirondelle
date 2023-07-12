@@ -45,6 +45,7 @@
                 <div>
                   <q-btn flat dense round icon="delete" color="negative" @click="S.B.removeBackup(b.date)"/>
                   <q-btn flat dense round icon="publish" color="positive" @click="restoreBackup(b)"/>
+                  <q-btn flat dense round icon="content_copy" @click="copyBackup(b)"/>
                 </div>
               </q-item-section>
             </q-item>
@@ -105,6 +106,10 @@ const backups = computed(() => _.sortBy(S.backups, "date").reverse())
 const restoreBackup = backup => {
   console.log(`Restoring backup: ${backup.name || backup.date}`)
   H.graph.load(backup.data.graph.state, true)
+}
+const copyBackup = backup => {
+  copyToClipboard(JSON.stringify(backup.data, null, "  "))
+  $q.notify("Backup copiée dans le presse papier")
 }
 
 </script>

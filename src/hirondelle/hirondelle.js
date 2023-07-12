@@ -46,7 +46,7 @@ export const useHirondelle = defineStore('hirondelle', () => {
       type: this.type,
       val: val || this.default || ((this.array || this.multiple) ? [] : varTypes[this.type].default),
       // name: this.name,
-      name: computed(() => name || this.name),
+      name: computed(() => name || this.displayName || this.name),
       options: computed(() => this.options),
       array: this.array,
       getType: () => this,
@@ -363,18 +363,6 @@ export const useHirondelle = defineStore('hirondelle', () => {
         // On remet à jour les valeurs connectées je pense
         node.graph.connections.filter(c => c.output?.id == obj.id).forEach(c => c.updateVars())
       }
-      node.setInputName = function(newName, oldName) { node.setPortName("input", newName, oldName)}
-      node.setOutputName = function(newName, oldName) { node.setPortName("output", newName, oldName)}
-      node.setPortName = function(type, newName, oldName) {
-        var port = node[type+"s"].value
-        var values = this.values.value[type]
-        // On change le nom dans l'object
-        node[type+"s"].value = _.mapKeys(node[type+"s"].value, (val, key) => key == oldName ? newName : key)
-        // On change le nom du port
-        node[type+"s"].value[newName].name = newName
-        // On change le nom des valeurs
-        this.values.value[type] = _.mapKeys(this.values.value[type], (val, key) => key == oldName ? newName : key)
-      }
 
       // Ports & values
       // On ajoute un ref au node à chaque port, ainsi qu'un id (dans le doute)
@@ -458,10 +446,10 @@ export const useHirondelle = defineStore('hirondelle', () => {
         // Sinon avec les noms
         if (!fromParam) fromParam = from.outputs[output]
         if (!toParam) toParam = to.inputs[input]
-
         if (type == "param" && (!fromParam || !toParam) ||
             type == "clone" && (!fromParam && !toParam)) {
-          console.error(`Les paramètres '${output}' et '${input}' sont introuvables.`)
+
+          console.error(`Les paramètres '${output}' et '${input}' sont introuvables. Maybe it will be fixed with a second pass. If this shows only once, everything is alright.`)
           return false
         }
       }

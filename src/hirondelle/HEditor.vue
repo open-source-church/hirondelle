@@ -10,7 +10,7 @@
     @keyup.self.ctrl.v.exact="() => selected = CB.paste(parentNode)"
     @keyup.self.shift.a.exact="newNodeDialog"
     @keydown.self.prevent.ctrl.a.exact="selected = parentNode.nodes"
-    @keydown.prevent.self.ctrl.g.exact="() => graph.newGroup(selected)"
+    @keydown.self.prevent.ctrl.g.exact="() => graph.newGroup(selected)"
     @dblclick.self="newNodeDialog"
   >
     <div class="absolute-top-left h-prevent-select" style="z-index: 10">

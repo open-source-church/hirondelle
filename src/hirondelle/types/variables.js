@@ -25,16 +25,12 @@ H.registerNodeType({
   compute (values, node) {
     var name = values.input.name.val || "number"
     // On change le nom du port
-    if (!node._outputName) node._outputName = "number"
-    if (name != node._outputName) {
-      node.setInputName(name, node._outputName)
-      node.setOutputName(name, node._outputName)
-      node._outputName = name
-    }
+    node.inputs.value.number.displayName = name
+    node.outputs.value.number.displayName = name
+
     // On met à jour la valeur
-    // values.output[name].val = values.input.value.val
-    values.output[name].val = values.input[name].val
-    // node.title.value = `Number: ${name} (${values.input[name].val})`
+    values.output.number.val = values.input.number.val
+    node.title.value = `Number: ${values.input.number.val} (${name})`
   }
 })
 H.registerNodeType({
@@ -80,15 +76,15 @@ H.registerNodeType({
   },
   outputs: {
     text: { type: "string" },
+    array: { type: "string", array: true}
   },
   compute(values, node) {
     var name = values.input.name.val || "text"
     // On change le nom du port
-    if (!node._outputName) node._outputName = "text"
-    if (name != node._outputName) {
-      node.setOutputName(name, node._outputName)
-      node._outputName = name
-    }
+    node.inputs.value.template.displayName = name
+    node.outputs.value.text.displayName = name
+    node.outputs.value.array.displayName = name
+
     // On met à jour la valeur
     var t = values.input.template.val || ""
     _.forEach(values.input.vars.val, v => {
@@ -96,7 +92,6 @@ H.registerNodeType({
       t = t.replaceAll(`[${v.name}]`, v.val)
     })
     // object
-    // t = t.replaceAll(`/\[([^\.]+)\.([^\.]+)\]/`, (m, p1, p2) => {
     t = t.replaceAll(/\[([^\.]+)\.(\d+)\]/g, (m, p1, p2) => {
       console.log("Matching", m, p1, p2)
       var v = values.input.vars.val.find(v => v.name == p1)?.val[p2]
@@ -104,17 +99,19 @@ H.registerNodeType({
     })
     if (values.input.actions.val.includes("trim")) t = t.trim()
 
+    // Split ?
     if (values.input.actions.val.includes("split")) {
       t = t.split(values.input.delimiter.val)
       if (values.input.actions.val.includes("trim")) t = t.map(e => e.trim())
+      values.output.array.val = t
+    }
+    else {
+      values.output.text.val = t
     }
 
-    // FIXME: changer array comme ça n'est pas reactif quand on appel newVar
-    node.outputs.value[name].array = values.input.actions.val.includes("split")
-    values.output[name].val = t
-    values.output[name].array = values.input.actions.val.includes("split")
-
     node.inputs.value.delimiter.hidden = !values.input.actions.val.includes("split")
+    node.outputs.value.array.hidden = !values.input.actions.val.includes("split")
+    node.outputs.value.text.hidden = values.input.actions.val.includes("split")
 
     node.title.value = `Text: ${name} (${t})`
   }
@@ -127,28 +124,26 @@ H.registerNodeType({
   active: true,
   inputs: {
     name: { type: "string", default: "boolean" },
-    value: { type: "boolean" }
+    boolean: { type: "boolean" }
   },
   outputs: {
     boolean: { type: "boolean"},
   },
   slots: {
-    setTrue: (values) => values.input.value.val = true,
-    setFalse: (values) => values.input.value.val = false,
-    toggle: (values) => values.input.value.val = !values.input.value.val,
+    setTrue: (values) => values.input.boolean.val = true,
+    setFalse: (values) => values.input.boolean.val = false,
+    toggle: (values) => values.input.boolean.val = !values.input.boolean.val,
   },
   compute (values, node) {
     console.log("COMPUTING VAR BOOLEAN")
     var name = values.input.name.val || "boolean"
     // On change le nom du port
-    if (!node._outputName) node._outputName = "boolean"
-    if (name != node._outputName) {
-      node.setOutputName(name, node._outputName)
-      node._outputName = name
-    }
+    node.inputs.value.boolean.displayName = name
+    node.outputs.value.boolean.displayName = name
+
     // On met à jour la valeur
-    values.output[name].val = values.input.value.val
-    node.title.value = `Boolean: ${name} (${values.input.value.val})`
+    values.output.boolean.val = values.input.boolean.val
+    node.title.value = `Boolean: ${name} (${values.input.boolean.val})`
   }
 })
 H.registerNodeType({
@@ -177,11 +172,9 @@ H.registerNodeType({
   compute (values, node) {
     var name = values.input.name.val || "rect"
     // On change le nom du port
-    if (!node._outputName) node._outputName = "rect"
-    if (name != node._outputName) {
-      node.setOutputName(name, node._outputName)
-      node._outputName = name
-    }
+    node.inputs.value.rect.displayName = name
+    node.outputs.value.rect.displayName = name
+
     // On met à jour les valeurs
     var rect
     if (values.input.fromNumbers.val) {
@@ -194,10 +187,10 @@ H.registerNodeType({
     values.output.top.val = rect.y
     values.output.width.val = rect.width
     values.output.height.val = rect.height
-    values.output[name].val = rect
+    values.output.rect.val = rect
     // On gère l'affichage
     node.inputs.value.rect.hidden = values.input.fromNumbers.val
-    node.outputs.value[name].hidden = values.input.split.val
+    node.outputs.value.rect.hidden = values.input.split.val
     for (var p of ["left", "top", "width", "height"]) {
       node.inputs.value[p].hidden = !values.input.fromNumbers.val
       node.outputs.value[p].hidden = !values.input.split.val
@@ -247,11 +240,8 @@ H.registerNodeType({
   compute (values, node) {
     var name = values.input.name.val || "color"
     // On change le nom du port
-    if (!node._outputName) node._outputName = "color"
-    if (name != node._outputName) {
-      node.setOutputName(name, node._outputName)
-      node._outputName = name
-    }
+    node.inputs.value.color.displayName = name
+    node.outputs.value.color.displayName = name
     // On met à jour les valeurs
     var text = values.input.color.val
     var rgb = colors.hexToRgb(text)
@@ -278,7 +268,7 @@ H.registerNodeType({
       var hsv = colors.rgbToHsv(rgb)
     }
 
-    values.output[name].val = text
+    values.output.color.val = text
     values.output.red.val = rgb.r
     values.output.green.val = rgb.g
     values.output.blue.val = rgb.b
@@ -290,7 +280,7 @@ H.registerNodeType({
     // On gère l'affichage
     node.inputs.value.color.hidden = values.input.from.val != "string"
     node.inputs.value.alpha.hidden = values.input.from.val == "string"
-    node.outputs.value[name].hidden = !values.input.to.val.includes("string")
+    node.outputs.value.color.hidden = !values.input.to.val.includes("string")
     for (var p of ["hue", "saturation", "value"]) {
       node.inputs.value[p].hidden = values.input.from.val != "hsv"
       node.outputs.value[p].hidden = !values.input.to.val.includes("hsv")

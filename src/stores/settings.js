@@ -60,11 +60,14 @@ export const useSettings = defineStore('settings', () => {
       var nNodes = countNodes(settings.value.graph?.state)
       var nConnections = settings.value.graph.state.connections.length
       console.log(`Creating backup.s for ${nNodes} nodes and ${nConnections} connections.`)
+      var data = _.cloneDeep(settings.value)
+      delete data.obs
+      delete data.twitch
       backups.value.push({
         date: Date.now(),
         nodes: nNodes,
         connections: nConnections,
-        data: _.cloneDeep(settings.value)
+        data: data
       })
       backupsChanged.value = true
     }
