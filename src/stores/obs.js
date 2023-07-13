@@ -46,8 +46,9 @@ export const useOBS = defineStore('obs', () => {
       S.set("obs.port", port)
       S.set("obs.password", password)
     }
-    catch(error) {
-      console.log(error)
+    catch(err) {
+      console.error(err)
+      $q.notify(`Error (code ${err.code}): ${err}`)
       connected.value = false
     }
   }
