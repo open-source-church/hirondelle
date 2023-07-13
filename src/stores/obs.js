@@ -31,10 +31,8 @@ export const useOBS = defineStore('obs', () => {
   var OSCBotBrowserName = "HirondelleBrowser[Bot]"
   const OSCBotBrowserKeepOnAllScenes = ref(true)
 
-  const connect = async (ip, port, password) => {
-    var protocol = (location.protocol.substring(0, 5) == "https") ? "wss" : "ws"
-    var url = `${protocol}://${ip}:${port}`
-    $q.notify(`Tentative de connection le protocol ${protocol} pour ${location.protocol}`)
+  const connect = async (ip, port, password, protocol) => {
+    var url = `${protocol}${ip}:${port}`
     await disconnect()
     try {
       var r = await obsWS.connect(url, password, {
@@ -46,6 +44,7 @@ export const useOBS = defineStore('obs', () => {
       S.set("obs.ip", ip)
       S.set("obs.port", port)
       S.set("obs.password", password)
+      S.set("obs.protocol", protocol)
     }
     catch(err) {
       console.error(err)
@@ -57,8 +56,8 @@ export const useOBS = defineStore('obs', () => {
   // Auto connect
   onMounted(() => {
     console.log("AUTO CONNECT?")
-    if (S.get("obs.ip") && S.get("obs.port") && S.get("obs.password"))
-      connect(S.get("obs.ip"), S.get("obs.port"), S.get("obs.password"))
+    if (S.get("obs.ip") && S.get("obs.port") && S.get("obs.password") && S.get("obs.protocol"))
+      connect(S.get("obs.ip"), S.get("obs.port"), S.get("obs.password"), S.get("obs.protocol"))
   })
 
   obsWS.on("ConnectionClosed", (v) => {

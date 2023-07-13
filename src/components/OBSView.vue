@@ -2,15 +2,15 @@
   <div class="row q-pa-sm q-pa-md-xl" style="max-width: 900px; margin: auto;"
     v-if="!obs.connected" @keyup.enter="obs.connect(ip, port, password)" >
     <div class="col-12 text-h2 items-center row q-mb-md">
-      {{ protocol }}
       <q-icon name="img:icons/obs.png" class="q-mr-md"/>
       OBS
     </div>
-    <q-input dense filled class="col-6" v-model="ip" label="IP" />
-    <q-input dense filled class="col-6 q-pl-md" v-model="port" label="port" />
+    <q-select dense filled class="col-2" v-model="protocol" label="Protocol" :options="['wss://', 'ws://']" />
+    <q-input dense filled class="col-6 q-pl-md" v-model="ip" label="IP" />
+    <q-input dense filled class="col-4 q-pl-md" v-model="port" label="port" />
 
     <q-input dense filled class="col-12 q-pt-md" v-model="password" type="password" label = "password" />
-    <q-btn class="col-12 q-mt-md" icon="power" @click="obs.connect(ip, port, password)" label="Connect" color="primary" text-color="dark"/>
+    <q-btn class="col-12 q-mt-md" icon="power" @click="obs.connect(ip, port, password, protocol)" label="Connect" color="primary" text-color="dark"/>
 
     <q-banner class="text-info">
       <template v-slot:avatar > <q-icon name="info"  /> </template>
@@ -326,15 +326,13 @@ const icons = useIcons()
 const S = useSettings()
 const H = useHirondelle()
 
-// Debug
-const protocol = computed(() => location.protocol)
-
 // Tabs
 const tab = ref("obs")
 
 const ip = ref(S.get("obs.ip") || "localhost")
 const port = ref(S.get("obs.port") || "4455")
 const password = ref(S.get("obs.password") || "")
+const protocol = ref(S.get("obs.protocol") || "ws://")
 
 // Auto connect
 // if (ip.value && port.value && password.value)
