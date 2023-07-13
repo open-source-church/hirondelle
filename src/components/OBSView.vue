@@ -337,8 +337,8 @@ const port = ref(S.get("obs.port") || "4455")
 const password = ref(S.get("obs.password") || "")
 
 // Auto connect
-if (ip.value && port.value && password.value)
-  obs.connect(ip.value, port.value, password.value)
+// if (ip.value && port.value && password.value)
+//   obs.connect(ip.value, port.value, password.value)
 
 // Scenes
 const scenesHide = ref(S.get("obs.scenes.hidden") || [])

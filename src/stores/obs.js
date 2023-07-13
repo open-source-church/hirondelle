@@ -31,9 +31,10 @@ export const useOBS = defineStore('obs', () => {
   var OSCBotBrowserName = "HirondelleBrowser[Bot]"
   const OSCBotBrowserKeepOnAllScenes = ref(true)
 
-  const connect = async (ip, port, password, protocol, reconnect) => {
-    if (protocol) protocol = location.protocol == "https" ? "wss" : "ws"
+  const connect = async (ip, port, password, protocol) => {
+    if (!protocol) protocol = location.protocol == "https" ? "wss" : "ws"
     var url = `${protocol}://${ip}:${port}`
+    $q.notify(`Tentative de connection le protocol ${protocol} pour ${location.protocol}`)
     disconnect()
     try {
       var r = await obsWS.connect(url, password, {
@@ -47,8 +48,6 @@ export const useOBS = defineStore('obs', () => {
       S.set("obs.password", password)
     }
     catch(err) {
-      // On essaie de se connecter avec l'autre protocol
-      if (err.code == 18 && !reconnect) return connect(ip, port, password, protocol == 'ws' ? 'wss' : 'ws', true)
       console.error(err)
       $q.notify(`Error (code ${err.code}): ${err}. Protocol used: ${protocol}.`)
       connected.value = false
