@@ -327,7 +327,7 @@ const S = useSettings()
 const H = useHirondelle()
 
 // Debug
-const protocol = computed(() => document.location.protocol)
+const protocol = computed(() => location.protocol)
 
 // Tabs
 const tab = ref("obs")

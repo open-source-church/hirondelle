@@ -35,8 +35,8 @@ export const useOBS = defineStore('obs', () => {
     var protocol = (location.protocol.substring(0, 5) == "https") ? "wss" : "ws"
     var url = `${protocol}://${ip}:${port}`
     $q.notify(`Tentative de connection le protocol ${protocol} pour ${location.protocol}`)
-    disconnect()
     try {
+      await disconnect()
       var r = await obsWS.connect(url, password, {
         eventSubscriptions: EventSubscription.All | EventSubscription.InputVolumeMeters | EventSubscription.SceneItemTransformChanged
         ,
