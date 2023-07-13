@@ -67,7 +67,11 @@ export const useOBS = defineStore('obs', () => {
   })
 
   const disconnect = async () => {
-    await obsWS.disconnect()
+    try {
+      await obsWS.disconnect()
+    } catch (err) {
+      console.error(err)
+    }
     connected.value = false
   }
 
