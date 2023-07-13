@@ -2,6 +2,7 @@
   <div class="row q-pa-sm q-pa-md-xl" style="max-width: 900px; margin: auto;"
     v-if="!obs.connected" @keyup.enter="obs.connect(ip, port, password)" >
     <div class="col-12 text-h2 items-center row q-mb-md">
+      {{ protocol }}
       <q-icon name="img:icons/obs.png" class="q-mr-md"/>
       OBS
     </div>
@@ -324,6 +325,9 @@ const peer = usePeer()
 const icons = useIcons()
 const S = useSettings()
 const H = useHirondelle()
+
+// Debug
+const protocol = computed(() => document.location.protocol)
 
 // Tabs
 const tab = ref("obs")

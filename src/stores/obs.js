@@ -32,7 +32,7 @@ export const useOBS = defineStore('obs', () => {
   const OSCBotBrowserKeepOnAllScenes = ref(true)
 
   const connect = async (ip, port, password) => {
-    var protocol = window.location.protocol == "https" ? "wss" : "ws"
+    var protocol = location.protocol == "https" ? "wss" : "ws"
     var url = `${protocol}://${ip}:${port}`
     disconnect()
     try {
