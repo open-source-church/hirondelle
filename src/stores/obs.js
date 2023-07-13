@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import OBSWebSocket from 'obs-websocket-js'
+import OBSWebSocket, {EventSubscription} from 'obs-websocket-js'
 import { ref, computed, watch, toRef, onMounted, reactive } from 'vue'
 import _ from 'lodash'
 import { useSettings } from './settings'
@@ -36,7 +36,10 @@ export const useOBS = defineStore('obs', () => {
     var url = `${protocol}://${ip}:${port}`
     disconnect()
     try {
-      var r = await obsWS.connect(url, password)
+      var r = await obsWS.connect(url, password, {
+        eventSubscriptions: EventSubscription.All | EventSubscription.InputVolumeMeters | EventSubscription.SceneItemTransformChanged
+        ,
+      })
       console.log(`Connecté à websocket version ${r.obsWebSocketVersion} (avec RCP ${r.rpcVersion})`)
       connected.value = true
       S.set("obs.ip", ip)
@@ -213,6 +216,27 @@ export const useOBS = defineStore('obs', () => {
     _.assign(data.value.stream, r)
     setTimeout(getStats, 1000)
   }
+
+  // Input levels
+  const inputVolumeMeters = ref([])
+  // See https://github.com/obsproject/obs-websocket/commit/d48ddef0318af1e370a4d0b77751afc14ac6b140
+  // [magnitude, peak, input_peak]
+  // Also https://obsproject.com/wiki/Understanding-the-Mixer
+  const setInputVolumeMeters = _.throttle(data => {
+    var input = data.inputs
+    .filter(i => i.inputLevelsMul.length)
+    input.forEach((i, k) => {
+      var l = i.inputLevelsMul[0].map(v => v ? 20 * Math.log10(v) : -100)
+      var r = i.inputLevelsMul[1].map(v => v ? 20 * Math.log10(v) : -100)
+      input[k].inputLevelsDB = [l, r]
+      // Si ça descent on fait la moyenne, comme ça ça smoothe
+      if (l < inputVolumeMeters.value[k]?.inputLevelsDB?.at(0)) l = (l - 60) / 10
+      if (r < inputVolumeMeters.value[k]?.inputLevelsDB?.at(1)) r = (r - 60) / 10
+    })
+    inputVolumeMeters.value = input
+
+  }, 0)
+  obsWS.on("InputVolumeMeters", setInputVolumeMeters)
 
   const setPreviewScene = async (name) => {
     if (!data.value.studioModeEnabled) return setProgramScene(name)
@@ -607,7 +631,6 @@ export const useOBS = defineStore('obs', () => {
     },
     async compute (values, node) {
       if (!connected.value) return
-      console.log("Before:", values)
       var sceneItems = await getSceneItemRecs(values.input.sceneName.val)
       if (!_.isEqual(sceneItems, node.inputs.value["sceneItemId"].options))
         node.inputs.value["sceneItemId"].options = sceneItems
@@ -615,10 +638,21 @@ export const useOBS = defineStore('obs', () => {
       if (rect && !_.isEqual(rect, values.output.rect.val)) values.output.rect.val = rect
     },
   })
+
+  // var events = [
+  //   // "SceneItemSelected",
+  //   "SceneItemTransformChanged",
+  //   // "SceneItemChanged",
+  //   "InputVolumeMeters",
+  //   // "InputAudioMonitorTypeChanged",
+  //   // "InputMuteStateChanged"
+  // ]
+  // events.forEach(e => obsWS.on(e, data => console.log(e, data)))
+
   // FIXME: trigger pas :(
   obsWS.on("SceneItemTransformChanged", (p) => {
-    console.log("SCENE ITEM TRANSFORMED")
-    H.graph.updateValuesFoNodeTypes("OBS:GetSceneItemRect")
+    console.error("SCENE ITEM TRANSFORMED")
+    H.graph.computeNodesForTypes("OBS:GetSceneItemRect")
   })
 
   // Play sound
@@ -699,6 +733,6 @@ export const useOBS = defineStore('obs', () => {
     setRecordingState, setStreamState,
     TriggerStudioModeTransition, currentSceneTransitions,
     preview_img, program_img,
-    data, obsWS
+    data, obsWS, inputVolumeMeters
   }
 })

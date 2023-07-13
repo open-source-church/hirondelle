@@ -289,6 +289,21 @@
       <q-btn v-for="(action, i) in actions" :key="`${i}:${action.name}`" :label="action.name"
         @click="runAction(action)" class="q-ma-sm bg-primary text-dark"/>
     </div>
+
+    <!-- Volume Meters -->
+    <div class="col-12 row text-center q-mt-xl" >
+      <!-- Meters: {{ obs.inputVolumeMeters }} -->
+      <div class="col-12 row items-center" v-for="input in obs.inputVolumeMeters" :key="input.inputName">
+        <div class="col text-left">
+          {{ input.inputName }}
+          <volume-meters :levels="input.inputLevelsDB" :height="10"/>
+        </div>
+        <q-btn v-if="input.inputLevelsDB[0][1] != -100" flat icon="volume_up"
+          @click="obs.obsWS.call('ToggleInputMute', { inputName: input.inputName })" />
+        <q-btn v-else flat icon="volume_off" color="red"
+          @click="obs.obsWS.call('ToggleInputMute', { inputName: input.inputName })" />
+      </div>
+    </div>
   </div>
 </template>
 

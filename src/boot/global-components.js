@@ -9,6 +9,7 @@ export default async ({ app }) => {
   app.component('h-tooltip', defineAsyncComponent(() => import('../components/utils/ToolTip.vue')))
   app.component('h-help-dialog', defineAsyncComponent(() => import('../components/utils/HelpDialog.vue')))
   app.component('github-banner', defineAsyncComponent(() => import('../components/utils/GHBanner.vue')))
+  app.component('volume-meters', defineAsyncComponent(() => import('../components/utils/VolumeMeters.vue')))
   // Twitch
   app.component('reward-item', defineAsyncComponent(() => import('../components/twitch/RewardItem.vue')))
   // Hirondelle
