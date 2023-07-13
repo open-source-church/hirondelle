@@ -31,8 +31,8 @@ export const useOBS = defineStore('obs', () => {
   var OSCBotBrowserName = "HirondelleBrowser[Bot]"
   const OSCBotBrowserKeepOnAllScenes = ref(true)
 
-  const connect = async (ip, port, password, protocol) => {
-    if (!protocol) protocol = location.protocol == "https" ? "wss" : "ws"
+  const connect = async (ip, port, password) => {
+    var protocol = (location.protocol.substring(0, 5) == "https") ? "wss" : "ws"
     var url = `${protocol}://${ip}:${port}`
     $q.notify(`Tentative de connection le protocol ${protocol} pour ${location.protocol}`)
     disconnect()
