@@ -32,10 +32,11 @@ export const useOBS = defineStore('obs', () => {
   const OSCBotBrowserKeepOnAllScenes = ref(true)
 
   const connect = async (ip, port, password) => {
-    var protocol = window.location.protocol == "https" ? "wss" : "ws"
+    var protocol = (location.protocol == "https:" && ip != 'localhost') ? "wss" : "ws"
     var url = `${protocol}://${ip}:${port}`
     disconnect()
     try {
+      console.log("Connecting to:", url)
       var r = await obsWS.connect(url, password, {
         eventSubscriptions: EventSubscription.All | EventSubscription.InputVolumeMeters | EventSubscription.SceneItemTransformChanged
         ,
@@ -48,7 +49,7 @@ export const useOBS = defineStore('obs', () => {
     }
     catch(err) {
       console.error(err)
-      $q.notify(`Error (code ${err.code}): ${err}. Protocol used: ${protocol}.`)
+      $q.notify(`Error (code ${err.code}): ${err}. URL used: ${url}.`)
       connected.value = false
     }
   }

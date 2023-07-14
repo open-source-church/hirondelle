@@ -16,6 +16,11 @@
       <p>Start Websocket server in OBS: <b>Tools > Websocker server settings > Show connect info</b> and fill infos here.</p>
       <p>None of those data leave your browser, connection is made between Hirondelle and OBS directly on your local network.</p>
     </q-banner>
+
+    <q-banner class="text-warning">
+      <template v-slot:avatar > <q-icon name="warning"  /> </template>
+      <p>Currently only works on same computer with ip '<b>localhost</b>'. This needs to be fixed.</p>
+    </q-banner>
   </div>
   <div class="row" v-else >
     <!-- Toolbar -->
