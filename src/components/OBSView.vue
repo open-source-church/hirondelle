@@ -10,7 +10,7 @@
     <q-input dense filled class="col-4 q-pl-md" v-model="port" label="port" />
 
     <q-input dense filled class="col-12 q-pt-md" v-model="password" type="password" label = "password" />
-    <q-btn class="col-12 q-mt-md" icon="power" @click="obs.connect(ip, port, password, protocol)" label="Connect" color="primary" text-color="dark"/>
+    <q-btn class="col-12 q-mt-md" icon="power" @click="obs.connect(ip, port, password, protocol)" :label="`Connect with ${protocol}`" color="primary" text-color="dark"/>
 
     <q-banner class="text-info">
       <template v-slot:avatar > <q-icon name="info"  /> </template>
