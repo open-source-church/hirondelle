@@ -360,13 +360,13 @@ export const useOBS = defineStore('obs', () => {
       name: "Studio Mode Changed", obsname: "StudioModeStateChanged", description: "Le mode studio a été activé ou désactivé",
       params: [ { name: "studioModeEnabled", description: "Valeur" } ]
     },
-    {
-      name: "Stream State Changed", obsname: "StreamStateChanged", description: "The state of the stream output has changed.",
-      params: [
-        { name: "outputActive", type:"boolean", description: "Whether the output is active" },
-        { name: "outputState", description: "The specific state of the output" },
-      ]
-    },
+    // {
+    //   name: "Stream State Changed", obsname: "StreamStateChanged", description: "The state of the stream output has changed.",
+    //   params: [
+    //     { name: "outputActive", type:"boolean", description: "Whether the output is active" },
+    //     { name: "outputState", description: "The specific state of the output" },
+    //   ]
+    // },
     {
       name: "Profile Changed", obsname: "CurrentProfileChanged", description: "Le profile a changé",
       params: [ { name: "profileName", description: "Le nom du nouveau profile" } ]
@@ -426,19 +426,35 @@ export const useOBS = defineStore('obs', () => {
   H.registerNodeType({
     id: "OBS:SetStreamState",
     type: "action",
-    title: "Start Streaming",
+    title: "Streaming",
     category: "OBS",
     active: connected,
     accepts_input: false,
     accepts_output: false,
+    description: "Control your stream and reacts to stream state change events.",
+    outputs: {
+      streaming: { type: "boolean" }
+    },
     slots: {
       start: async () => await obsWS.call("StartStream"),
       stop: async () => await obsWS.call("StopStream"),
     },
-    action () {
-
+    signals: {
+      started: {},
+      stopped: {},
+    },
+    action (values, node) {
+      if (values.output.streaming.val) node.emit("started")
+      else node.emit("stopped")
     }
   })
+  obsWS.on("StreamStateChanged", (p) => {
+    console.log("OBS STREAM STATE CHANGED", p)
+    H.graph.startNodeType(`OBS:SetStreamState`, {
+      streaming: p.outputActive
+    })
+  })
+
   const peer_connected = computed(() => peer.connected)
   H.registerNodeType({
     id: "OBSSource:Confettis",
