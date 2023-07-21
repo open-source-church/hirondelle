@@ -115,8 +115,9 @@
               </q-menu>
             </q-chip>
             <template v-if="v.options && node.state.filter[v.name].filterType == '='">
-              <q-select class="col" dense filled clearable options-dense
-                :options="v.options" v-model="node.state.filter[v.name].filterText" />
+              <!-- <q-select class="col" dense filled clearable options-dense
+                :options="v.options" v-model="node.state.filter[v.name].filterText" /> -->
+              <HParam :param="v.getType()" :name="v.name" v-model="node.state.filter[v.name].filterText" :node="node" />
             </template>
             <template v-else>
 
@@ -190,7 +191,7 @@
       <q-list>
         <q-item dense v-for="(output, name) in _.pickBy(node.outputs, p => !p.hidden)" :key="name">
           <!-- <q-item-section /> -->
-          <q-item-section >
+          <q-item-section>
             <HParam :disable="false" :param="output" :name="name" v-model="node.values.output[name].val" :node="node" />
             <HConnector port-type="output" port-class="param" :node="node" :param-id="output.id" />
           </q-item-section>

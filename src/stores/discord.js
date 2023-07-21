@@ -135,23 +135,6 @@ export const useDiscord = defineStore('discord', () => {
   }
 
   /*
-    Computed
-  */
-
-  const guilds = computed(() => {
-    return _guilds.value.map(g => ({
-      id: g.id,
-      name: g.name,
-      avatar: g.avatar,
-      channels: g.channels.map(c => ({
-        name: c.name,
-        id: c.id,
-        type: c.type
-      }))
-    }))
-  })
-
-  /*
     Avatars
   */
   const guildIcon = guildId => {
@@ -159,7 +142,7 @@ export const useDiscord = defineStore('discord', () => {
     if (!guild || !guild.icon) return ""
     else if (guild.icon.substring(0, 2) == "a_")
       return `https://cdn.discordapp.com/icons/${guildId}/${guild.icon}.gif`
-    else return
+    else
       return `https://cdn.discordapp.com/icons/${guildId}/${guild.icon}.png`
   }
   const userGuildAvatar = (userId, guildId) => {
@@ -174,6 +157,30 @@ export const useDiscord = defineStore('discord', () => {
     if (!emojiId) return ""
     return `https://cdn.discordapp.com/emojis/${emojiId}.${animated ? 'gif' : 'png'}`
   }
+  const channelIcon = channel => channel.type == 0 ? 'tag' : channel.type == 2 ? 'volume_up' : ''
+
+  /*
+    Computed
+  */
+
+  const guilds = computed(() => {
+    return _guilds.value.map(g => ({
+      id: g.id,
+      name: g.name,
+      image: guildIcon(g.id),
+      channels: g.channels.map(c => ({
+        name: c.name,
+        id: c.id,
+        type: c.type,
+        guild: g.name,
+        icon: channelIcon(c)
+      }))
+    }))
+  })
+
+  const guildNames = computed(() => guilds.value.map(g => g.name) )
+  const channels = computed(() => _.flatten(guilds.value.map(g => g.channels)) )
+
 
 
   /*
@@ -187,10 +194,10 @@ export const useDiscord = defineStore('discord', () => {
     category: "Discord",
     active: connected,
     outputs: {
-      guild: { type: "string", options: () => computed(() => guilds.value.map(g => g.name) )},
+      guild: { type: "string", options: () => guilds, optionLabel: "name", optionValue: "name"},
       guildId: { type: "string" },
       guildIcon: { type: "string" },
-      channel: { type: "string" },
+      channel: { type: "string", options: () => channels, optionLabel: "name", optionValue: "name", optionCaption: "guild" },
       channelId: { type: "string" },
       userName: { type: "string" },
       userAvatar: { type: "string" },
@@ -227,7 +234,7 @@ export const useDiscord = defineStore('discord', () => {
     category: "Discord",
     active: connected,
     inputs: {
-      guild: { type: "string", options: () => computed(() => guilds.value.map(g => g.name) ) },
+      guild: { type: "string", options: () => guildNames },
       channel: { type: "string" },
       content: { type: "string" }
     },

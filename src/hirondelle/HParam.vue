@@ -90,16 +90,32 @@
   </template>
   <!-- String -->
   <template v-else>
-    <div>
+    <div class="">
       <div v-if="param.options && param.checkbox">{{ param.displayName || name }}</div>
       <q-option-group v-if="param.options && param.checkbox" dense :disable="disable" :options="param.options"
       :label="param.displayName || name" :clearable="param.clearable" :type="param.array ? 'checkbox' : 'radio'"
       :option-label="param.optionLabel || 'label'" :option-value="param.optionValue || 'value'" emit-value map-options
       :model-value="modelValue" @update:model-value="update" inline/>
-      <q-select v-else-if="param.options" options-dense :disable="disable" :options="param.options"
+      <q-select v-else-if="param.options" options-dense :disable="disable"
+      :options="options" @filter="filterFn" use-input fill-input hide-selected
       :label="param.displayName || name" dense filled :clearable="param.clearable" :multiple="param.multiple"
       :option-label="param.optionLabel || 'label'" :option-value="param.optionValue || 'value'" emit-value map-options
-      :model-value="modelValue" @update:model-value="update"/>
+      :model-value="modelValue" @update:model-value="update">
+        <template v-slot:option="scope">
+          <q-item v-bind="scope.itemProps">
+            <q-item-section avatar v-if="scope.opt.icon">
+              <q-icon :name="scope.opt.icon" />
+            </q-item-section>
+            <q-item-section avatar v-else-if="scope.opt.image">
+              <q-img width="24" :src="scope.opt.image" />
+            </q-item-section>
+            <q-item-section>
+              <q-item-label>{{ scope.label }}</q-item-label>
+              <q-item-label caption v-if="scope.opt[param.optionCaption || 'caption']">{{ scope.opt[param.optionCaption || "caption"] }}</q-item-label>
+            </q-item-section>
+          </q-item>
+        </template>
+      </q-select>
       <q-input v-else dense filled :label="param.displayName || name" :textarea="param.textarea" :autogrow="param.textarea"
       :model-value="modelValue" @update:model-value="update" :disable="disable" :debounce="param.type=='number' ? 1000:0" />
     </div>
@@ -148,6 +164,15 @@ const update = (val, rectProp) => {
   if (props.param.type == 'rect') val = _.assign(props.modelValue, { [rectProp]: val })
 
   emit('update:modelValue', val)
+}
+
+// Filter options
+const options = ref(props.param.options)
+const filterFn = (val, update, abort) => {
+  update(() => {
+    const needle = val.toLowerCase()
+    options.value = props.param.options.filter(v => JSON.stringify(v).toLowerCase().indexOf(needle) > -1)
+  })
 }
 
 </script>
