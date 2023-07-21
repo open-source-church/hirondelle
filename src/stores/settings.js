@@ -37,7 +37,7 @@ export const useSettings = defineStore('settings', () => {
 
     // Make backup?
     var nNodes = countNodes(settings.value.graph?.state)
-    var nConnections = settings.value.graph.state.connections.length
+    var nConnections = settings.value.graph?.state.connections.length || 0
     if (Math.abs(nNodes + nConnections - lastNNodes.value - lastNConnections.value) > 10) {
       B.createBackup()
     }

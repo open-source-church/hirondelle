@@ -45,6 +45,7 @@ import { useTwitch } from 'stores/twitch'
 import _ from 'lodash'
 import { useSettings } from 'src/stores/settings'
 import { useHirondelle } from 'src/hirondelle/hirondelle'
+import { useDiscord } from 'src/stores/discord'
 // Nodes types
 import "src/hirondelle/types/variables.js"
 import "src/hirondelle/types/base-actions.js"
@@ -54,6 +55,7 @@ const $q = useQuasar()
 const S = useSettings()
 const H = useHirondelle()
 const twitch = useTwitch()
+const D = useDiscord()
 
 const props = defineProps({
   tab: { type: String, default: "obs"}

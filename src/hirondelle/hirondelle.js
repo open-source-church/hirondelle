@@ -312,11 +312,13 @@ export const useHirondelle = defineStore('hirondelle', () => {
       node.findParamName = function (paramId) {
         return _.findKey(this.inputs, p => p.id == paramId) || _.findKey(this.outputs, p => p.id == paramId)
       }
-      node.compute = function () {
+      node.compute = async function () {
         if (node._computing) return
         console.log("Computing", node.title.value || node.type.title)
         node._computing = true
         if (node.type.compute) node.type.compute(node.values.value, node)
+        // We allow watches to react
+        await nextTick()
         node._computing = false
       }
 

@@ -52,6 +52,26 @@
           </q-list>
         </q-card-section>
       </q-card>
+      <q-card class="col-auto">
+        <q-card-section class="bg-primary text-dark row items-center">
+          <span class="col">Discord</span>
+          <q-btn class="col-auto" dense flat icon="circle" :color="D.connected ? 'green' : 'red' "/>
+        </q-card-section>
+        <q-card-section class="column q-gutter-md" v-if="!D.connected">
+          <q-input dense filled v-model="discord_token" type="password" label="Discord Token"/>
+          <q-btn :disable="D.connected" label="Connect" class="bg-primary text-dark" @click="D.connect(discord_token)"/>
+        </q-card-section>
+        <q-card-section class="" v-else>
+            Connecté en tant que:
+          <q-chip class="bg-grey-9">
+            <q-avatar size="32px">
+              <img :src="D.userAvatar(D.user.id, D.user.avatar)" />
+            </q-avatar>
+            {{ D.user.username }}
+          </q-chip>
+          <q-btn label="Logout" icon="power_off" flat color="negative" @click="D.disconnect"/>
+        </q-card-section>
+      </q-card>
     </div>
   </div>
 </template>
@@ -64,10 +84,12 @@ import _ from 'lodash'
 import { useSettings } from 'stores/settings'
 // Node
 import { useHirondelle } from "src/hirondelle/hirondelle.js"
+import { useDiscord } from 'src/stores/discord'
 
 const $q = useQuasar()
 const S = useSettings()
 const H = useHirondelle()
+const D = useDiscord()
 
 const export_opt = ref({
   obs: true,
@@ -111,6 +133,9 @@ const copyBackup = backup => {
   copyToClipboard(JSON.stringify(backup.data, null, "  "))
   $q.notify("Backup copiée dans le presse papier")
 }
+
+// Discord
+const discord_token = ref(S.get("discord.access_token") || "")
 
 </script>
 
