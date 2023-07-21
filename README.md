@@ -29,6 +29,11 @@ Twitch:
 - Respond to message, announcements, subs, follows, channel point rendemption
 - Send messages and announcements
 
+Discord:
+
+- Respond to message and reactions
+- Send messages
+
 
 ## Install the dependencies
 ```bash

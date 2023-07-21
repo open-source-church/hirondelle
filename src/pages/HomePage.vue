@@ -79,7 +79,7 @@
               </div>
               <div class="col-12 col-sm-4 q-pl-lg row col justify-center">
                 <div class="bg-black q-pa-md text-cream" style="border-radius: 1em;">
-                  <div class="text-h3">Interracts with <span class="gradiant">twitch</span> and <span class="gradiant">OBS</span></div>
+                  <div class="text-h3">Interracts with <span class="gradiant">OBS</span>, <span class="gradiant">twitch</span> and <span class="gradiant">discord</span></div>
                   <div class="text-subtitle1" v-html="marked(`
   - Reacts to subs, follows, messages, channel point redemptions, etc.
   - Send messages, announcements, play sounds, read messages, etc.
@@ -281,6 +281,20 @@ const actions = [
         name: "Tools",
         items: ["Manage redemptions", "Switch channel"]
       },
+    ]
+  },
+  {
+    name: "Discord",
+    icon: "img:icons/discord.png",
+    items: [
+      {
+        name: "Events",
+        items: ["Message", "Reaction"]
+      },
+      {
+        name: "Actions",
+        items: ["Send message"]
+      }
     ]
   },
   {
